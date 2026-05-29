@@ -144,11 +144,20 @@ class PenggunaController extends Controller
             ], 401);
         }
 
+        if (in_array($user->role, [Pengguna::ROLE_KPS, Pengguna::ROLE_KETUA_PBL])) {
+            if (!$user->isAktif()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Akun Anda telah dinonaktifkan. Hubungi Admin.',
+                ], 403);
+            }
+        }
+
         $user->tokens()->delete();
 
         // cek role 
         $abilities = match($user->role) {
-            Pengguna::ROLE_ADMIN     => ['Admin'],
+            Pengguna::ROLE_ADMIN     => ['admin'],
             Pengguna::ROLE_KPS       => ['kps'],
             Pengguna::ROLE_KETUA_PBL => ['ketua-pbl'],
             default                  => ['pengunjung'],

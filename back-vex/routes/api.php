@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\ResetPasswordController;
+use App\Http\Controllers\AdminController;
 
 // Route::post('/test', function () {
 //     return response()->json(['message' => 'OK']);
@@ -45,6 +46,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', function () {
             return response()->json(['status' => 'success', 'page' => 'Admin Dashboard']);
         });
+
+        //manajemen pengguna
+        Route::get('/pengguna',                    [AdminController::class, 'daftarPengguna']);
+        Route::post('/pengguna',                   [AdminController::class, 'tambahPengguna']);
+        Route::get('/pengguna/{id}',               [AdminController::class, 'detailPengguna']);
+        Route::put('/pengguna/{id}',               [AdminController::class, 'editPengguna']);
+        Route::patch('/pengguna/{id}/aktifkan',    [AdminController::class, 'aktifkanAkun']);
+        Route::patch('/pengguna/{id}/nonaktifkan', [AdminController::class, 'nonaktifkanAkun']);
     });
 
     // KPS

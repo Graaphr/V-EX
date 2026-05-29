@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+
 class Pengguna extends Authenticatable
 {
     // HasApiTokens 
@@ -18,10 +19,13 @@ class Pengguna extends Authenticatable
     protected $table = 'pengguna';
     
     // konstanta role
-    const ROLE_ADMIN = 'admin';
-    const ROLE_KPS = 'kps';
-    const ROLE_KETUA_PBL = 'ketua pbl';
-    const ROLE_PENGUNJUNG = 'pengunjung';
+    const ROLE_ADMIN = 'Admin';
+    const ROLE_KPS = 'KPS';
+    const ROLE_KETUA_PBL = 'Ketua PBL';
+    const ROLE_PENGUNJUNG = 'Pengunjung';
+
+    const STATUS_AKTIF ='Aktif';
+    const STATUS_TIDAK_AKTIF ='Tidak Aktif';
 
 
    
@@ -32,6 +36,7 @@ class Pengguna extends Authenticatable
         'kelas',
         'program_studi',
         'role',
+        'status',
         'new_email',  //tambah untuk ganti email
         'new_email_verification_token', // tambah untuk ganti email
         'new_email_expires_at',  //tambah untuk ganti email
@@ -71,6 +76,11 @@ class Pengguna extends Authenticatable
     public function isPengunjung(): bool
     {
         return $this->role === self::ROLE_PENGUNJUNG;
+    }
+
+    public function isAktif(): bool
+    {
+        return $this->status === self::STATUS_AKTIF;
     }
 
     public function kelasBelongsTo()

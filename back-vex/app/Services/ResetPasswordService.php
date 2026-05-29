@@ -68,8 +68,11 @@ class ResetPasswordService
     /**
      * Generate link reset password untuk frontend.
      */
-    public function generateResetLink(string $token): string
+    public function generateResetLink(string $token, string $email): string
     {
-        return config('app.frontend_url') . '/reset-password?token=' . $token;
+        return config('app.frontend_url') 
+            . '/auth/lupa-password/ganti-password'
+            . '?id=' . $token
+            . '&email=' . urlencode($email);
     }
 }

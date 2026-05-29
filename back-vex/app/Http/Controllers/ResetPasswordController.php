@@ -42,7 +42,7 @@ class ResetPasswordController extends Controller
         $this->resetPasswordService->storeToCache($resetToken, $user->email, $expiredAt);
 
         // Generate link & kirim email
-        $resetLink = $this->resetPasswordService->generateResetLink($resetToken);
+        $resetLink = $this->resetPasswordService->generateResetLink($resetToken, $user->email);
         $this->resetPasswordService->sendResetEmail($user->email, $resetLink);
 
         return response()->json([
@@ -78,6 +78,7 @@ class ResetPasswordController extends Controller
     {
         $request->validate([
             'token'    => 'required',
+            'email'    => 'required|email',
             'password' => 'required|min:8|confirmed',
         ]);
 
@@ -111,6 +112,7 @@ class ResetPasswordController extends Controller
         return response()->json([
             'status'  => 'success',
             'message' => 'Kata sandi berhasil diubah. Silakan login.',
+            // 'email' => $user->email
         ]);
     }
 }
