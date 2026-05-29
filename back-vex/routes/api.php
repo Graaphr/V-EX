@@ -84,4 +84,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/verify', [App\Http\Controllers\ChangeEmailController::class, 'verify']);
     });
 
+        // GANTI KATA SANDI 
+    Route::post('/change-password', [App\Http\Controllers\ChangePasswordController::class, 'changePassword']);
+
 });
