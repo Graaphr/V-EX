@@ -111,3 +111,12 @@ export function LinkAksesEks({ link, title, children, className, ...props }: Lin
     </a>
   );
 }
+
+// ini harus menggunakan group di parentnya
+export function Tooltip({children,} : {children:React.ReactNode;}){
+  return (
+    <div className="pointer-events-none absolute -top-11 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-main-blue opacity-0 shadow-lg/40 transition-all duration-200 group-hover:-top-12 group-hover:opacity-100">
+      {children}
+    </div>
+  );
+}

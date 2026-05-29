@@ -8,18 +8,18 @@ import AddPameran from "@/components/pameran/AddPameran";
 
 
 export default function AdminDetailPameran() {
-  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isFormOpen, setisFormOpen] = useState(false);
 
   const handleEditClick = () => {
-    setIsEditOpen((prev) => !prev);
+    setisFormOpen((prev) => !prev);
   };
 
   return (
     <div className="w-full">
       {/* NAV ADMIN */}
-      <NavAdmin isFormOpen={isEditOpen} onAddClick={handleEditClick} />
+      <NavAdmin isFormOpen={isFormOpen} onAddClick={handleEditClick} />
 
-      {isEditOpen ? <AddPameran /> : <DetailPameran isLogin={true}/>}
+      {isFormOpen ? <AddPameran /> : <DetailPameran isLogin={true}/>}
     </div>
   );
 }

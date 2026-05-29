@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { FaUser, FaBook, FaImage, FaPlus, FaTimes } from 'react-icons/fa';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Tooltip } from './Components';
 
 interface AddOn {
   onAddClick?: () => void;
@@ -66,15 +67,12 @@ export default function NavAdmin({ onAddClick, isFormOpen }: AddOn) {
                   />
                 )}
 
-                {/* TOOLTIP */}
-                <div className="pointer-events-none absolute -top-11 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-main-blue opacity-0 shadow-lg/40 transition-all duration-200 group-hover:-top-12 group-hover:opacity-100">
-                  {item.title}
-                </div>
+                <Tooltip>{item.title}</Tooltip>
                 <Link
                   href={item.link}
                   className={`relative z-10 flex h-full w-full items-center justify-center rounded-full transition
-            ${isActive ? 'text-main-blue' : 'text-white border border-white/20 hover:bg-white/10'}
-          `}
+                    ${isActive ? 'text-main-blue' : 'text-white border border-white/20 hover:bg-white/10'}
+                    `}
                 >
                   {item.icon}
                 </Link>
@@ -87,24 +85,13 @@ export default function NavAdmin({ onAddClick, isFormOpen }: AddOn) {
         <div className="w-px h-6 bg-white/20 mx-1" />
 
         {/* BUTTON */}
-        {/* BUTTON */}
         <div className="group relative flex h-10 w-10 items-center justify-center">
-          {/* TOOLTIP */}
-          <div className="pointer-events-none absolute -top-11 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-main-blue opacity-0 transition-all duration-200 group-hover:-top-12 group-hover:opacity-100 shadow-lg/40">
-            Tambah
-          </div>
+          <Tooltip>Tambah</Tooltip>
 
           <motion.button
             onClick={onAddClick}
             whileTap={{ scale: 0.9 }}
-            className="
-      relative z-10
-      flex h-10 w-10
-      items-center justify-center
-      rounded-full
-      bg-white
-      text-main-blue
-    "
+            className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-main-blue"
           >
             <AnimatePresence mode="wait">
               {isFormOpen ? (
