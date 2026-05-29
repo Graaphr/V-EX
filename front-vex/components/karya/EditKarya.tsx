@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import DetailThumbnail from '@/components/dashboard/admin/karya/DetailThumbnail';
-import DetailPoster from '@/components/dashboard/admin/karya/DetailPoster';
-import DetailPreview from '@/components/dashboard/admin/karya/DetailPreview';
-import DetailForm from '@/components/dashboard/admin/karya/DetailForm';
-import DetailAction from '@/components/dashboard/admin/karya/DetailAction';
+import DetailThumbnail from '@/components/karya/DetailThumbnail';
+import DetailPoster from '@/components/karya/DetailPoster';
+import DetailPreview from '@/components/karya/DetailPreview';
+import DetailForm from '@/components/karya/DetailForm';
+import DetailAction from '@/components/karya/DetailAction';
 import { KaryaItem } from '@/types/karya';
 
 interface Props {

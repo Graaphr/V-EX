@@ -1,6 +1,6 @@
 'use client';
 
-import { KaryaItem } from '../../../../types/karya';
+import { KaryaItem } from '../../types/karya';
 
 interface Props {
   form: KaryaItem;

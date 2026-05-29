@@ -1,4 +1,4 @@
-import PageKarya from '@/components/dashboard/admin/karya/PageKarya';
+import PageKarya from '@/components/karya/PageKarya';
 
 export default function KaryaPage() {
   return <PageKarya href="/admin/karya/" />;

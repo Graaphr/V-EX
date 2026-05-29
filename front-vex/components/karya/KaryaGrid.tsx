@@ -5,7 +5,7 @@ import Link from 'next/link';
 import PosterCard from './KaryaPosterCard';
 import HeaderSlider from './KaryaHeaderSlider';
 
-import { KaryaItem, PameranItem } from '../../../../types/karya';
+import { KaryaItem, PameranItem } from '../../types/karya';
 
 interface KaryaGridProps {
   category: string;

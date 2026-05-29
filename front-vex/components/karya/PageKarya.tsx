@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import FilterSection from '@/components/pameran/FilterSection';
-import KaryaGrid from '@/components/dashboard/admin/karya/KaryaGrid';
+import KaryaGrid from '@/components/karya/KaryaGrid';
 import { KaryaItem } from '@/types/karya';
 import { ProdiType } from '@/components/shared/filter/SelectProdi';
 import { TahunType } from '@/components/shared/filter/SelectTahun';
@@ -22,7 +22,7 @@ export default function PageKarya({ href  }: Props) {
   const [selectedSemester, setSelectedSemester] = useState<SemesterType | null>(null);
   const [search, setSearch] = useState('');
   const [pages, setPages] = useState<Record<string, number>>({});
-  const PER_PAGE = 4;
+  const PER_PAGE = 6;
 
   const changePage = (category: string, type: 'next' | 'prev', totalPages: number) => {
     setPages((prev) => {

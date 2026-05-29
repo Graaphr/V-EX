@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { KaryaItem, PameranItem } from '../../../../types/karya';
+import { KaryaItem, PameranItem } from '../../types/karya';
 
 interface PosterCardProps {
   karya: KaryaItem;

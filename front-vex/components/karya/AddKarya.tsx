@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 // COMPONENTS
-import DetailThumbnail from '@/components/dashboard/admin/karya/DetailThumbnail';
-import DetailPoster from '@/components/dashboard/admin/karya/DetailPoster';
-import DetailPreview from '@/components/dashboard/admin/karya/DetailPreview';
-import DetailForm from '@/components/dashboard/admin/karya/DetailForm';
-import DetailAction from '@/components/dashboard/admin/karya/DetailAction';
+import DetailThumbnail from '@/components/karya/DetailThumbnail';
+import DetailPoster from '@/components/karya/DetailPoster';
+import DetailPreview from '@/components/karya/DetailPreview';
+import DetailForm from '@/components/karya/DetailForm';
+import DetailAction from '@/components/karya/DetailAction';
 // TYPES
 import { KaryaItem } from '@/types/karya';
 
