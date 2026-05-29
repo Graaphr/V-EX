@@ -10,9 +10,9 @@ import {
   LogoWhite,
   LinkAkses,
   LinkAksesEks,
-} from "@/components/Componen";
+} from "@/components/ui/Components";
 
-import { VectorBox } from "@/components/model/BoxModel";
+import { VectorBox } from "@/components/ui/BoxModel";
 import "@/app/globals.css";
 
 export default function Footer() {

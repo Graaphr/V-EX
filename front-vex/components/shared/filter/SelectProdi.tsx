@@ -1,64 +1,35 @@
-"use client";
+'use client';
 
-import {
-  Listbox,
-  ListboxButton,
-  ListboxOption,
-  ListboxOptions,
-} from "@headlessui/react";
-
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
-
-// ambil data pameran
-import ALL_EXHIBITIONS from "@/public/data/Pameran.json";
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
+import { ChevronDownIcon } from '@heroicons/react/20/solid';
+import ALL_EXHIBITIONS from '@/public/data/Pameran.json';
 
 export type ProdiType = {
   id: number;
   name: string;
 };
 
-/* ambil kategori unik dari data json */
-const prodiList: ProdiType[] = Array.from(
-  new Set(
-    ALL_EXHIBITIONS.map(
-      (item) => item.category
-    )
-  )
-).map((category, index) => ({
-  id: index + 1,
-  name: category,
-}));
+const prodiList: ProdiType[] = Array.from(new Set(ALL_EXHIBITIONS.map((item) => item.category))).map(
+  (category, index) => ({
+    id: index + 1,
+    name: category,
+  }),
+);
 
 interface SelectProdiProps {
-  selected: ProdiType ;
-  onChange: (
-    prodi: ProdiType
-  ) => void;
+  selected: ProdiType;
+  onChange: (prodi: ProdiType) => void;
 }
 
-export default function SelectProdi({
-  selected,
-  onChange,
-}: SelectProdiProps) {
+export default function SelectProdi({ selected, onChange }: SelectProdiProps) {
   return (
     <div className="w-full max-w-sm">
-      <Listbox
-        value={selected}
-        onChange={onChange}
-      >
+      <Listbox value={selected} onChange={onChange}>
         <div className="relative">
           {/* button */}
           <ListboxButton className="relative w-full cursor-pointer rounded-full bg-white py-2 pl-[15px] pr-[30px] text-left text-sm font-poppins shadow-xl/20 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-main-blue/60">
-            <span
-              className={`block truncate ${
-                selected
-                  ? "text-gray-800 font-medium"
-                  : "text-gray-400"
-              }`}
-            >
-              {selected
-                ? selected.name
-                : "Program Studi"}
+            <span className={`block truncate ${selected ? 'text-gray-800 font-medium' : 'text-gray-400'}`}>
+              {selected ? selected.name : 'Program Studi'}
             </span>
 
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-[10px]">
@@ -77,18 +48,8 @@ export default function SelectProdi({
                 value={prodi}
                 className="group relative cursor-pointer select-none py-2.5 pl-3 pr-4 text-gray-900 data-focus:bg-gray-400/20 data-focus:text-black"
               >
-                {({
-                  selected: isSelected,
-                }) => (
-                  <span
-                    className={`block truncate ${
-                      isSelected
-                        ? "font-semibold"
-                        : "font-normal"
-                    }`}
-                  >
-                    {prodi.name}
-                  </span>
+                {({ selected: isSelected }) => (
+                  <span className={`block truncate ${isSelected ? 'font-semibold' : 'font-normal'}`}>{prodi.name}</span>
                 )}
               </ListboxOption>
             ))}

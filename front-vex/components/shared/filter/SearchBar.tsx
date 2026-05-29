@@ -10,19 +10,13 @@ interface SearchBarProps {
   onChange:(e:React.ChangeEvent<HTMLInputElement>)=>void;
 }
 
-export default function SearchBar({ onSearch, text }: SearchBarProps) {
-  const [query, setQuery] = useState("");
-
+export default function SearchBar({ text, value, onChange }: SearchBarProps) {
   return (
     <div className="w-full relative flex items-center text-black">
       <input
         type="text"
-        value={query}
-        onChange={(e) => {
-          const value = e.target.value;
-          setQuery(value);
-          onSearch?.(value);
-        }}
+        value={value}
+        onChange={onChange}
         placeholder={text}
         className="w-full p-2 pl-[50px] bg-white rounded-full text-sm border-2 border-transparent shadow-xl/20 focus:outline-none focus:border-main-blue transition-all"
       />

@@ -1,0 +1,38 @@
+'use client';
+
+import Image from 'next/image';
+import { KaryaItem, PameranItem } from '../../../../types/karya';
+
+interface PosterCardProps {
+  karya: KaryaItem;
+  pameranList: PameranItem[];
+}
+
+export default function PosterCard({ karya, pameranList }: PosterCardProps) {
+  const pameran = pameranList.find((item) => item.id === karya.pameranId);
+
+  return (
+    <div className="mt-1 bg-white rounded-xl overflow-hidden hover:scale-102 shadow-md hover:shadow-xl/40 transition duration-300 group">
+      <div className="relative aspect-[3/4] w-full">
+        <Image
+          src={karya.image}
+          alt={karya.title}
+          fill
+          className="object-cover group-hover:scale-102 transition duration-300"
+        />
+      </div>
+
+      <div className="p-3 h-[100px] flex flex-col justify-between">
+        <h3 className="font-medium text-sm line-clamp-2">{karya.title}</h3>
+
+        <p className="text-xs text-gray-500">{karya.category}</p>
+
+        {pameran && (
+          <span className="mt-1 inline-flex w-fit items-center rounded-full bg-blue-300/40 px-3 py-1">
+            <p className="font-poppins text-xs font-medium text-main-blue leading-none">{pameran.title}</p>
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}

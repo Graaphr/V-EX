@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 // components
-import NavAdmin from "@/components/dashboard/NavAdmin";
+import NavAdmin from "@/components/ui/NavAdmin";
 // import PameranPage from "@/app/(pameran)/pameran/page";
 import AddPameran from "@/components/pameran/AddPameran";
 import PagePameran from "@/components/pameran/PagePameran";

@@ -1,18 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { HiMenu, HiX } from "react-icons/hi";
-import { FaUser, FaLock } from "react-icons/fa";
-import { FiLogOut } from "react-icons/fi";
-import { Logo, TextNav } from "@/components/Componen";
-import { Button } from "@/components/model/Button";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+// ICON
+import { HiMenu, HiX } from 'react-icons/hi';
+import { FaUser, FaLock } from 'react-icons/fa';
+import { FiLogOut } from 'react-icons/fi';
+// COMPONENT
+import { Logo, TextNav } from '@/components/ui/Components';
+import { Button } from '@/components/ui/Button';
 
-// === AUTH CONTEXT ===
-import { useAuth } from "@/context/AuthContext";
-
-// ===== TYPES =====
 interface NavItem {
   title: string;
   subtitle: string;
@@ -23,7 +22,6 @@ interface NavbarProps {
   menuItems: NavItem[];
 }
 
-// ===== COMPONENT =====
 export default function Navbar({ menuItems }: NavbarProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -31,17 +29,34 @@ export default function Navbar({ menuItems }: NavbarProps) {
 
   const { user, logout, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <nav className="h-[70px] bg-white shadow-sm flex items-center px-6">
-        <div className="animate-pulse flex gap-3">
-          <div className="h-8 w-24 bg-gray-200 rounded"></div>
-          <div className="h-8 w-20 bg-gray-200 rounded"></div>
+if (loading) {
+  return (
+    <nav className="bg-white px-6 shadow-sm">
+      <div className="autoMid flex h-[70px] items-center justify-between">
+        {/* Left Side */}
+        <div className="flex animate-pulse items-center gap-3">
+          <div className="h-10 w-28 rounded bg-gray-200" />
         </div>
-      </nav>
-    );
-  }
 
+        {/* Center - hidden di mobile */}
+        <div className="hidden md:flex animate-pulse items-center gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-4 w-28 rounded bg-gray-200" />
+              <div className="h-2 w-16 rounded bg-gray-200" />
+            </div>
+          ))}
+        </div>
+
+        {/* Right Side */}
+        <div className="flex animate-pulse items-center gap-3">
+          <div className="hidden sm:block h-9 w-24 rounded bg-gray-200" />
+          <div className="h-9 w-9 rounded-full bg-gray-200" />
+        </div>
+      </div>
+    </nav>
+  );
+}
   const isLogin = !!user;
 
   // ===== AUTH DESKTOP =====
@@ -54,10 +69,7 @@ export default function Navbar({ menuItems }: NavbarProps) {
         <FaUser size={24} className="rounded-full" />
       </button>
     ) : (
-      <Button
-        link="/login"
-        className="px-5 py-2 text-sm font-bold rounded-md hover:scale-110 transition"
-      >
+      <Button link="/login" className="px-5 py-2 text-sm font-bold rounded-md hover:scale-110 transition">
         Masuk
       </Button>
     );
@@ -76,10 +88,7 @@ export default function Navbar({ menuItems }: NavbarProps) {
         <span>Profile</span>
       </button>
     ) : (
-      <Button
-        link="/login"
-        className="w-full py-3 text-sm font-bold rounded-md"
-      >
+      <Button link="/login" className="w-full py-3 text-sm font-bold rounded-md">
         Masuk
       </Button>
     );
@@ -99,12 +108,7 @@ export default function Navbar({ menuItems }: NavbarProps) {
           {/* DESKTOP MENU */}
           <div className="hidden lg:flex items-center gap-10">
             {menuItems.map((item, index) => (
-              <TextNav
-                key={index}
-                link={item.link}
-                title={item.title}
-                subtitle={item.subtitle}
-              />
+              <TextNav key={index} link={item.link} title={item.title} subtitle={item.subtitle} />
             ))}
           </div>
 
@@ -114,10 +118,7 @@ export default function Navbar({ menuItems }: NavbarProps) {
           </div>
 
           {/* BURGER */}
-          <button
-            onClick={() => setOpen(!open)}
-            className="lg:hidden text-main-blue text-3xl"
-          >
+          <button onClick={() => setOpen(!open)} className="lg:hidden text-main-blue text-3xl">
             {open ? <HiX /> : <HiMenu />}
           </button>
         </div>
@@ -125,17 +126,12 @@ export default function Navbar({ menuItems }: NavbarProps) {
         {/* MOBILE MENU */}
         <div
           className={`lg:hidden overflow-hidden transition-all duration-300 ${
-            open ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+            open ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
           <div className="px-4 pb-5 flex flex-col gap-4">
             {menuItems.map((item, index) => (
-              <TextNav
-                key={index}
-                link={item.link}
-                title={item.title}
-                subtitle={item.subtitle}
-              />
+              <TextNav key={index} link={item.link} title={item.title} subtitle={item.subtitle} />
             ))}
 
             <AuthMobile />
@@ -146,19 +142,16 @@ export default function Navbar({ menuItems }: NavbarProps) {
       {/* PROFILE SIDEBAR */}
       <div
         className={`fixed inset-0 z-50 transition-all duration-300 ${
-          openProfile ? "visible opacity-100" : "invisible opacity-0"
+          openProfile ? 'visible opacity-100' : 'invisible opacity-0'
         }`}
       >
         {/* OVERLAY */}
-        <div
-          onClick={() => setOpenProfile(false)}
-          className="absolute inset-0 bg-black/40 -sm"
-        />
+        <div onClick={() => setOpenProfile(false)} className="absolute inset-0 bg-black/40 -sm" />
 
         {/* DRAWER */}
         <div
           className={`absolute top-0 right-0 min-h-[400px] w-[85%] sm:w-[320px] bg-white shadow-2xl p-4 transform transition-transform duration-300 rounded-l-xl
-          ${openProfile ? "translate-x-0" : "translate-x-full"}`}
+          ${openProfile ? 'translate-x-0' : 'translate-x-full'}`}
         >
           <div className="flex flex-col h-100">
             {/* HEADER */}
@@ -169,10 +162,8 @@ export default function Navbar({ menuItems }: NavbarProps) {
                 </div>
 
                 <div>
-                  <p className="font-semibold">{user?.nama || "User"}</p>
-                  <p className="text-sm text-gray-400">
-                    {user?.email || "user@mail.com"}
-                  </p>
+                  <p className="font-semibold">{user?.nama || 'User'}</p>
+                  <p className="text-sm text-gray-400">{user?.email || 'user@mail.com'}</p>
                 </div>
               </div>
 
@@ -196,10 +187,10 @@ export default function Navbar({ menuItems }: NavbarProps) {
             <div className="mt-auto pt-4 border-t">
               <button
                 onClick={() => {
-                  logout(); 
+                  logout();
                   setOpenProfile(false);
-                  confirm("Apakah anda yakin ?");
-                  router.push("/");
+                  confirm('Apakah anda yakin ?');
+                  router.push('/');
                 }}
                 className="w-full p-3 flex items-center justify-center gap-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition active:scale-95"
               >

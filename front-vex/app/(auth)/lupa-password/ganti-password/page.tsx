@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Button, ButtonPutih } from '@/components/model/Button';
+import { Button, ButtonPutih } from '@/components/ui/Button';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import api from '@/lib/axios';
 
-export default function ResetPasswordChoicePage() {
+export default function LupaPasswordPage() {
   // ROUTE
   const router = useRouter();
   const searchParams = useSearchParams();

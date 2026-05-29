@@ -14,7 +14,7 @@ export function Button({ children,title, link, className, ...props }: ButtonProp
   const style = `
   inline-flex items-center justify-center
   text-white font-bold font-tilt-wrap cursor-pointer
-  bg-main-blue transition-all ease-in-out duration-300 border-none
+  bg-main-blue transition-all ease-in-out duration-300 
   hover:shadow-[inset_0px_0px_24px_-2px_rgba(255,255,255,0.25)]
   ${className}
   `;

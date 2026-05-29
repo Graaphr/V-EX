@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 // Component
-import { Button, ButtonPutih } from "@/components/model/Button";
+import { Button, ButtonPutih } from "@/components/ui/Button";
 // API
 import api from "@/lib/axios";
 

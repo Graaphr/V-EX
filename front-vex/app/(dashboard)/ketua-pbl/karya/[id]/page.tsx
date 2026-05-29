@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Button, ButtonPutih } from "@/components/model/Button.tsx";
+import { Button, ButtonPutih } from "@/components/ui/Button";
 
 type Karya = {
   id: number;

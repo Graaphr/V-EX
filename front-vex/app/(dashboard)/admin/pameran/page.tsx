@@ -1,18 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 
 // components
-import NavAdmin from "@/components/dashboard/NavAdmin";
-// import PameranPage from "@/app/(pameran)/pameran/page";
-import AddPameran from "@/components/pameran/AddPameran";
-import PagePameran from "@/components/pameran/PagePameran";
+import NavAdmin from '@/components/ui/NavAdmin';
+import AddPameran from '@/components/pameran/AddPameran';
+import PagePameran from '@/components/pameran/PagePameran';
 
 export default function AdminPameranPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const handleAddClick = () => {
-    setIsFormOpen((prev) => !prev); // toggle
+    setIsFormOpen((prev) => !prev);
   };
 
   return (
@@ -21,7 +20,7 @@ export default function AdminPameranPage() {
       <NavAdmin isFormOpen={isFormOpen} onAddClick={handleAddClick} />
 
       {/* CONDITIONAL RENDER */}
-      {isFormOpen ? <AddPameran /> : <PagePameran href={"/admin/pameran/detail/"} />}
+      {isFormOpen ? <AddPameran /> : <PagePameran href={'/admin/pameran/detail/'} />}
     </div>
   );
 }
