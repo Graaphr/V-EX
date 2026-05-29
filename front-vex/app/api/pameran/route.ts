@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { Pameran } from '@/types/pameran';
 
 const jsonPath = path.join(process.cwd(), 'public/data/Pameran.json');
-
 const imageDir = path.join(process.cwd(), 'public/image');
-
 const uploadDir = path.join(process.cwd(), 'public/uploads');
 
 /* ===================== */
@@ -13,7 +12,6 @@ const uploadDir = path.join(process.cwd(), 'public/uploads');
 /* ===================== */
 export async function GET() {
   const file = fs.readFileSync(jsonPath, 'utf-8');
-
   return NextResponse.json(JSON.parse(file));
 }
 
@@ -23,58 +21,30 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
-
     const title = formData.get('title') as string;
-
     const prodi = formData.get('prodi') as string;
-
     const publishDate = formData.get('publishDate') as string;
-
     const endDate = formData.get('endDate') as string;
-
     const prepareStart = formData.get('prepareStart') as string;
-
     const prepareEnd = formData.get('prepareEnd') as string;
-
     const description = formData.get('description') as string;
-
     const fileImage = formData.get('image') as File | null;
-
-    /* ===================== */
-    /* BACA JSON */
-    /* ===================== */
     const file = fs.readFileSync(jsonPath, 'utf-8');
-
     const data = JSON.parse(file);
-
-    /* ===================== */
-    /* ID BARU */
-    /* ===================== */
     const newId = String(data.length + 1);
-
-    /* ===================== */
-    /* BUAT FOLDER UPLOADS/{id} */
-    /* ===================== */
     const userFolder = path.join(uploadDir, newId);
-
     if (!fs.existsSync(userFolder)) {
       fs.mkdirSync(userFolder, {
         recursive: true,
       });
     }
 
-    /* ===================== */
-    /* SIMPAN IMAGE */
-    /* ===================== */
     let bannerImage = '/image/default.jpg';
 
     if (fileImage && fileImage.size > 0) {
       const bytes = await fileImage.arrayBuffer();
-
       const buffer = Buffer.from(bytes);
-
       const ext = fileImage.name.split('.').pop();
-
       const fileName = `${Date.now()}.${ext}`;
 
       if (!fs.existsSync(imageDir)) {
@@ -88,42 +58,28 @@ export async function POST(req: Request) {
       bannerImage = `/image/${fileName}`;
     }
 
-    /* ===================== */
-    /* DATA BARU */
-    /* ===================== */
     const newData = {
       id: newId,
-
       title,
       subtitle: prodi,
       category: prodi,
-
       date: formatLongDate(publishDate),
-
       bannerImage,
-
       likes: 0,
       karya: 0,
-
       description: [
         {
           title: 'Deskripsi',
           content: description,
         },
       ],
-
       stats: {
         likes: 0,
         karya: 0,
-
         prepareStartDate: toSlashDate(prepareStart),
-
         prepareEndDate: toSlashDate(prepareEnd),
-
         startDate: toSlashDate(publishDate),
-
         endDate: toSlashDate(endDate),
-
         studyLevel: prodi,
       },
 
@@ -150,36 +106,21 @@ export async function POST(req: Request) {
   }
 }
 
-/* ===================== */
-/* PUT - EDIT DATA */
-/* ===================== */
 export async function PUT(req: Request) {
   try {
     const formData = await req.formData();
-
     const id = formData.get('id') as string;
-
     const title = formData.get('title') as string;
-
     const prodi = formData.get('prodi') as string;
-
     const publishDate = formData.get('publishDate') as string;
-
     const endDate = formData.get('endDate') as string;
-
     const prepareStart = formData.get('prepareStart') as string;
-
     const prepareEnd = formData.get('prepareEnd') as string;
-
     const description = formData.get('description') as string;
-
     const fileImage = formData.get('image') as File | null;
-
     const file = fs.readFileSync(jsonPath, 'utf-8');
-
-    const data = JSON.parse(file);
-
-    const index = data.findIndex((item: any) => item.id === id);
+    const data: Pameran[] = JSON.parse(file);
+    const index = data.findIndex((item: any) => String(item.id) === String(id));
 
     if (index === -1) {
       return NextResponse.json(
@@ -196,11 +137,8 @@ export async function PUT(req: Request) {
     /* upload image baru */
     if (fileImage && fileImage.size > 0) {
       const bytes = await fileImage.arrayBuffer();
-
       const buffer = Buffer.from(bytes);
-
       const ext = fileImage.name.split('.').pop();
-
       const fileName = `${Date.now()}.${ext}`;
 
       fs.writeFileSync(path.join(imageDir, fileName), buffer);
@@ -214,11 +152,8 @@ export async function PUT(req: Request) {
       title,
       subtitle: prodi,
       category: prodi,
-
       date: formatLongDate(publishDate),
-
       bannerImage,
-
       description: [
         {
           title: 'Deskripsi',
@@ -228,15 +163,10 @@ export async function PUT(req: Request) {
 
       stats: {
         ...data[index].stats,
-
         prepareStartDate: toSlashDate(prepareStart),
-
         prepareEndDate: toSlashDate(prepareEnd),
-
         startDate: toSlashDate(publishDate),
-
         endDate: toSlashDate(endDate),
-
         studyLevel: prodi,
       },
     };
@@ -257,10 +187,6 @@ export async function PUT(req: Request) {
     );
   }
 }
-
-/* ===================== */
-/* HELPER */
-/* ===================== */
 
 function toSlashDate(value: string) {
   const [year, month, day] = value.split('-');
