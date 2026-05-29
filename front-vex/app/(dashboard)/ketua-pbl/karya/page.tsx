@@ -6,15 +6,15 @@ import Image from "next/image";
 
 import {
     ProdiType,
-} from "@/components/dashboard/SelectProdi";
+} from "@/components/shared/filter/SelectProdi";
 
 import {
     TahunType,
-} from "@/components/dashboard/SelectTahun";
+} from "@/components/shared/filter/SelectTahun";
 
 import {
     SemesterType,
-} from "@/components/dashboard/SelectSemester";
+} from "@/components/shared/filter/SelectSemester";
 
 import FilterSection from "@/components/pameran/FilterSection";
 import CategorySection from "@/components/pameran/CategorySection";

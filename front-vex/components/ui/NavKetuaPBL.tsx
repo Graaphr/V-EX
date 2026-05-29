@@ -1,34 +1,24 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import {
-  FaImage,
-  FaPlus,
-  FaTimes,
-} from "react-icons/fa";
-import { usePathname } from "next/navigation";
-import {
-  motion,
-  AnimatePresence,
-} from "framer-motion";
+import Link from 'next/link';
+import { FaImage, FaPlus, FaTimes } from 'react-icons/fa';
+import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface AddOn {
   onAddClick?: () => void;
   isFormOpen?: boolean;
 }
 
-export default function NavKetuaPBL({
-  onAddClick,
-  isFormOpen,
-}: AddOn) {
+export default function NavKetuaPBL({ onAddClick, isFormOpen }: AddOn) {
   const pathname = usePathname();
 
   const menuItems = [
     {
       id: 1,
       icon: <FaImage size={17} />,
-      link: "/ketua-pbl/karya",
-    }
+      link: '/ketua-pbl/karya',
+    },
   ];
 
   return (
@@ -43,8 +33,7 @@ export default function NavKetuaPBL({
         pb-3
       "
       style={{
-        paddingBottom:
-          "calc(env(safe-area-inset-bottom) + 12px)",
+        paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
       }}
     >
       <div
@@ -59,17 +48,10 @@ export default function NavKetuaPBL({
       >
         {/* MENU */}
         {menuItems.map((item) => {
-          const isActive =
-            pathname === item.link ||
-            pathname.startsWith(
-              item.link + "/"
-            );
+          const isActive = pathname === item.link || pathname.startsWith(item.link + '/');
 
           return (
-            <div
-              key={item.id}
-              className="relative w-10 h-10"
-            >
+            <div key={item.id} className="relative w-10 h-10">
               {/* ACTIVE */}
               {isActive && (
                 <motion.div
@@ -79,7 +61,7 @@ export default function NavKetuaPBL({
                     bg-white rounded-full
                   "
                   transition={{
-                    type: "spring",
+                    type: 'spring',
                     stiffness: 400,
                     damping: 30,
                   }}
@@ -94,11 +76,7 @@ export default function NavKetuaPBL({
                   w-full h-full
                   flex items-center justify-center
                   rounded-full transition
-                  ${
-                    isActive
-                      ? "text-main-blue"
-                      : "text-white border border-white/20 hover:bg-white/10"
-                  }
+                  ${isActive ? 'text-main-blue' : 'text-white border border-white/20 hover:bg-white/10'}
                 `}
               >
                 {item.icon}

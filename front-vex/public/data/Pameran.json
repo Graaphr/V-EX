@@ -1,7 +1,7 @@
 [
   {
-    "id": "1",
-    "title": "TRPL EXPO",
+    "id": 1,
+    "title": "TRPL EXPO 2026",
     "subtitle": "Teknologi Rekayasa Perangkat Lunak",
     "category": "Teknologi Rekayasa Perangkat Lunak",
     "date": "26 April 2026",
@@ -26,7 +26,7 @@
     "institution": "Politeknik Negeri Batam"
   },
   {
-    "id": "2",
+    "id": 2,
     "title": "ANIMOTION FEST 2026",
     "subtitle": "Animasi",
     "category": "Animasi",
@@ -52,7 +52,7 @@
     "institution": "Politeknik Negeri Batam"
   },
   {
-    "id": "3",
+    "id": 3,
     "title": "MULTIMEDIA CREATIVE EXPO",
     "subtitle": "Teknologi Rekayasa Multimedia",
     "category": "Teknologi Rekayasa Multimedia",
@@ -78,7 +78,7 @@
     "institution": "Politeknik Negeri Batam"
   },
   {
-    "id": "4",
+    "id": 4,
     "title": "GEOMATIKA DIGITAL MAP",
     "subtitle": "Teknik Geomatika",
     "category": "Teknik Geomatika",
@@ -104,7 +104,7 @@
     "institution": "Politeknik Negeri Batam"
   },
   {
-    "id": "5",
+    "id": 5,
     "title": "CYBER DEFENSE EXPO 2026",
     "subtitle": "Rekayasa Keamanan Siber",
     "category": "Rekayasa Keamanan Siber",
@@ -130,7 +130,7 @@
     "institution": "Politeknik Negeri Batam"
   },
   {
-    "id": "6",
+    "id": 6,
     "title": "IOT SMART CITY EXPO",
     "subtitle": "Teknik Informatika",
     "category": "Teknik Informatika",
@@ -156,7 +156,7 @@
     "institution": "Politeknik Negeri Batam"
   },
   {
-    "id": "7",
+    "id": 7,
     "title": "GAME TECHNOLOGY FEST 2026",
     "subtitle": "Teknologi Permainan",
     "category": "Teknologi Permainan",

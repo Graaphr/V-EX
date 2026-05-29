@@ -1,24 +1,23 @@
-"use client";
+'use client';
 
-import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
-import { ChevronDownIcon, CheckIcon } from "@heroicons/react/20/solid";
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
+import { ChevronDownIcon, CheckIcon } from '@heroicons/react/20/solid';
 
 export type SemesterType = { id: number; name: string };
 
 const SemesterList: SemesterType[] = [
-  { id: 1, name: "1" },
-  { id: 2, name: "2" },
-  { id: 3, name: "3" },
-  { id: 4, name: "4" },
-  { id: 5, name: "5" },
-  { id: 6, name: "6" },
-{ id: 7, name: "7" },
-  { id: 8, name: "8" },
+  { id: 1, name: '1' },
+  { id: 2, name: '2' },
+  { id: 3, name: '3' },
+  { id: 4, name: '4' },
+  { id: 5, name: '5' },
+  { id: 6, name: '6' },
+  { id: 7, name: '7' },
+  { id: 8, name: '8' },
 ];
 
-
 interface SelectSemesterProps {
-  selected: SemesterType | null;
+  selected: SemesterType ;
   onChange: (semester: SemesterType) => void;
 }
 
@@ -28,9 +27,8 @@ export default function SelectSemester({ selected, onChange }: SelectSemesterPro
       <Listbox value={selected} onChange={onChange}>
         <div className="relative">
           <ListboxButton className="relative w-full cursor-pointer rounded-full bg-white py-2 pl-[15px] pr-[30px] text-left text-sm font-poppins shadow-xl/20 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-main-blue/60">
-            
-            <span className={`block truncate ${selected ? "text-gray-800 font-medium" : "text-gray-400"}`}>
-              {selected ? selected.name : "Semester"}
+            <span className={`block truncate ${selected ? 'text-gray-800 font-medium' : 'text-gray-400'}`}>
+              {selected ? selected.name : 'Semester'}
             </span>
 
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-[10px]">
@@ -50,13 +48,12 @@ export default function SelectSemester({ selected, onChange }: SelectSemesterPro
               >
                 {({ selected: isSelected }) => (
                   <>
-                    <span className={`block truncate ${isSelected ? "font-semibold" : "font-normal"}`}>
+                    <span className={`block truncate ${isSelected ? 'font-semibold' : 'font-normal'}`}>
                       {semester.name}
                     </span>
 
                     {isSelected ? (
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-main-blue group-data-focus:text-white">
-                      </span>
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-main-blue group-data-focus:text-white"></span>
                     ) : null}
                   </>
                 )}
