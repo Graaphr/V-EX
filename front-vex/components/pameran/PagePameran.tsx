@@ -1,36 +1,31 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import useEmblaCarousel from "embla-carousel-react";
-import Link from "next/link";
+import { useMemo, useState } from 'react';
+import useEmblaCarousel from 'embla-carousel-react';
+import Link from 'next/link';
 
-import ProjectCard from "@/components/dashboard/ProjectCard";
-import SearchBar from "@/components/dashboard/SearchBar";
-import SelectProdi, { ProdiType } from "@/components/dashboard/SelectProdi";
-import SelectTahun, { TahunType } from "@/components/dashboard/SelectTahun";
-import SelectSemester, {
-  SemesterType,
-} from "@/components/dashboard/SelectSemester";
+import ProjectCard from '@/components/ui/ProjectCard';
+import  { ProdiType } from '@/components/shared/filter/SelectProdi';
+import  { TahunType } from '@/components/shared/filter/SelectTahun';
+import  { SemesterType } from '@/components/shared/filter/SelectSemester';
 
-import ALL_EXHIBITIONS from "@/public/data/Pameran.json";
+import ALL_EXHIBITIONS from '@/public/data/Pameran.json';
 
-import FilterSection from "@/components/pameran/FilterSection";
-import CarouselSection from "@/components/pameran/CarouselSection";
-import CategorySection from "@/components/pameran/CategorySection";
+import FilterSection from '@/components/pameran/FilterSection';
+import CarouselSection from '@/components/pameran/CarouselSection';
+import CategorySection from '@/components/pameran/CategorySection';
 
 interface PameranProps {
   href?: string;
 }
 
-export default function PagePameran({ href = "/pameran/" }: PameranProps) {
-  const [emblaRef] = useEmblaCarousel({ align: "start" });
+export default function PagePameran({ href = '/pameran/' }: PameranProps) {
+  const [emblaRef] = useEmblaCarousel({ align: 'start' });
 
   const [selectedProdi, setSelectedProdi] = useState<ProdiType | null>(null);
   const [selectedTahun, setSelectedTahun] = useState<TahunType | null>(null);
-  const [selectedSemester, setSelectedSemester] = useState<SemesterType | null>(
-    null,
-  );
-  const [search, setSearch] = useState("");
+  const [selectedSemester, setSelectedSemester] = useState<SemesterType | null>(null);
+  const [search, setSearch] = useState('');
 
   /* FILTER DATA */
   const filteredData = useMemo(() => {
@@ -40,9 +35,7 @@ export default function PagePameran({ href = "/pameran/" }: PameranProps) {
         item.category.toLowerCase().includes(search.toLowerCase());
 
       const matchProdi = !selectedProdi || item.category === selectedProdi.name;
-
-      const matchTahun =
-        !selectedTahun || item.date.slice(-4) === selectedTahun.name;
+      const matchTahun = !selectedTahun || item.date.slice(-4) === selectedTahun.name;
 
       return matchSearch && matchProdi && matchTahun;
     });

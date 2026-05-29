@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 
-import NavAdmin from "@/components/dashboard/NavAdmin";
+import NavAdmin from "@/components/ui/NavAdmin";
 import DetailPameran from "@/components/pameran/DetailPameran";
-import EditPameran from "@/components/pameran/EditPameran";
 import AddPameran from "@/components/pameran/AddPameran";
 
 
@@ -20,7 +19,6 @@ export default function AdminDetailPameran() {
       {/* NAV ADMIN */}
       <NavAdmin isFormOpen={isEditOpen} onAddClick={handleEditClick} />
 
-      {/* CONDITIONAL RENDER */}
       {isEditOpen ? <AddPameran /> : <DetailPameran isLogin={true}/>}
     </div>
   );
