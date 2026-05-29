@@ -1,7 +1,7 @@
 export interface KaryaItem {
   id: number;
   title: string;
-  category?: string;
+  category: string;
   image: string;
   year: string;
   link?: string;

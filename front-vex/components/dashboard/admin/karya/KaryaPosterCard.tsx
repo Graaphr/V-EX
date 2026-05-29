@@ -14,12 +14,18 @@ export default function PosterCard({ karya, pameranList }: PosterCardProps) {
   return (
     <div className="mt-1 bg-white rounded-xl overflow-hidden hover:scale-102 shadow-md hover:shadow-xl/40 transition duration-300 group">
       <div className="relative aspect-[3/4] w-full">
-        <Image
-          src={karya.image}
-          alt={karya.title}
-          fill
-          className="object-cover group-hover:scale-102 transition duration-300"
-        />
+        {karya.image ? (
+          <Image
+            src={karya.image}
+            alt={karya.title}
+            fill
+            className="object-cover group-hover:scale-105 transition duration-300"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+            <span className="text-gray-400 text-sm">No Image</span>
+          </div>
+        )}
       </div>
 
       <div className="p-3 h-[100px] flex flex-col justify-between">
