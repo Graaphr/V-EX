@@ -106,7 +106,7 @@ if (loading) {
           </Link>
 
           {/* DESKTOP MENU */}
-          <div className="hidden lg:flex items-center gap-10">
+          <div className="hidden lg:flex items-center gap-10 select-none">
             {menuItems.map((item, index) => (
               <TextNav key={index} link={item.link} title={item.title} subtitle={item.subtitle} />
             ))}
