@@ -17,16 +17,20 @@
         (admin){
             karya (KaryaPage) : OK,
             {
-                halaman detail karya (DetailPage) : OK,
+                halaman detail karya (PageKaryaAdmin) : OK,
             },
             pameran (PagePameran) : OK,
             {
                 detail pameran (DetailPameran) : OK,  
-                edit pameran (export default function AdminEditPameran) : OK,  
+                edit pameran (AdminEditPameran) : OK,  
+                add pameran (AddPameran) : OK,  
             },
             pengguna (AdminPage): OK, 
         },
         (ketua-pbl){
+            karya (KaryaPage) : OK,
+            detail karya (DetailKarya) : OK,
+            add karya (AddKarya) : OK,
 
         },
     },
