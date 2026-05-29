@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FaTimes, FaUser } from 'react-icons/fa';
 import { UserType } from '@/types/pengguna';
 import { Button, ButtonPutih } from '@/components/ui/Button';
+import { PRODI_OPTIONS } from '@/types/pameran';
 
 type Props = {
   onClose: () => void;
@@ -62,7 +63,6 @@ export default function FormTambahUser({ onClose, onSave }: Props) {
           <Button
             onClick={() => pilihRole('KPS')}
             className="w-full bg-main-blue cursor-pointer text-white py-3 rounded-lg font-bold hover:bg-white border-2 border-main-blue hover:text-main-blue hover:opacity-90"
-
           >
             Kepala Program Studi
           </Button>
@@ -84,7 +84,7 @@ export default function FormTambahUser({ onClose, onSave }: Props) {
           {[
             { label: 'Nama', name: 'nama', value: form.nama },
             { label: 'Email', name: 'email', value: form.email },
-            { label: 'Program Studi', name: 'prodi', value: form.prodi },
+            // { label: 'Program Studi', name: 'prodi', value: form.prodi },
           ].map(({ label, name, value }) => (
             <div key={name}>
               <p className="text-sm font-semibold mb-1 text-gray-600">{label}</p>
@@ -96,7 +96,25 @@ export default function FormTambahUser({ onClose, onSave }: Props) {
               />
             </div>
           ))}
-
+          {/* Program Studi – select */}
+          <div>
+            <p className="text-sm font-semibold mb-1 text-gray-600">Program Studi</p>
+            <select
+              name="prodi"
+              value={form.prodi}
+              onChange={handleChange}
+              className="w-full bg-gray-200 p-2 px-4 rounded-lg"
+            >
+              <option value="" disabled>
+                -- Pilih Prodi --
+              </option>
+              {PRODI_OPTIONS.map((prodi) => (
+                <option key={prodi} value={prodi}>
+                  {prodi}
+                </option>
+              ))}
+            </select>
+          </div>
           {/* Kelas — hanya untuk Ketua PBL */}
           {form.role === 'Ketua PBL' && (
             <div>
@@ -125,13 +143,24 @@ export default function FormTambahUser({ onClose, onSave }: Props) {
           </div>
 
           {/* Tombol aksi */}
-          <div className="flex gap-2 pt-2">
-            <button onClick={() => setStep('pilih')} className="w-1/2 bg-gray-300 py-2 rounded-lg">
-              Kembali
-            </button>
-            <button onClick={handleSubmit} className="w-1/2 bg-green-600 text-white py-2 rounded-lg">
-              Simpan
-            </button>
+          <div className="gap-2 pt-2">
+            <div className="w-full">
+              <p className="text-sm font-semibold mb-1 text-gray-600">Aksi</p>
+              <div className="flex flex-row gap-3">
+                <button
+                  onClick={() => setStep('pilih')}
+                  className="w-full hover:scale-105 duration-300 text-white font-bold cursor-pointer bg-main-blue py-2 rounded-lg"
+                >
+                  Kembali
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  className="w-full text-white hover:scale-105 duration-300 font-bold cursor-pointer bg-green-600 text-white py-2 rounded-lg"
+                >
+                  Simpan
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

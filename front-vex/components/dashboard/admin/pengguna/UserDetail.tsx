@@ -4,6 +4,7 @@ import { FiInfo } from 'react-icons/fi';
 import { HiPencilAlt } from 'react-icons/hi';
 import { UserType } from '@/types/pengguna';
 import { Button } from '@/components/ui/Button';
+import { PRODI_OPTIONS } from '@/types/pameran';
 
 type Props = {
   selectedUser: UserType | null;
@@ -11,7 +12,7 @@ type Props = {
   isEdit: boolean;
   onToggleEdit: () => void;
   onSaveEdit: () => void;
-  onFormChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
 };
 
 export default function UserDetail({ selectedUser, formData, isEdit, onToggleEdit, onSaveEdit, onFormChange }: Props) {
@@ -59,12 +60,13 @@ export default function UserDetail({ selectedUser, formData, isEdit, onToggleEdi
             />
 
             {/* Program Studi */}
-            <DetailField
+            <SelectField
               label="Program Studi"
               name="prodi"
               value={formData?.prodi || ''}
               isEdit={isEdit}
               onChange={onFormChange}
+              options={PRODI_OPTIONS}
             />
 
             {/* Kelas — hanya untuk non-KPS */}
@@ -79,7 +81,7 @@ export default function UserDetail({ selectedUser, formData, isEdit, onToggleEdi
             )}
 
             {/* Role + Status / Tombol Simpan */}
-            <div className="flex gap-2 flex-col sm:flex-row">
+            <div className="flex gap-2 flex-col sm:flex-row cursor-default select-none">
               <DetailField
                 label="Role"
                 name="role"
@@ -87,7 +89,6 @@ export default function UserDetail({ selectedUser, formData, isEdit, onToggleEdi
                 // isEdit={isEdit}
                 onChange={onFormChange}
                 className="w-full"
-                
               />
 
               <div className="w-full">
@@ -123,7 +124,7 @@ type FieldProps = {
   name: string;
   value: string;
   isEdit?: boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   className?: string;
 };
 
@@ -134,11 +135,44 @@ function DetailField({ label, name, value, isEdit, onChange, className = '', ...
       <input
         name={name}
         value={value}
-        onChange={onChange}
+        onChange={onChange as React.ChangeEventHandler<HTMLInputElement>}
         disabled={!isEdit}
         className={`w-full p-2 px-4 rounded-lg ${isEdit ? 'bg-gray-200' : 'bg-gray-200'}`}
         {...props}
       />
+    </div>
+  );
+}
+
+type SelectFieldProps = FieldProps & {
+  options: string[];
+};
+
+function SelectField({ label, name, value, isEdit, options, onChange, className = '', ...props }: SelectFieldProps) {
+  return (
+    <div className={className}>
+      <p className="text-sm font-semibold mb-1 text-gray-600">{label}</p>
+      {isEdit ? (
+        <select name={name} value={value} onChange={onChange} className="w-full bg-gray-200 p-2 px-3 rounded-lg">
+          <option value="" disabled>
+            -- Pilih Prodi --
+          </option>
+          {options.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          name={name}
+          value={value}
+          disabled
+          onChange={() => {}}
+          className="w-full bg-gray-200 p-2 px-4 rounded-lg"
+          {...props}
+        />
+      )}
     </div>
   );
 }

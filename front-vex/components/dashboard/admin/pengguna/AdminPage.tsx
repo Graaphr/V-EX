@@ -28,7 +28,7 @@ export default function Admin() {
     addUser,
     updateUser,
     toggleStatus,
-    isLoading, 
+    isLoading,
   } = useUsers();
 
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
@@ -41,7 +41,7 @@ export default function Admin() {
     setIsEdit(false);
   }, [selectedUser]);
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => prev && { ...prev, [name]: value });
   };
@@ -79,7 +79,7 @@ export default function Admin() {
       <div className="autoMid mt-6 px-2 sm:px-4">
         <div className="flex flex-col xl:flex-row gap-6">
           {/* PANEL KIRI */}
-          <div className="w-full xl:w-[30%] xl:sticky xl:top-24 h-fit">
+          <div className="w-full xl:w-[30%] xl:mt-[50px] xl:block xl:top-24 h-fit">
             {isFormOpen ? (
               <FormTambahUser onClose={() => setIsFormOpen(false)} onSave={addUser} />
             ) : (

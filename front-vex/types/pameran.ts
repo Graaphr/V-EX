@@ -1,13 +1,4 @@
-export type ProdiOption =
-  | 'Animasi'
-  | 'Teknik Informatika'
-  | 'Teknologi Rekayasa Perangkat Lunak'
-  | 'Rekayasa Keamanan Siber'
-  | 'Teknologi Permainan'
-  | 'Teknologi Rekayasa Multimedia'
-  | 'Teknik Geomatika';
-  
-export const PRODI_OPTIONS: ProdiOption[] = [
+export const PRODI_OPTIONS = [
   'Animasi',
   'Teknik Informatika',
   'Teknologi Rekayasa Perangkat Lunak',
@@ -16,6 +7,9 @@ export const PRODI_OPTIONS: ProdiOption[] = [
   'Teknologi Rekayasa Multimedia',
   'Teknik Geomatika',
 ];
+
+export type ProdiOption = (typeof PRODI_OPTIONS)[number];
+
 export type PameranDescription = {
   title: string;
   content: string;
