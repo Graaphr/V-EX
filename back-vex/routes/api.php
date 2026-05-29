@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\PameranController;
 
 // Route::post('/test', function () {
 //     return response()->json(['message' => 'OK']);
@@ -54,6 +55,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/pengguna/{id}',               [AdminController::class, 'editPengguna']);
         Route::patch('/pengguna/{id}/aktifkan',    [AdminController::class, 'aktifkanAkun']);
         Route::patch('/pengguna/{id}/nonaktifkan', [AdminController::class, 'nonaktifkanAkun']);
+
+        // manajemen pameran
+        Route::get('/pameran',          [PameranController::class, 'index']);
+        Route::post('/pameran',         [PameranController::class, 'store']);
+        Route::get('/pameran/{id}',     [PameranController::class, 'show']);
+        Route::put('/pameran/{id}',     [PameranController::class, 'update']);
+        Route::delete('/pameran/{id}',  [PameranController::class, 'destroy']);
     });
 
     // KPS
