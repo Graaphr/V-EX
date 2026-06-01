@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import PageKarya from '@/components/karya/PageKarya';
 import AddKarya from '@/components/karya/AddKarya';
-import NavKetuaPBL from '@/components/ui/NavKetuaPBL';
+import NavKetuaPBL from '@/components/shared/ui/NavKetuaPBL';
 
 export default function KaryaPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);

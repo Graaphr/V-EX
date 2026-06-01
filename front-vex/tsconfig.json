@@ -29,7 +29,7 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "components/ui/Button.tjs", "components/ui/Button.tsx", "app/data/Pameran.js"  ],
+, "components/shared/ui/Button.tjs", "components/shared/ui/Button.tsx", "app/data/Pameran.js"  ],
   "exclude": ["node_modules"]
 
  

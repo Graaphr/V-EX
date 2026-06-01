@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Link from 'next/link';
 
-import ProjectCard from '@/components/ui/ProjectCard';
+import ProjectCard from '@/components/shared/ui/ProjectCard';
 import  { ProdiType } from '@/components/shared/filter/SelectProdi';
 import  { TahunType } from '@/components/shared/filter/SelectTahun';
 import  { SemesterType } from '@/components/shared/filter/SelectSemester';

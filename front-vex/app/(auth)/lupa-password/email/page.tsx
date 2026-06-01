@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button, ButtonPutih } from '@/components/ui/Button';
+import { Button, ButtonPutih } from '@/components/shared/ui/Button';
 import api from '@/lib/axios';
 
 export default function LupaPasswordEmailPage() {

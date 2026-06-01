@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FaTimes, FaUser } from 'react-icons/fa';
 import { UserType } from '@/types/pengguna';
-import { Button, ButtonPutih } from '@/components/ui/Button';
+import { Button, ButtonPutih } from '@/components/shared/ui/Button';
 import { PRODI_OPTIONS } from '@/types/pameran';
 
 type Props = {

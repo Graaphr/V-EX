@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 
 import EditKarya from '@/components/karya/EditKarya';
 import AddKarya from '@/components/karya/AddKarya';
-import NavKetuaPBL from '@/components/ui/NavKetuaPBL';
+import NavKetuaPBL from '@/components/shared/ui/NavKetuaPBL';
 
 export default function DetailKarya() {
   const { id } = useParams();

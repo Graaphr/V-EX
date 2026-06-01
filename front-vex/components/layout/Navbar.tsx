@@ -9,8 +9,8 @@ import { HiMenu, HiX } from 'react-icons/hi';
 import { FaUser, FaLock } from 'react-icons/fa';
 import { FiLogOut } from 'react-icons/fi';
 // COMPONENT
-import { Logo, TextNav } from '@/components/ui/Components';
-import { Button } from '@/components/ui/Button';
+import { Logo, TextNav } from '@/components/shared/ui/Components';
+import { Button } from '@/components/shared/ui/Button';
 
 interface NavItem {
   title: string;
@@ -35,7 +35,7 @@ if (loading) {
       <div className="autoMid flex h-[70px] items-center justify-between">
         {/* Left Side */}
         <div className="flex animate-pulse items-center gap-3">
-          <div className="h-10 w-28 rounded bg-gray-200" />
+          <div className="h-10 w-30 rounded bg-gray-200" />
         </div>
 
         {/* Center - hidden di mobile */}

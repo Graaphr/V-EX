@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import NavAdmin from '@/components/ui/NavAdmin';
+import NavAdmin from '@/components/shared/ui/NavAdmin';
 import SearchBar from '@/components/shared/filter/SearchBar';
 import SelectStatus from '@/components/shared/filter/SelectStatus';
 

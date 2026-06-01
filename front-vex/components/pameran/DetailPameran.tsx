@@ -6,7 +6,7 @@ import { FaPlay, FaInstagram, FaYoutube, FaFacebookSquare, FaRegCalendarAlt } fr
 import { HiPencilAlt } from 'react-icons/hi';
 import { useParams } from 'next/navigation';
 
-import { Button } from '../ui/Button';
+import { Button } from '../shared/ui/Button';
 import { Pameran } from '@/types/pameran';
 import pameranData from '@/public/data/Pameran.json';
 

@@ -1,6 +1,6 @@
 import { FaCloudUploadAlt } from 'react-icons/fa';
 import { PameranForm as PameranFormType, PRODI_OPTIONS } from '@/types/pameran';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/shared/ui/Button';
 
 type Props = {
   form: PameranFormType;

@@ -1,4 +1,4 @@
-import Admin from '@/components/dashboard/admin/pengguna/AdminPage';
+import Admin from '@/components/pengguna/AdminPage';
 
 /* 
 

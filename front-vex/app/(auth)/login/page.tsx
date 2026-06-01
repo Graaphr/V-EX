@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 // Komponen
-import { Logo } from '@/components/ui/Components';
-import { Button, ButtonPutih } from '@/components/ui/Button';
-import { VectorBox } from '@/components/ui/BoxModel';
+import { Logo } from '@/components/shared/ui/Components';
+import { Button, ButtonPutih } from '@/components/shared/ui/Button';
+import { VectorBox } from '@/components/shared/ui/BoxModel';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, ButtonPutih } from '@/components/ui/Button';
+import { Button, ButtonPutih } from '@/components/shared/ui/Button';
 
 interface Props {
   onDelete: () => void;

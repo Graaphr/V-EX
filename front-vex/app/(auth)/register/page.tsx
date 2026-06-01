@@ -6,9 +6,9 @@ import { motion, Transition } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
 // Componen
-import { Logo } from '@/components/ui/Components';
-import { Button, ButtonPutih } from '@/components/ui/Button';
-import { VectorBlueBox } from '@/components/ui/BoxModel';
+import { Logo } from '@/components/shared/ui/Components';
+import { Button, ButtonPutih } from '@/components/shared/ui/Button';
+import { VectorBlueBox } from '@/components/shared/ui/BoxModel';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 // API

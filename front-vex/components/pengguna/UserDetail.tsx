@@ -3,7 +3,7 @@ import { FaUser } from 'react-icons/fa';
 import { FiInfo } from 'react-icons/fi';
 import { HiPencilAlt } from 'react-icons/hi';
 import { UserType } from '@/types/pengguna';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/shared/ui/Button';
 import { PRODI_OPTIONS } from '@/types/pameran';
 
 type Props = {

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import ProjectCard from '@/components/ui/ProjectCard';
+import ProjectCard from '@/components/shared/ui/ProjectCard';
 
 export default function CarouselSection({ data, href, emblaRef }: any) {
   return (
