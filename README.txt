@@ -1,4 +1,4 @@
-[MERAPIKAN && MERAMPINGKAN && MEMASTIKAN]
+{Daftar Front-end yang sudah berdasarkan urutan folder}
 
 [
     (auth)
@@ -17,11 +17,11 @@
         (admin){
             karya (KaryaPage) : OK,
             {
-                halaman detail karya (PageKaryaAdmin) : OK,
+                halaman detail karya (DetailPage) : OK,
             },
-            pameran (PagePameran) : OK,
+            pameran (AdminPameranPage) : OK,
             {
-                detail pameran (DetailPameran) : OK,  
+                detail pameran (AdminDetailPameran) : OK,  
                 edit pameran (AdminEditPameran) : OK,  
                 add pameran (AddPameran) : OK,  
             },
@@ -31,19 +31,32 @@
             karya (KaryaPage) : OK,
             detail karya (DetailKarya) : OK,
             add karya (AddKarya) : OK,
+            edit karya (EditKarya) : OK
 
         },
     },
 
     (index)
     {
-
+        halaman utama (HomePage) : OK 
     },
+
+    (pameran)
+    {
+        halaman pameran (PagePameran) : OK,
+        detail pameran (DetailPameran) : OK
+    },
+
+    (play)
+    {
+        halaman 3D exhibition (ExhibitionPage) : OK,
+    }
 ]
 
 : Folder hooks berguna untuk menyimpan kumpulan operasi di satu fungsi
 : Folder context menyimpan identitas User kredensial dan session
 : Folder types menyimpan types yang sering di gunakan dalam operasi
+
 
 [AGAK]
 _____ logika NavBar jika role?admin ==> /admin/....

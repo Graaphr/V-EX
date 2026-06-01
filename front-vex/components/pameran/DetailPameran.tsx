@@ -14,7 +14,7 @@ interface Status {
   isLogin?: boolean;
 }
 
-export default function DetailPameran({ isLogin = false }: Status) {
+export default function PageDetailPameran({ isLogin = false }: Status) {
   const params = useParams();
   const id = params.id as string;
 

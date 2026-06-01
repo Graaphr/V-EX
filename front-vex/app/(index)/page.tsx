@@ -6,7 +6,7 @@ import Carousel from '@/components/shared/ui/Carousel';
 import { BiCube, BiGlobe } from 'react-icons/bi';
 import { FaStar } from 'react-icons/fa';
 
-export default function Home() {
+export default function HomePage() {
   return (
     <div className="flex flex-col w-full bg-secondary-color select-none">
       {/* SECTION 1 - Hero */}

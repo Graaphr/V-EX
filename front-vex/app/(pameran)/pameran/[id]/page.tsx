@@ -1,7 +1,7 @@
-import DetailPameran from "@/components/pameran/DetailPameran";
+import PageDetailPameran from "@/components/pameran/DetailPameran";
 
-export default function AdminDetailPameran(){
+export default function DetailPameran(){
     return(
-        <DetailPameran />
+        <PageDetailPameran />
     )
 }
