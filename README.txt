@@ -7,7 +7,7 @@
         halaman register (RegisterPage): OK,
         halaman lupa password :{
             email (LupaPasswordEmailPage): OK,
-            ganti-password (LupaPasswordPage): OK,
+            ganti-password (GantiPasswordPage): OK,
         },
         halaman verifikasi (VerifikasiPage): OK,
     }, '
@@ -33,6 +33,11 @@
             add karya (AddKarya) : OK,
 
         },
+    },
+
+    (index)
+    {
+
     },
 ]
 
