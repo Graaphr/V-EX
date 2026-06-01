@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
-  title: "V-EX | Lupa Password",
+  title: 'V-EX | Lupa Password',
+  description: 'Virtual Exhibition',
 };
 
 export default function ForgotPasswordLayout({

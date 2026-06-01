@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Tilt_Warp, Poppins } from "next/font/google";
 import "@/app/globals.css";
 import Navbar from "@/components/layout/Navbar";
-import NavAdmin from "@/components/ui/NavAdmin";
+import NavAdmin from "@/components/shared/ui/NavAdmin";
 
 export const metadata: Metadata = {
   title: "V-EX | Admin",

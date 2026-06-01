@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
-  title: "V-EX | Register",
+  title: 'V-EX | Register',
+  description: 'Virtual Exhibition',
 };
 
 export default function RegisterLayout({
