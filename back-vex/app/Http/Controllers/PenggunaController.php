@@ -129,64 +129,70 @@ class PenggunaController extends Controller
 
     public function login(Request $request)
     {
-        // validasi inputan user
-        $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
-        ]);
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
+            ]);
 
-        $user = Pengguna::where('email', $request->email)->first();
+            $user = Pengguna::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Email atau password salah.'
-            ], 401);
-        }
-
-        if (in_array($user->role, [Pengguna::ROLE_KPS, Pengguna::ROLE_KETUA_PBL])) {
-            if (!$user->isAktif()) {
+            if (!$user || !Hash::check($request->password, $user->password)) {
                 return response()->json([
-                    'status'  => 'error',
-                    'message' => 'Akun Anda telah dinonaktifkan. Hubungi Admin.',
-                ], 403);
+                    'status' => 'error',
+                    'message' => 'Email atau password salah.'
+                ], 401);
             }
+
+            if (in_array($user->role, [Pengguna::ROLE_KPS, Pengguna::ROLE_KETUA_PBL])) {
+                if (!$user->isAktif()) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Akun Anda telah dinonaktifkan. Hubungi Admin.'
+                    ], 403);
+                }
+            }
+
+            $user->tokens()->delete();
+
+            $abilities = match ($user->role) {
+                Pengguna::ROLE_ADMIN => ['admin'],
+                Pengguna::ROLE_KPS => ['kps'],
+                Pengguna::ROLE_KETUA_PBL => ['ketua-pbl'],
+                default => ['pengunjung'],
+            };
+
+            $token = $user->createToken('token', $abilities)->plainTextToken;
+
+            $redirectTo = match ($user->role) {
+                Pengguna::ROLE_ADMIN => '/admin/pengguna',
+                Pengguna::ROLE_KPS => '/',
+                Pengguna::ROLE_KETUA_PBL => '/ketua-pbl/karya',
+                default => '/',
+            };
+
+            return response()->json([
+                'status' => 'success',
+                'role' => $user->role,
+                'redirect_to' => $redirectTo,
+                'token' => $token,
+                'user' => [
+                    'id' => $user->id,
+                    'nama' => $user->nama,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'kelas' => $user->kelas,
+                    'program_studi' => $user->program_studi,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => config('app.debug')
+                    ? $e->getMessage()
+                    : 'Terjadi kesalahan pada server.',
+            ], 500);
         }
-
-        $user->tokens()->delete();
-
-        // cek role 
-        $abilities = match($user->role) {
-            Pengguna::ROLE_ADMIN     => ['admin'],
-            Pengguna::ROLE_KPS       => ['kps'],
-            Pengguna::ROLE_KETUA_PBL => ['ketua-pbl'],
-            default                  => ['pengunjung'],
-        };
-
-        $token = $user->createToken('token', $abilities)->plainTextToken;
-
-        // mengarahkan ke dashboard sesuai role
-        $redirectTo = match($user->role) {
-            Pengguna::ROLE_ADMIN     => '/admin/pengguna',
-            Pengguna::ROLE_KPS       => '/',
-            Pengguna::ROLE_KETUA_PBL => '/ketua-pbl/karya',
-            default                  => '/',
-        };
-
-        return response()->json([
-            'status'      => 'success',
-            'role'        => $user->role,
-            'redirect_to' => $redirectTo,
-            'token'       => $token,
-            'user'        => [
-                'id'            => $user->id,
-                'nama'          => $user->nama,
-                'email'         => $user->email,
-                'role'          => $user->role,
-                'kelas'         => $user->kelas,
-                'program_studi' => $user->program_studi,
-            ],
-        ]);
     }
 
     public function logout(Request $request)
