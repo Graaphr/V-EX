@@ -53,11 +53,15 @@
     }
 ]
 
+    npm run build
+    npm start
+
+
 : Folder hooks berguna untuk menyimpan kumpulan operasi di satu fungsi
 : Folder context menyimpan identitas User kredensial dan session
 : Folder types menyimpan types yang sering di gunakan dalam operasi
 
-
+NOTE :
 [AGAK]
 _____ logika NavBar jika role?admin ==> /admin/....
 [AMAN]
