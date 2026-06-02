@@ -10,7 +10,8 @@
             ganti-password (GantiPasswordPage): OK,
         },
         halaman verifikasi (VerifikasiPage): OK,
-    }, '
+        halaman ganti email (GantiEmailPage) : OK 
+    }, 
 
     (dashboard)
     {
