@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 // ICON
-import { HiMenu, HiX } from 'react-icons/hi';
+import { HiMenu, HiX, HiOutlineMail } from 'react-icons/hi';
 import { FaUser, FaLock } from 'react-icons/fa';
 import { FiLogOut } from 'react-icons/fi';
 // COMPONENT
@@ -150,12 +150,12 @@ if (loading) {
 
         {/* DRAWER */}
         <div
-          className={`absolute top-0 right-0 min-h-[400px] w-[85%] sm:w-[320px] bg-white shadow-2xl p-4 transform transition-transform duration-300 rounded-l-xl
+          className={`absolute top-0 right-0 min-h-[400px] w-[700px] sm:w-[320px] bg-white shadow-2xl p-4 transform transition-transform duration-300 rounded-l-xl
           ${openProfile ? 'translate-x-0' : 'translate-x-full'}`}
         >
           <div className="flex flex-col h-100">
             {/* HEADER */}
-            <div className="flex items-center justify-between border-b pb-3">
+            <div className="flex items-center justify-between border-b pb-3 select-none">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-main-blue flex items-center justify-center text-white">
                   <FaUser size={20} className="rounded-full" />
@@ -163,11 +163,11 @@ if (loading) {
 
                 <div>
                   <p className="font-semibold">{user?.nama || 'User'}</p>
-                  <p className="text-sm text-gray-400">{user?.email || 'user@mail.com'}</p>
+                  <p className="text-xs text-gray-500 truncate max-w-[170px]">{user?.email || 'user@mail.com'}</p>
                 </div>
               </div>
 
-              <button onClick={() => setOpenProfile(false)}>
+              <button className="cursor-pointer" onClick={() => setOpenProfile(false)}>
                 <HiX size={24} />
               </button>
             </div>
@@ -180,6 +180,12 @@ if (loading) {
               >
                 <FaLock size={18} />
                 Lupa Password
+              </Link>
+            </div>
+            <div className="flex flex-col mt-4">
+              <Link href="/ganti-email" className="p-3 flex items-center gap-3 hover:bg-gray-100 transition border-b-2">
+                <HiOutlineMail size={22} />
+                Ganti Email
               </Link>
             </div>
 

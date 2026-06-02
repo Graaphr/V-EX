@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const response = await api.get('/user');
+      const response = await api.get('/api/user');
 
       setUser(response.data.user ?? response.data);
     } catch (error) {
