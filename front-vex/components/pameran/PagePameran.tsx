@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Link from 'next/link';
 
@@ -9,7 +9,6 @@ import  { ProdiType } from '@/components/shared/filter/SelectProdi';
 import  { TahunType } from '@/components/shared/filter/SelectTahun';
 import  { SemesterType } from '@/components/shared/filter/SelectSemester';
 
-import ALL_EXHIBITIONS from '@/public/data/Pameran.json';
 
 import FilterSection from '@/components/pameran/FilterSection';
 import CarouselSection from '@/components/pameran/CarouselSection';
@@ -25,25 +24,54 @@ export default function PagePameran({ href = '/pameran/' }: PameranProps) {
   const [selectedProdi, setSelectedProdi] = useState<ProdiType | null>(null);
   const [selectedTahun, setSelectedTahun] = useState<TahunType | null>(null);
   const [selectedSemester, setSelectedSemester] = useState<SemesterType | null>(null);
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
   /* FILTER DATA */
   const filteredData = useMemo(() => {
-    return ALL_EXHIBITIONS.filter((item) => {
+    return data.filter((item) => {
       const matchSearch =
         item.title.toLowerCase().includes(search.toLowerCase()) ||
         item.category.toLowerCase().includes(search.toLowerCase());
 
       const matchProdi = !selectedProdi || item.category === selectedProdi.name;
-      const matchTahun = !selectedTahun || item.date.slice(-4) === selectedTahun.name;
+      const matchTahun = !selectedTahun || new Date(item.date).getFullYear().toString() === selectedTahun.name;
 
       return matchSearch && matchProdi && matchTahun;
     });
   }, [search, selectedProdi, selectedTahun]);
 
+  // mengambil data dari API
+  useEffect(() => {
+  async function loadPameran() {
+    try {
+      const response = await fetch('/api/pameran');// Ambil data dari API
+
+      const result = await response.json();
+
+      setData(result.pameran || []);
+    } catch (error) {
+      console.error(error);// Cetak error di console browser
+    } finally {
+      setLoading(false);// Matikan indikator loading
+    }
+  }
+
+  loadPameran();
+}, []);
+
   /* AUTO CATEGORY */
   const categories = [...new Set(filteredData.map((i) => i.category))];
 
+if (loading) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      Loading...
+    </div>
+  );
+}
+  
   return (
     <div className="min-h-screen bg-secondary-color font-poppins">
       {/* HERO WRAPPER */}

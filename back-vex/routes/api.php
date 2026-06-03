@@ -22,7 +22,12 @@ Route::prefix('auth')->group(function () {
     Route::post('/forgot-password', [ResetPasswordController::class, 'forgotPassword']);
     Route::post('/verify-reset-token', [ResetPasswordController::class, 'verifyResetToken']);
     Route::post('/reset-password', [ResetPasswordController::class, 'resetPassword']);
+    
+    // Route::get('/pameran', [PameranController::class, 'index']);
+    // Route::get('/pameran/{id}', [PameranController::class, 'show']);
 });
+    Route::get('/pameran', [PameranController::class, 'index']);
+    Route::get('/pameran/{id}', [PameranController::class, 'show']);
 
 // =============================
 // PROTECTED ROUTES
