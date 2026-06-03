@@ -23,12 +23,9 @@ Route::prefix('auth')->group(function () {
     Route::post('/forgot-password', [ResetPasswordController::class, 'forgotPassword']);
     Route::post('/verify-reset-token', [ResetPasswordController::class, 'verifyResetToken']);
     Route::post('/reset-password', [ResetPasswordController::class, 'resetPassword']);
-});
-// public pameran tanpa login
-Route::prefix('pameran')->group(function () {
-    Route::get('/',                [PublicPameranController::class, 'index']);          // filter & search
-    Route::get('/filter-options',  [PublicPameranController::class, 'filterOptions']); // isi dropdown
-    Route::get('/{id}',            [PublicPameranController::class, 'show']);           // detail pameran
+    
+    // Route::get('/pameran', [PameranController::class, 'index']);
+    // Route::get('/pameran/{id}', [PameranController::class, 'show']);
 });
 
 // =============================
