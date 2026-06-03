@@ -49,6 +49,7 @@ class PameranController extends Controller
     {
         $request->validate([
             'kategori'                => 'required|exists:prodi,kode_prodi',
+            'semester'                => 'required|integer|min:1|max:8',
             'banner'                  => 'required|image|mimes:png,jpg,jpeg|max:2048',
             'judul'                   => 'required|string|max:255',
             'deskripsi'               => 'required|string',
@@ -75,6 +76,8 @@ class PameranController extends Controller
         $pameran = Pameran::create([
             'model_pameran'           => $modelPameran->id_model,
             'kategori'                => $request->kategori,
+            'tahun'                   => now()->year,
+            'semester'                => $request->semester,
             'banner'                  => $bannerPath,
             'judul'                   => $request->judul,
             'deskripsi'               => $request->deskripsi,
@@ -108,6 +111,7 @@ class PameranController extends Controller
 
         $request->validate([
             'kategori'                => 'sometimes|exists:prodi,kode_prodi',
+            'semester'                => 'sometimes|integer|min:1|max:8',
             'banner'                  => 'sometimes|image|mimes:png,jpg,jpeg|max:2048',
             'judul'                   => 'sometimes|string|max:255',
             'deskripsi'               => 'sometimes|string',
