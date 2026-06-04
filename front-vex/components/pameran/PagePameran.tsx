@@ -42,19 +42,19 @@ export default function PagePameran({ href = '/pameran/' }: PameranProps) {
     });
   }, [search, selectedProdi, selectedTahun]);
 
-  // mengambil data dari API
+  // mengambil data dari API {sudah nyambung dengan API pameran yang ada di route front(data)}
   useEffect(() => {
   async function loadPameran() {
     try {
       const response = await fetch('/api/pameran');// Ambil data dari API
 
-      const result = await response.json();
+      const data = await response.json();
 
-      setData(result.pameran || []);
+      setData(data.pameran || []);
     } catch (error) {
-      console.error(error);// Cetak error di console browser
+      console.error(error); // Cetak error di console browser
     } finally {
-      setLoading(false);// Matikan indikator loading
+      setLoading(false); // Matikan indikator loading
     }
   }
 

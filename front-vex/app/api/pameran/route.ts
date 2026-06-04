@@ -15,7 +15,7 @@ const uploadDir = path.join(process.cwd(), 'public/uploads');
 export async function GET() {
   try {
     const response = await api.get("/api/pameran");
-
+// mengambil api dari backend
     const transformed = response.data.pameran.map((item: any) => ({
       id: item.id_pameran,
 
@@ -67,12 +67,15 @@ export async function GET() {
     });
 
   } catch (error: any) {
-    console.error("PAMERAN ERROR:", error);
+    console.error("PAMERAN ERROR:", error.message);
+    console.error("DETAIL:", error.response?.data);
+    console.error("CODE:", error.code);
 
     return NextResponse.json(
       {
         status: "error",
         message: error.message,
+        code: error.code,
         detail: error.response?.data ?? null,
       },
       {
