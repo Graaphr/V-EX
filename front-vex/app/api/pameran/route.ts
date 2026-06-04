@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-import { Pameran } from '@/types/pameran';
-import api from '@/lib/axios';
+import { NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
+import { Pameran } from "@/types/pameran";
+import api from "@/lib/axios";
 
-const jsonPath = path.join(process.cwd(), 'public/data/Pameran.json');
-const imageDir = path.join(process.cwd(), 'public/image');
-const uploadDir = path.join(process.cwd(), 'public/uploads');
+const jsonPath = path.join(process.cwd(), "public/data/Pameran.json");
+const imageDir = path.join(process.cwd(), "public/image");
+const uploadDir = path.join(process.cwd(), "public/uploads");
 
 /* ===================== */
 /* GET */
@@ -15,7 +15,7 @@ const uploadDir = path.join(process.cwd(), 'public/uploads');
 export async function GET() {
   try {
     const response = await api.get("/api/pameran");
-// mengambil api dari backend
+    // mengambil api dari backend
     const transformed = response.data.pameran.map((item: any) => ({
       id: item.id_pameran,
 
@@ -53,9 +53,7 @@ export async function GET() {
 
         endDate: item.tanggal_akhir,
 
-        studyLevel:
-          item.prodi?.nama_prodi ??
-          item.kategori,
+        studyLevel: item.prodi?.nama_prodi ?? item.kategori,
       },
 
       institution: "Politeknik Negeri Batam",
@@ -65,7 +63,6 @@ export async function GET() {
       status: "success",
       pameran: transformed,
     });
-
   } catch (error: any) {
     console.error("PAMERAN ERROR:", error.message);
     console.error("DETAIL:", error.response?.data);
@@ -80,7 +77,7 @@ export async function GET() {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }
@@ -96,15 +93,15 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
-    const title = formData.get('title') as string;
-    const prodi = formData.get('prodi') as string;
-    const publishDate = formData.get('publishDate') as string;
-    const endDate = formData.get('endDate') as string;
-    const prepareStart = formData.get('prepareStart') as string;
-    const prepareEnd = formData.get('prepareEnd') as string;
-    const description = formData.get('description') as string;
-    const fileImage = formData.get('image') as File | null;
-    const file = fs.readFileSync(jsonPath, 'utf-8');
+    const title = formData.get("title") as string;
+    const prodi = formData.get("prodi") as string;
+    const publishDate = formData.get("publishDate") as string;
+    const endDate = formData.get("endDate") as string;
+    const prepareStart = formData.get("prepareStart") as string;
+    const prepareEnd = formData.get("prepareEnd") as string;
+    const description = formData.get("description") as string;
+    const fileImage = formData.get("image") as File | null;
+    const file = fs.readFileSync(jsonPath, "utf-8");
     const data = JSON.parse(file);
     const newId = String(data.length + 1);
     const userFolder = path.join(uploadDir, newId);
@@ -114,12 +111,12 @@ export async function POST(req: Request) {
       });
     }
 
-    let bannerImage = '/image/default.jpg';
+    let bannerImage = "http://localhost:8000/storage/banner/default.jpg";
 
     if (fileImage && fileImage.size > 0) {
       const bytes = await fileImage.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const ext = fileImage.name.split('.').pop();
+      const ext = fileImage.name.split(".").pop();
       const fileName = `${Date.now()}.${ext}`;
 
       if (!fs.existsSync(imageDir)) {
@@ -144,7 +141,7 @@ export async function POST(req: Request) {
       karya: 0,
       description: [
         {
-          title: 'Deskripsi',
+          title: "Deskripsi",
           content: description,
         },
       ],
@@ -158,7 +155,7 @@ export async function POST(req: Request) {
         studyLevel: prodi,
       },
 
-      institution: 'Politeknik Negeri Batam',
+      institution: "Politeknik Negeri Batam",
     };
 
     data.push(newData);
@@ -169,8 +166,8 @@ export async function POST(req: Request) {
       success: true,
       data: newData,
     });
+
   } catch (error) {
-    console.log(error);
 
     return NextResponse.json(
       {
@@ -180,20 +177,20 @@ export async function POST(req: Request) {
     );
   }
 }
-
+// PUT
 export async function PUT(req: Request) {
   try {
     const formData = await req.formData();
-    const id = formData.get('id') as string;
-    const title = formData.get('title') as string;
-    const prodi = formData.get('prodi') as string;
-    const publishDate = formData.get('publishDate') as string;
-    const endDate = formData.get('endDate') as string;
-    const prepareStart = formData.get('prepareStart') as string;
-    const prepareEnd = formData.get('prepareEnd') as string;
-    const description = formData.get('description') as string;
-    const fileImage = formData.get('image') as File | null;
-    const file = fs.readFileSync(jsonPath, 'utf-8');
+    const id = formData.get("id") as string;
+    const title = formData.get("title") as string;
+    const prodi = formData.get("prodi") as string;
+    const publishDate = formData.get("publishDate") as string;
+    const endDate = formData.get("endDate") as string;
+    const prepareStart = formData.get("prepareStart") as string;
+    const prepareEnd = formData.get("prepareEnd") as string;
+    const description = formData.get("description") as string;
+    const fileImage = formData.get("image") as File | null;
+    const file = fs.readFileSync(jsonPath, "utf-8");
     const data: Pameran[] = JSON.parse(file);
     const index = data.findIndex((item: any) => String(item.id) === String(id));
 
@@ -201,7 +198,7 @@ export async function PUT(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Data tidak ditemukan',
+          message: "Data tidak ditemukan",
         },
         { status: 404 },
       );
@@ -213,7 +210,7 @@ export async function PUT(req: Request) {
     if (fileImage && fileImage.size > 0) {
       const bytes = await fileImage.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const ext = fileImage.name.split('.').pop();
+      const ext = fileImage.name.split(".").pop();
       const fileName = `${Date.now()}.${ext}`;
 
       fs.writeFileSync(path.join(imageDir, fileName), buffer);
@@ -231,7 +228,7 @@ export async function PUT(req: Request) {
       bannerImage,
       description: [
         {
-          title: 'Deskripsi',
+          title: "Deskripsi",
           content: description,
         },
       ],
@@ -264,27 +261,27 @@ export async function PUT(req: Request) {
 }
 
 function toSlashDate(value: string) {
-  const [year, month, day] = value.split('-');
+  const [year, month, day] = value.split("-");
 
   return `${day}/${month}/${year}`;
 }
 
 function formatLongDate(value: string) {
-  const [year, month, day] = value.split('-');
+  const [year, month, day] = value.split("-");
 
   const bulan = [
-    'Januari',
-    'Februari',
-    'Maret',
-    'April',
-    'Mei',
-    'Juni',
-    'Juli',
-    'Agustus',
-    'September',
-    'Oktober',
-    'November',
-    'Desember',
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
   ];
 
   return `${day} ${bulan[Number(month) - 1]} ${year}`;

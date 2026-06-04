@@ -1,8 +1,8 @@
 // app/api/pengguna/route.ts
 
-import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
 /* ===================== */
 /* TYPE */
@@ -22,7 +22,7 @@ type UserType = {
 /* FILE PATH */
 /* ===================== */
 
-const filePath = path.join(process.cwd(), 'public', 'data', 'Pengguna.json');
+const filePath = path.join(process.cwd(), "public", "data", "Pengguna.json");
 
 /* ===================== */
 /* READ FILE */
@@ -30,7 +30,7 @@ const filePath = path.join(process.cwd(), 'public', 'data', 'Pengguna.json');
 
 function readFile(): UserType[] {
   try {
-    const data = fs.readFileSync(filePath, 'utf-8');
+    const data = fs.readFileSync(filePath, "utf-8");
 
     return JSON.parse(data);
   } catch {
@@ -43,7 +43,7 @@ function readFile(): UserType[] {
 /* ===================== */
 
 function writeFile(data: UserType[]) {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
 }
 
 /* ===================== */
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
   writeFile(users);
 
   return NextResponse.json({
-    message: 'User berhasil ditambah',
+    message: "User berhasil ditambah",
     data: newUser,
   });
 }
@@ -94,6 +94,6 @@ export async function PUT(req: Request) {
   writeFile(updated);
 
   return NextResponse.json({
-    message: 'User berhasil diupdate',
+    message: "User berhasil diupdate",
   });
 }

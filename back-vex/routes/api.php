@@ -23,10 +23,12 @@ Route::prefix('auth')->group(function () {
     Route::post('/forgot-password', [ResetPasswordController::class, 'forgotPassword']);
     Route::post('/verify-reset-token', [ResetPasswordController::class, 'verifyResetToken']);
     Route::post('/reset-password', [ResetPasswordController::class, 'resetPassword']);
-    
-    // Route::get('/pameran', [PameranController::class, 'index']);
-    // Route::get('/pameran/{id}', [PameranController::class, 'show']);
+
+
 });
+
+Route::get('/pameran', [PameranController::class, 'index']);
+Route::get('/pameran/{id}', [PameranController::class, 'show']);
 
 // =============================
 // PROTECTED ROUTES
@@ -53,19 +55,19 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
         //manajemen pengguna
-        Route::get('/pengguna',                    [AdminController::class, 'daftarPengguna']);
-        Route::post('/pengguna',                   [AdminController::class, 'tambahPengguna']);
-        Route::get('/pengguna/{id}',               [AdminController::class, 'detailPengguna']);
-        Route::put('/pengguna/{id}',               [AdminController::class, 'editPengguna']);
-        Route::patch('/pengguna/{id}/aktifkan',    [AdminController::class, 'aktifkanAkun']);
+        Route::get('/pengguna', [AdminController::class, 'daftarPengguna']);
+        Route::post('/pengguna', [AdminController::class, 'tambahPengguna']);
+        Route::get('/pengguna/{id}', [AdminController::class, 'detailPengguna']);
+        Route::put('/pengguna/{id}', [AdminController::class, 'editPengguna']);
+        Route::patch('/pengguna/{id}/aktifkan', [AdminController::class, 'aktifkanAkun']);
         Route::patch('/pengguna/{id}/nonaktifkan', [AdminController::class, 'nonaktifkanAkun']);
 
         // manajemen pameran
-        Route::get('/pameran',          [PameranController::class, 'index']);
-        Route::post('/pameran',         [PameranController::class, 'store']);
-        Route::get('/pameran/{id}',     [PameranController::class, 'show']);
-        Route::put('/pameran/{id}',     [PameranController::class, 'update']);
-        Route::delete('/pameran/{id}',  [PameranController::class, 'destroy']);
+        Route::get('/pameran', [PameranController::class, 'index']);
+        Route::post('/pameran', [PameranController::class, 'store']);
+        Route::get('/pameran/{id}', [PameranController::class, 'show']);
+        Route::put('/pameran/{id}', [PameranController::class, 'update']);
+        Route::delete('/pameran/{id}', [PameranController::class, 'destroy']);
     });
 
     // KPS
@@ -88,7 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/verify', [App\Http\Controllers\ChangeEmailController::class, 'verify']);
     });
 
-        // GANTI KATA SANDI 
+    // GANTI KATA SANDI 
     Route::post('/change-password', [App\Http\Controllers\ChangePasswordController::class, 'changePassword']);
 
 });

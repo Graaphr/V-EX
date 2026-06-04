@@ -1,18 +1,22 @@
-import { FaCloudUploadAlt } from 'react-icons/fa';
-import { PameranForm as PameranFormType, PRODI_OPTIONS } from '@/types/pameran';
-import { Button } from '@/components/shared/ui/Button';
+import { FaCloudUploadAlt } from "react-icons/fa";
+import { PameranForm as PameranFormType, PRODI_OPTIONS } from "@/types/pameran";
+import { Button } from "@/components/shared/ui/Button";
 
 type Props = {
   form: PameranFormType;
   preview: string | null;
   loading: boolean;
   onChangeImage: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+  onChange: (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
+  ) => void;
   onSubmit: () => void;
 };
 
 const inputClass =
-  'w-full p-2.5 px-3 rounded-lg border border-gray-300 mt-1.5 focus:outline-none focus:border-main-blue focus:ring-1 focus:ring-main-blue transition-all text-sm';
+  "w-full p-2.5 px-3 rounded-lg border border-gray-300 mt-1.5 focus:outline-none focus:border-main-blue focus:ring-1 focus:ring-main-blue transition-all text-sm";
 
 function Label({ text, required }: { text: string; required?: boolean }) {
   return (
@@ -22,7 +26,14 @@ function Label({ text, required }: { text: string; required?: boolean }) {
   );
 }
 
-export default function FormPameran({ form, preview, loading, onChangeImage, onChange, onSubmit }: Props) {
+export default function FormPameran({
+  form,
+  preview,
+  loading,
+  onChangeImage,
+  onChange,
+  onSubmit,
+}: Props) {
   return (
     <div className="flex flex-col lg:flex-row gap-10">
       {/* LEFT - THUMBNAIL */}
@@ -53,7 +64,9 @@ export default function FormPameran({ form, preview, loading, onChangeImage, onC
           />
         </label>
 
-        <p className="text-xs text-gray-400 mt-2">Format: PNG, JPG, JPEG. Ukuran maks 2MB.</p>
+        <p className="text-xs text-gray-400 mt-2">
+          Format: PNG, JPG, JPEG. Ukuran maks 2MB.
+        </p>
       </div>
 
       {/* RIGHT - FIELDS */}
@@ -61,7 +74,12 @@ export default function FormPameran({ form, preview, loading, onChangeImage, onC
         {/* PRODI */}
         <div>
           <Label text="Program Studi" required />
-          <select name="prodi" value={form.prodi} onChange={onChange} className={inputClass}>
+          <select
+            name="prodi"
+            value={form.prodi}
+            onChange={onChange}
+            className={inputClass}
+          >
             <option value="" disabled>
               -- Pilih Prodi --
             </option>
@@ -102,7 +120,13 @@ export default function FormPameran({ form, preview, loading, onChangeImage, onC
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Berakhir</p>
-              <input type="date" name="endDate" value={form.endDate} onChange={onChange} className={inputClass} />
+              <input
+                type="date"
+                name="endDate"
+                value={form.endDate}
+                onChange={onChange}
+                className={inputClass}
+              />
             </div>
           </div>
         </div>
@@ -123,7 +147,13 @@ export default function FormPameran({ form, preview, loading, onChangeImage, onC
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Berakhir</p>
-              <input type="date" name="prepareEnd" value={form.prepareEnd} onChange={onChange} className={inputClass} />
+              <input
+                type="date"
+                name="prepareEnd"
+                value={form.prepareEnd}
+                onChange={onChange}
+                className={inputClass}
+              />
             </div>
           </div>
         </div>
@@ -142,8 +172,12 @@ export default function FormPameran({ form, preview, loading, onChangeImage, onC
 
         {/* BUTTON */}
         <div className="flex justify-end">
-          <Button onClick={onSubmit} disabled={loading} className="px-8 py-2.5 text-white rounded-lg hover:opacity-80">
-            {loading ? 'Menyimpan...' : 'Simpan'}
+          <Button
+            onClick={onSubmit}
+            disabled={loading}
+            className="px-8 py-2.5 text-white rounded-lg hover:opacity-80"
+          >
+            {loading ? "Menyimpan..." : "Simpan"}
           </Button>
         </div>
       </div>

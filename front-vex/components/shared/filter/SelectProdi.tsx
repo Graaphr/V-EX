@@ -1,27 +1,47 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
-import ALL_EXHIBITIONS from '@/public/data/Pameran.json';
 
 export type ProdiType = {
   id: number;
   name: string;
 };
 
-const prodiList: ProdiType[] = Array.from(new Set(ALL_EXHIBITIONS.map((item) => item.category))).map(
-  (category, index) => ({
-    id: index + 1,
-    name: category,
-  }),
-);
-
 interface SelectProdiProps {
-  selected: ProdiType;
+  selected: ProdiType | null;
   onChange: (prodi: ProdiType) => void;
 }
 
 export default function SelectProdi({ selected, onChange }: SelectProdiProps) {
+  const [prodiList, setProdiList] = useState<ProdiType[]>([]);
+
+  // ─────────────────────────────────────────────────────────
+  // Ambil daftar prodi unik dari API pameran
+  // ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    async function load() {
+      try {
+        const res  = await fetch('/api/pameran');
+        const json = await res.json();
+
+        // Ambil category unik lalu jadikan list prodi
+        const unique: string[] = [...new Set<string>(
+          (json.pameran ?? []).map((item: any) => item.category)
+        )];
+
+        setProdiList(
+          unique.map((name, index) => ({ id: index + 1, name }))
+        );
+      } catch (err) {
+        console.error('Gagal memuat prodi:', err);
+      }
+    }
+
+    load();
+  }, []);
+
   return (
     <div className="w-full max-w-sm">
       <Listbox value={selected} onChange={onChange}>
@@ -31,7 +51,6 @@ export default function SelectProdi({ selected, onChange }: SelectProdiProps) {
             <span className={`block truncate ${selected ? 'text-gray-800 font-medium' : 'text-gray-400'}`}>
               {selected ? selected.name : 'Program Studi'}
             </span>
-
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-[10px]">
               <ChevronDownIcon className="h-5 w-5 text-black" />
             </span>
@@ -49,7 +68,9 @@ export default function SelectProdi({ selected, onChange }: SelectProdiProps) {
                 className="group relative cursor-pointer select-none py-2.5 pl-3 pr-4 text-gray-900 data-focus:bg-gray-400/20 data-focus:text-black"
               >
                 {({ selected: isSelected }) => (
-                  <span className={`block truncate ${isSelected ? 'font-semibold' : 'font-normal'}`}>{prodi.name}</span>
+                  <span className={`block truncate ${isSelected ? 'font-semibold' : 'font-normal'}`}>
+                    {prodi.name}
+                  </span>
                 )}
               </ListboxOption>
             ))}

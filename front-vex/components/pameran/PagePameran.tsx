@@ -1,32 +1,33 @@
-'use client';
+"use client";
 
-import { useMemo, useState, useEffect } from 'react';
-import useEmblaCarousel from 'embla-carousel-react';
-import Link from 'next/link';
+import { useMemo, useState, useEffect } from "react";
+import useEmblaCarousel from "embla-carousel-react";
+import Link from "next/link";
 
-import ProjectCard from '@/components/shared/ui/ProjectCard';
-import  { ProdiType } from '@/components/shared/filter/SelectProdi';
-import  { TahunType } from '@/components/shared/filter/SelectTahun';
-import  { SemesterType } from '@/components/shared/filter/SelectSemester';
+import ProjectCard from "@/components/shared/ui/ProjectCard";
+import { ProdiType } from "@/components/shared/filter/SelectProdi";
+import { TahunType } from "@/components/shared/filter/SelectTahun";
+import { SemesterType } from "@/components/shared/filter/SelectSemester";
 
-
-import FilterSection from '@/components/pameran/FilterSection';
-import CarouselSection from '@/components/pameran/CarouselSection';
-import CategorySection from '@/components/pameran/CategorySection';
+import FilterSection from "@/components/pameran/FilterSection";
+import CarouselSection from "@/components/pameran/CarouselSection";
+import CategorySection from "@/components/pameran/CategorySection";
 
 interface PameranProps {
   href?: string;
 }
 
-export default function PagePameran({ href = '/pameran/' }: PameranProps) {
-  const [emblaRef] = useEmblaCarousel({ align: 'start' });
+export default function PagePameran({ href = "/pameran/" }: PameranProps) {
+  const [emblaRef] = useEmblaCarousel({ align: "start" });
 
   const [selectedProdi, setSelectedProdi] = useState<ProdiType | null>(null);
   const [selectedTahun, setSelectedTahun] = useState<TahunType | null>(null);
-  const [selectedSemester, setSelectedSemester] = useState<SemesterType | null>(null);
+  const [selectedSemester, setSelectedSemester] = useState<SemesterType | null>(
+    null,
+  );
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
 
   /* FILTER DATA */
   const filteredData = useMemo(() => {
@@ -36,42 +37,44 @@ export default function PagePameran({ href = '/pameran/' }: PameranProps) {
         item.category.toLowerCase().includes(search.toLowerCase());
 
       const matchProdi = !selectedProdi || item.category === selectedProdi.name;
-      const matchTahun = !selectedTahun || new Date(item.date).getFullYear().toString() === selectedTahun.name;
+      const matchTahun =
+        !selectedTahun ||
+        new Date(item.date).getFullYear().toString() === selectedTahun.name;
 
       return matchSearch && matchProdi && matchTahun;
     });
-  }, [search, selectedProdi, selectedTahun]);
+  }, [data, search, selectedProdi, selectedTahun]);
 
   // mengambil data dari API {sudah nyambung dengan API pameran yang ada di route front(data)}
   useEffect(() => {
-  async function loadPameran() {
-    try {
-      const response = await fetch('/api/pameran');// Ambil data dari API
+    async function loadPameran() {
+      try {
+        const response = await fetch("/api/pameran"); // Ambil data dari API
 
-      const data = await response.json();
+        const data = await response.json();
 
-      setData(data.pameran || []);
-    } catch (error) {
-      console.error(error); // Cetak error di console browser
-    } finally {
-      setLoading(false); // Matikan indikator loading
+        setData(data.pameran || []);
+      } catch (error) {
+        console.error(error); // Cetak error di console browser
+      } finally {
+        setLoading(false); // Matikan indikator loading
+      }
     }
-  }
 
-  loadPameran();
-}, []);
+    loadPameran();
+  }, []);
 
   /* AUTO CATEGORY */
   const categories = [...new Set(filteredData.map((i) => i.category))];
 
-if (loading) {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      Loading...
-    </div>
-  );
-}
-  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-secondary-color font-poppins">
       {/* HERO WRAPPER */}

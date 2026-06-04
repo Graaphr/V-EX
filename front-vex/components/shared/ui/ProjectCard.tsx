@@ -15,6 +15,7 @@ export interface ProjectCard {
   stats: {
     startDate: string;
     endDate: string;
+    
   };
 }
 
@@ -25,9 +26,14 @@ interface ProjectData {
 
 export default function ProjectCard({ project, className }: ProjectData) {
   const today = new Date();
-  const startDate = convertDate(project.stats.startDate);
-  const endDate = convertDate(project.stats.endDate);
+
+  const startDate = new Date(project.stats.startDate);
+
+  const endDate = new Date(project.stats.endDate);
+  endDate.setHours(23, 59, 59, 999);
+
   const isOpen = today >= startDate && today <= endDate;
+
 
   return (
     <div className={`group relative overflow-hidden cursor-pointer ${className}`}>
@@ -37,6 +43,7 @@ export default function ProjectCard({ project, className }: ProjectData) {
           src={project.bannerImage}
           alt={project.title}
           fill
+          unoptimized
           className="object-cover transition-transform group-hover:scale-105"
         />
 
@@ -84,10 +91,4 @@ export default function ProjectCard({ project, className }: ProjectData) {
       </div>
     </div>
   );
-}
-
-function convertDate(value: string) {
-  const split = value.split('/');
-
-  return new Date(Number(split[2]), Number(split[1]) - 1, Number(split[0]), 0, 0, 0);
 }
