@@ -2,24 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Pengguna;
+use App\Services\OtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class ChangeEmailController extends Controller
 {
+    public function __construct(
+        private OtpService $otpService
+    ) {}
+
     /**
-     * STEP 1: Kirim verifikasi ganti email
-     * POST /api/change-email/send
+     * STEP 1
+     * Kirim OTP ke email baru
      */
     public function sendVerification(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'new_email' => 'required|email|unique:pengguna,email|different:email',
+            'new_email' => 'required|email|unique:pengguna,email',
             'password' => 'required'
         ]);
 
@@ -36,7 +38,7 @@ class ChangeEmailController extends Controller
         if (!Hash::check($request->password, $user->password)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Password yang Anda masukkan salah'
+                'message' => 'Password yang Anda masukkan salah !!'
             ], 401);
         }
 
@@ -47,72 +49,82 @@ class ChangeEmailController extends Controller
             ], 422);
         }
 
-        $token = Str::random(60);
-        
-        $user->new_email = $request->new_email;
-        $user->new_email_verification_token = $token;
-        $user->new_email_expires_at = Carbon::now()->addMinutes(30);
-        $user->save();
+        $otp = $this->otpService->generateOtp();
+        $expiresAt = $this->otpService->getExpiresAt();
+
+        $cacheKey = 'change_email_' . $user->id;
+
+        $this->otpService->storeToCache(
+            $cacheKey,
+            [
+                'user_id' => $user->id,
+                'new_email' => $request->new_email,
+                'otp' => $otp,
+            ],
+            $expiresAt
+        );
+
+        $this->otpService->sendOtpEmail(
+            $request->new_email,
+            $otp
+        );
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Token verifikasi telah dibuat',
+            'message' => 'OTP telah dikirim ke email baru',
             'data' => [
-                'verification_token' => $token,
                 'new_email' => $request->new_email,
-                'expires_at' => Carbon::now()->addMinutes(30)->toDateTimeString()
+                'expires_at' => $expiresAt->toDateTimeString()
             ]
         ], 200);
     }
 
     /**
-     * STEP 2: Verifikasi token dan ganti email
-     * POST /api/change-email/verify
+     * STEP 2
+     * Verifikasi OTP dan ubah email
      */
     public function verify(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'token' => 'required|string'
+            'otp' => 'required'
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Token wajib diisi'
+                'message' => 'OTP wajib diisi',
+                'errors' => $validator->errors()
             ], 422);
         }
 
         $user = Auth::user();
 
-        if (!$user->new_email || !$user->new_email_verification_token) {
+        $cacheKey = 'change_email_' . $user->id;
+
+        $cacheData = $this->otpService->getFromCache($cacheKey);
+
+        if (!$cacheData) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Tidak ada permintaan perubahan email'
+                'message' => 'OTP sudah kadaluarsa atau tidak ditemukan'
             ], 400);
         }
 
-        if ($user->new_email_verification_token !== $request->token) {
+        if ((string) $cacheData['otp'] !== (string) $request->otp) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Token verifikasi tidak valid'
-            ], 400);
-        }
-
-        if (Carbon::now()->greaterThan($user->new_email_expires_at)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Token verifikasi sudah kadaluarsa'
+                'message' => 'OTP tidak valid'
             ], 400);
         }
 
         $oldEmail = $user->email;
-        $newEmail = $user->new_email;
+        $newEmail = $cacheData['new_email'];
 
-        $user->email = $newEmail;
-        $user->new_email = null;
-        $user->new_email_verification_token = null;
-        $user->new_email_expires_at = null;
-        $user->save();
+        $user->update([
+            'email' => $newEmail
+        ]);
+
+        $this->otpService->forgetCache($cacheKey);
 
         return response()->json([
             'status' => 'success',
