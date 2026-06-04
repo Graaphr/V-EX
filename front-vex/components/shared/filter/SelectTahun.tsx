@@ -9,8 +9,13 @@ export type TahunType = {
   name: string;
 };
 
+// TypeScript membedakan null dan undefined — keduanya bukan hal yang sama:
+
+// null = nilai yang sengaja dikosongkan
+// undefined = nilai yang belum ada/tidak diset
+
 interface SelectTahunProps {
-  selected: TahunType | null;
+  selected: TahunType | undefined;
   onChange: (tahun: TahunType) => void;
 }
 

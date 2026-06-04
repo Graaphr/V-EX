@@ -63,7 +63,4 @@ yyuy
 : Folder types menyimpan types yang sering di gunakan dalam operasi
 
 NOTE :
-[AGAK]
-_____ logika NavBar jika role?admin ==> /admin/....
-[AMAN]
-_____ pastikan lagi menggunakan localstorage atau sactrum SPA
+

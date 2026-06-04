@@ -7,7 +7,7 @@ import { ChevronDownIcon } from '@heroicons/react/20/solid';
 export type SemesterType = { id: number; name: string };
 
 interface SelectSemesterProps {
-  selected: SemesterType | null;
+  selected: SemesterType | undefined;
   onChange: (semester: SemesterType) => void;
 }
 

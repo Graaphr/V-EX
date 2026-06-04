@@ -10,7 +10,7 @@ export type ProdiType = {
 };
 
 interface SelectProdiProps {
-  selected: ProdiType | null;
+  selected: ProdiType | undefined;
   onChange: (prodi: ProdiType) => void;
 }
 

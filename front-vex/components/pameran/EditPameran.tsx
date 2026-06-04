@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 
 import { Pameran, PameranForm, ProdiOption } from "@/types/pameran";
 import FormPameran from "./FormPameran";
-import ALL_EXHIBITIONS from "@/public/data/Pameran.json";
+import ALL_EXHIBITIONS from "@/public/data/Pameran.json"; // untuk mengganti referensi data dummy dari json ke database
 
 export default function EditPameran() {
   const params = useParams();
