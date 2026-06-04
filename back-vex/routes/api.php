@@ -6,6 +6,7 @@ use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PameranController;
+use App\Http\Controllers\PublicPameranController;
 
 // Route::post('/test', function () {
 //     return response()->json(['message' => 'OK']);
@@ -22,6 +23,9 @@ Route::prefix('auth')->group(function () {
     Route::post('/forgot-password', [ResetPasswordController::class, 'forgotPassword']);
     Route::post('/verify-reset-token', [ResetPasswordController::class, 'verifyResetToken']);
     Route::post('/reset-password', [ResetPasswordController::class, 'resetPassword']);
+    
+    // Route::get('/pameran', [PameranController::class, 'index']);
+    // Route::get('/pameran/{id}', [PameranController::class, 'show']);
 });
 
 // =============================

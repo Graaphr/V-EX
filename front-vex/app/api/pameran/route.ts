@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { Pameran } from '@/types/pameran';
+import api from '@/lib/axios';
 
 const jsonPath = path.join(process.cwd(), 'public/data/Pameran.json');
 const imageDir = path.join(process.cwd(), 'public/image');
@@ -10,10 +11,84 @@ const uploadDir = path.join(process.cwd(), 'public/uploads');
 /* ===================== */
 /* GET */
 /* ===================== */
+
 export async function GET() {
-  const file = fs.readFileSync(jsonPath, 'utf-8');
-  return NextResponse.json(JSON.parse(file));
+  try {
+    const response = await api.get("/api/pameran");
+// mengambil api dari backend
+    const transformed = response.data.pameran.map((item: any) => ({
+      id: item.id_pameran,
+
+      title: item.judul,
+
+      subtitle: item.prodi?.nama_prodi ?? item.kategori,
+
+      category: item.prodi?.nama_prodi ?? item.kategori,
+
+      date: item.tanggal_mulai,
+
+      bannerImage: `http://localhost:8000/storage/${item.banner}`,
+
+      likes: 0,
+
+      karya: 0,
+
+      description: [
+        {
+          title: "Deskripsi",
+          content: item.deskripsi,
+        },
+      ],
+
+      stats: {
+        likes: 0,
+
+        karya: 0,
+
+        prepareStartDate: item.tanggal_mulai_persiapan,
+
+        prepareEndDate: item.tanggal_akhir_persiapan,
+
+        startDate: item.tanggal_mulai,
+
+        endDate: item.tanggal_akhir,
+
+        studyLevel:
+          item.prodi?.nama_prodi ??
+          item.kategori,
+      },
+
+      institution: "Politeknik Negeri Batam",
+    }));
+
+    return NextResponse.json({
+      status: "success",
+      pameran: transformed,
+    });
+
+  } catch (error: any) {
+    console.error("PAMERAN ERROR:", error.message);
+    console.error("DETAIL:", error.response?.data);
+    console.error("CODE:", error.code);
+
+    return NextResponse.json(
+      {
+        status: "error",
+        message: error.message,
+        code: error.code,
+        detail: error.response?.data ?? null,
+      },
+      {
+        status: 500,
+      }
+    );
+  }
 }
+
+// export async function GET() {
+//   const file = fs.readFileSync(jsonPath, 'utf-8');
+//   return NextResponse.json(JSON.parse(file));
+// }
 
 /* ===================== */
 /* POST */
