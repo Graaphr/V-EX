@@ -1,18 +1,49 @@
-'use client';
 
-import { PointerLockControls, OrbitControls } from '@react-three/drei';
+"use client";
 
-import { useFrame, useThree } from '@react-three/fiber';
+import {
+  OrbitControls,
+  PointerLockControls,
+} from "@react-three/drei";
 
-import { useEffect, useRef, useState } from 'react';
+import {
+  useFrame,
+  useThree,
+} from "@react-three/fiber";
 
-import * as THREE from 'three';
+import {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+} from "react";
+
+import * as THREE from "three";
 
 type Props = {
-  mode: 'first' | 'third';
+  mode: "first" | "third";
+
   controlsLocked: boolean;
 
-  setWalking?: (value: boolean) => void;
+  playerId: string;
+  playerName: string;
+
+  setPosition?: (
+    pos: {
+      x: number;
+      y: number;
+      z: number;
+    }
+  ) => void;
+
+
+  setWalking?: (
+    value: boolean
+  ) => void;
+
+  setJumping?: (
+    value: boolean
+  ) => void;
 
   mobileMove?: {
     w: boolean;
@@ -27,74 +58,191 @@ type Props = {
   }>;
 };
 
-export default function Player({ mode, controlsLocked, setWalking, mobileMove, lookDelta }: Props) {
-  const { camera, scene: world } = useThree();
+export default function Player({
+  mode,
+  controlsLocked,
+  setWalking,
+  setJumping,
+  mobileMove,
+  lookDelta,
 
-  const orbitRef = useRef<any>(null);
+  playerId,
+  playerName,
 
-  const pointerRef = useRef<any>(null);
+  setPosition,
+}: Props) {
+  const {
+    camera,
+    scene: world,
+  } = useThree();
 
-  const playerMesh = useRef<THREE.Mesh>(null!);
+  const orbitRef =
+    useRef<any>(null);
 
-  const raycaster = useRef(new THREE.Raycaster());
+  const pointerRef =
+    useRef<any>(null);
 
-  const position = useRef(new THREE.Vector3(0, 20, -8));
+  const playerMesh =
+    useRef<THREE.Mesh>(
+      null!
+    );
 
-  const velocityY = useRef(0);
+  const raycaster =
+    useRef(
+      new THREE.Raycaster()
+    );
+
+  /* ===================== */
+  /* PLAYER */
+  /* ===================== */
+
+  const position =
+    useRef(
+      new THREE.Vector3(
+        0,
+        20,
+        -8
+      )
+    );
+
+  const velocityY =
+    useRef(0);
+
+  const grounded =
+    useRef(false);
+
+  /* ===================== */
+  /* SETTINGS */
+  /* ===================== */
+
+  const MOVE_SPEED = 6;
+
+  const GRAVITY = 24;
+
+  const JUMP_FORCE = 10;
+
+  const PLAYER_HEIGHT = 3;
+
+  const COLLISION_DISTANCE =
+    0.7;
+
+  /* ===================== */
+  /* INPUT */
+  /* ===================== */
 
   const keys = useRef({
     w: false,
     a: false,
     s: false,
     d: false,
+    space: false,
   });
 
-  const colliders = useRef<THREE.Object3D[]>([]);
+  /* ===================== */
+  /* COLLIDERS */
+  /* ===================== */
 
-  const [isMobile, setIsMobile] = useState(false);
+  const colliders =
+    useRef<
+      THREE.Object3D[]
+    >([]);
 
-  /* LOOK ROTATION */
-  const yaw = useRef(0);
+  /* ===================== */
+  /* MOBILE */
+  /* ===================== */
 
-  const pitch = useRef(0);
+  const [
+    isMobile,
+    setIsMobile,
+  ] = useState(false);
+
+  /* ===================== */
+  /* LOOK */
+  /* ===================== */
+
+  const yaw =
+    useRef(0);
+
+  const pitch =
+    useRef(0);
+
+  /* ===================== */
+  /* MULTIPLAYER SAVE */
+  /* ===================== */
+
+  const saveTimer =
+    useRef(0);
+
+  const rotationY =
+    useRef(0);
 
   /* ===================== */
   /* MOBILE DETECT */
   /* ===================== */
 
   useEffect(() => {
-    setIsMobile(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
+    setIsMobile(
+      /Android|iPhone|iPad|iPod/i.test(
+        navigator.userAgent
+      )
+    );
   }, []);
 
   /* ===================== */
-  /* COLLIDER */
+  /* COLLIDER SCAN */
   /* ===================== */
 
   useEffect(() => {
     const scan = () => {
-      const arr: THREE.Object3D[] = [];
+      const arr: THREE.Object3D[] =
+        [];
 
-      world.traverse((obj: any) => {
-        if (obj.userData?.collider && obj.isMesh) {
-          arr.push(obj);
-          obj.visible = false;
+      world.traverse(
+        (obj: any) => {
+          if (
+            obj.userData
+              ?.collider &&
+            obj.isMesh
+          ) {
+            arr.push(obj);
+
+            obj.visible =
+              false;
+          }
         }
-      });
+      );
 
-      colliders.current = arr;
-      console.log('colliders:', arr.length);
+      colliders.current =
+        arr;
+
+      console.log(
+        "colliders:",
+        arr.length
+      );
     };
 
-    const t1 = setTimeout(scan, 300);
-    const t2 = setTimeout(scan, 1000);
-    const t3 = setTimeout(scan, 2000);
-    const t4 = setTimeout(scan, 3500);
+    const t1 =
+      setTimeout(
+        scan,
+        300
+      );
+
+    const t2 =
+      setTimeout(
+        scan,
+        1000
+      );
+
+    const t3 =
+      setTimeout(
+        scan,
+        2000
+      );
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
-      clearTimeout(t4);
     };
   }, [world]);
 
@@ -103,46 +251,144 @@ export default function Player({ mode, controlsLocked, setWalking, mobileMove, l
   /* ===================== */
 
   useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (!controlsLocked) return;
+    const down = (
+      e: KeyboardEvent
+    ) => {
+      if (
+        !controlsLocked
+      )
+        return;
 
-      if (e.code === 'KeyW') keys.current.w = true;
+      if (
+        e.code === "KeyW"
+      )
+        keys.current.w =
+          true;
 
-      if (e.code === 'KeyA') keys.current.a = true;
+      if (
+        e.code === "KeyA"
+      )
+        keys.current.a =
+          true;
 
-      if (e.code === 'KeyS') keys.current.s = true;
+      if (
+        e.code === "KeyS"
+      )
+        keys.current.s =
+          true;
 
-      if (e.code === 'KeyD') keys.current.d = true;
+      if (
+        e.code === "KeyD"
+      )
+        keys.current.d =
+          true;
+
+      if (
+        e.code ===
+        "Space"
+      )
+        keys.current.space =
+          true;
     };
 
-    const up = (e: KeyboardEvent) => {
-      if (e.code === 'KeyW') keys.current.w = false;
+    const up = (
+      e: KeyboardEvent
+    ) => {
+      if (
+        e.code === "KeyW"
+      )
+        keys.current.w =
+          false;
 
-      if (e.code === 'KeyA') keys.current.a = false;
+      if (
+        e.code === "KeyA"
+      )
+        keys.current.a =
+          false;
 
-      if (e.code === 'KeyS') keys.current.s = false;
+      if (
+        e.code === "KeyS"
+      )
+        keys.current.s =
+          false;
 
-      if (e.code === 'KeyD') keys.current.d = false;
+      if (
+        e.code === "KeyD"
+      )
+        keys.current.d =
+          false;
+
+      if (
+        e.code ===
+        "Space"
+      )
+        keys.current.space =
+          false;
     };
 
-    window.addEventListener('keydown', down);
+    window.addEventListener(
+      "keydown",
+      down
+    );
 
-    window.addEventListener('keyup', up);
+    window.addEventListener(
+      "keyup",
+      up
+    );
 
     return () => {
-      window.removeEventListener('keydown', down);
+      window.removeEventListener(
+        "keydown",
+        down
+      );
 
-      window.removeEventListener('keyup', up);
+      window.removeEventListener(
+        "keyup",
+        up
+      );
     };
   }, [controlsLocked]);
 
   /* ===================== */
-  /* FORCE UNLOCK */
+  /* REMOVE PLAYER */
   /* ===================== */
 
   useEffect(() => {
-    if (!controlsLocked) {
+    const removePlayer =
+      () => {
+        fetch(
+          `/api/player?id=${playerId}`,
+          {
+            method: "DELETE",
+          }
+        ).catch(() => { });
+      };
+
+    window.addEventListener(
+      "beforeunload",
+      removePlayer
+    );
+
+    return () => {
+      removePlayer();
+
+      window.removeEventListener(
+        "beforeunload",
+        removePlayer
+      );
+    };
+  }, [playerId]);
+
+  /* ===================== */
+  /* POINTER UNLOCK */
+  /* ===================== */
+
+  useEffect(() => {
+    if (
+      !controlsLocked
+    ) {
       pointerRef.current?.unlock?.();
+
       document.exitPointerLock?.();
     }
   }, [controlsLocked]);
@@ -151,144 +397,392 @@ export default function Player({ mode, controlsLocked, setWalking, mobileMove, l
   /* FRAME */
   /* ===================== */
 
-  useFrame(() => {
-    const speed = 0.15;
-
-    const playerHeight = 3;
+  useFrame((_, delta) => {
+    const dt =
+      Math.min(
+        delta,
+        0.1
+      );
 
     /* ===================== */
-    /* MOBILE LOOK FIX */
+    /* MOBILE LOOK */
     /* ===================== */
 
-    if (isMobile && mode === 'first' && lookDelta) {
-      yaw.current -= lookDelta.current.x * 1;
-      pitch.current -= lookDelta.current.y * 1;
+    if (
+      isMobile &&
+      mode === "first" &&
+      lookDelta
+    ) {
+      yaw.current -=
+        lookDelta.current.x;
 
-      pitch.current = Math.max(-1.2, Math.min(1.2, pitch.current));
+      pitch.current -=
+        lookDelta.current.y;
 
-      const euler = new THREE.Euler(pitch.current, yaw.current, 0, 'YXZ');
+      pitch.current =
+        Math.max(
+          -1.2,
+          Math.min(
+            1.2,
+            pitch.current
+          )
+        );
 
-      camera.quaternion.setFromEuler(euler);
+      const euler =
+        new THREE.Euler(
+          pitch.current,
+          yaw.current,
+          0,
+          "YXZ"
+        );
+
+      camera.quaternion.setFromEuler(
+        euler
+      );
     }
 
-    const dir = new THREE.Vector3();
+    /* ===================== */
+    /* MOVE DIR */
+    /* ===================== */
 
-    camera.getWorldDirection(dir);
+    const forward =
+      new THREE.Vector3();
 
-    dir.y = 0;
-    dir.normalize();
+    camera.getWorldDirection(
+      forward
+    );
 
-    const right = new THREE.Vector3().crossVectors(dir, camera.up).normalize();
+    rotationY.current =
+      Math.atan2(
+        forward.x,
+        forward.z
+      );
 
-    const next = position.current.clone();
+    forward.y = 0;
 
-    let moving = false;
+    forward.normalize();
 
-    const W = keys.current.w || mobileMove?.w;
+    const right =
+      new THREE.Vector3()
+        .crossVectors(
+          forward,
+          camera.up
+        )
+        .normalize();
 
-    const A = keys.current.a || mobileMove?.a;
+    const next =
+      position.current.clone();
 
-    const S = keys.current.s || mobileMove?.s;
+    let moving =
+      false;
 
-    const D = keys.current.d || mobileMove?.d;
+    const moveAmount =
+      MOVE_SPEED * dt;
 
-    if (controlsLocked) {
+    const W =
+      keys.current.w ||
+      mobileMove?.w;
+
+    const A =
+      keys.current.a ||
+      mobileMove?.a;
+
+    const S =
+      keys.current.s ||
+      mobileMove?.s;
+
+    const D =
+      keys.current.d ||
+      mobileMove?.d;
+
+    if (
+      controlsLocked
+    ) {
       if (W) {
-        next.add(dir.clone().multiplyScalar(speed));
-        moving = true;
+        next.add(
+          forward
+            .clone()
+            .multiplyScalar(
+              moveAmount
+            )
+        );
+
+        moving =
+          true;
       }
 
       if (S) {
-        next.add(dir.clone().multiplyScalar(-speed));
-        moving = true;
+        next.add(
+          forward
+            .clone()
+            .multiplyScalar(
+              -moveAmount
+            )
+        );
+
+        moving =
+          true;
       }
 
       if (A) {
-        next.add(right.clone().multiplyScalar(-speed));
-        moving = true;
+        next.add(
+          right
+            .clone()
+            .multiplyScalar(
+              -moveAmount
+            )
+        );
+
+        moving =
+          true;
       }
 
       if (D) {
-        next.add(right.clone().multiplyScalar(speed));
-        moving = true;
+        next.add(
+          right
+            .clone()
+            .multiplyScalar(
+              moveAmount
+            )
+        );
+
+        moving =
+          true;
       }
     }
 
-    setWalking?.(moving);
+    setWalking?.(
+      moving &&
+      grounded.current
+    );
 
     /* ===================== */
-    /* COLLISION */
+    /* WALL COLLISION */
     /* ===================== */
 
-    const moveDir = next.clone().sub(position.current);
+    const moveDir =
+      next
+        .clone()
+        .sub(
+          position.current
+        );
 
-    if (moveDir.length() > 0) {
+    if (
+      moveDir.length() >
+      0
+    ) {
       moveDir.normalize();
 
-      const origin = position.current.clone();
+      const origin =
+        position.current.clone();
 
       origin.y -= 1;
 
-      raycaster.current.set(origin, moveDir);
+      raycaster.current.set(
+        origin,
+        moveDir
+      );
 
-      raycaster.current.far = 0.7;
+      raycaster.current.far =
+        COLLISION_DISTANCE;
 
-      const hits = raycaster.current.intersectObjects(colliders.current, true);
+      const hits =
+        raycaster.current.intersectObjects(
+          colliders.current,
+          true
+        );
 
-      if (hits.length === 0) {
-        position.current.copy(next);
+      if (
+        hits.length ===
+        0
+      ) {
+        position.current.copy(
+          next
+        );
       }
     }
 
     /* ===================== */
-    /* FLOOR */
+    /* FLOOR CHECK */
     /* ===================== */
 
-    let grounded = false;
+    grounded.current =
+      false;
 
-    const floorOrigin = position.current.clone();
+    const floorOrigin =
+      position.current.clone();
 
-    floorOrigin.y += 0.3;
+    floorOrigin.y +=
+      0.2;
 
-    raycaster.current.set(floorOrigin, new THREE.Vector3(0, -1, 0));
+    raycaster.current.set(
+      floorOrigin,
+      new THREE.Vector3(
+        0,
+        -1,
+        0
+      )
+    );
 
-    raycaster.current.far = 20;
+    raycaster.current.far =
+      50;
 
-    const floorHits = raycaster.current
-      .intersectObjects(world.children, true)
-      .filter((hit: any) => hit.object.isMesh && !hit.object.userData?.collider)
-      .sort((a, b) => a.distance - b.distance);
+    const floorHits =
+      raycaster.current
+        .intersectObjects(
+          world.children,
+          true
+        )
+        .filter(
+          (
+            hit: any
+          ) =>
+            hit.object
+              .isMesh &&
+            !hit.object
+              .userData
+              ?.collider
+        )
+        .sort(
+          (a, b) =>
+            a.distance -
+            b.distance
+        );
 
-    if (floorHits.length > 0) {
-      position.current.y = floorHits[0].point.y + playerHeight;
+    if (
+      floorHits.length >
+      0
+    ) {
+      const floorY =
+        floorHits[0]
+          .point.y;
 
-      grounded = true;
+      const targetY =
+        floorY +
+        PLAYER_HEIGHT;
 
-      velocityY.current = 0;
+      if (
+        velocityY.current <=
+        0 &&
+        position.current.y <=
+        targetY +
+        0.2
+      ) {
+        grounded.current =
+          true;
+
+        velocityY.current =
+          0;
+
+        setJumping?.(false);
+
+        position.current.y =
+          targetY;
+      }
     }
 
-    if (!grounded) {
-      velocityY.current -= 0.008;
+    /* ===================== */
+    /* JUMP */
+    /* ===================== */
 
-      position.current.y += velocityY.current;
+    if (
+      grounded.current &&
+      keys.current.space
+    ) {
+      velocityY.current =
+        JUMP_FORCE;
+
+      grounded.current =
+        false;
+
+      setJumping?.(true);
+    }
+
+    /* ===================== */
+    /* GRAVITY */
+    /* ===================== */
+
+    if (
+      !grounded.current
+    ) {
+      velocityY.current -=
+        GRAVITY * dt;
+
+      position.current.y +=
+        velocityY.current *
+        dt;
     }
 
     /* ===================== */
     /* CAMERA */
     /* ===================== */
 
-    if (mode === 'first') {
-      camera.position.copy(position.current);
+    if (
+      mode === "first"
+    ) {
+      camera.position.copy(
+        position.current
+      );
     }
 
-    if (playerMesh.current && mode === 'third') {
-      playerMesh.current.position.copy(position.current);
+    /* ===================== */
+    /* SAVE PLAYER */
+    /* ===================== */
 
-      playerMesh.current.position.y -= 1.5;
+    setPosition?.({
+      x: position.current.x,
+      y: position.current.y,
+      z: position.current.z,
+    });
+
+    saveTimer.current += dt;
+
+    if (
+      saveTimer.current >= 0.2 &&
+      playerName !== "Loading..."
+    ) {
+      saveTimer.current = 0;
+
+      fetch("/api/player", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: playerId,
+
+          name: playerName,
+
+          x: position.current.x,
+          y: position.current.y,
+          z: position.current.z,
+
+          rotation: rotationY.current,
+        }),
+      }).catch(() => { });
     }
 
-    if (mode === 'third' && orbitRef.current) {
-      orbitRef.current.target.copy(position.current);
+    if (
+      playerMesh.current &&
+      mode ===
+      "third"
+    ) {
+      playerMesh.current.position.copy(
+        position.current
+      );
+
+      playerMesh.current.position.y -=
+        1.5;
+    }
+
+    if (
+      mode ===
+      "third" &&
+      orbitRef.current
+    ) {
+      orbitRef.current.target.copy(
+        position.current
+      );
 
       orbitRef.current.update();
     }
@@ -296,26 +790,65 @@ export default function Player({ mode, controlsLocked, setWalking, mobileMove, l
 
   return (
     <>
-      {!isMobile && mode === 'first' && controlsLocked && <PointerLockControls ref={pointerRef} />}
-
-      {mode === 'third' && (
-        <>
-          <OrbitControls
-            ref={orbitRef}
-            enablePan={false}
-            enableRotate={controlsLocked}
-            enableZoom={controlsLocked}
-            minDistance={4}
-            maxDistance={8}
+      {!isMobile &&
+        mode ===
+        "first" &&
+        controlsLocked && (
+          <PointerLockControls
+            ref={
+              pointerRef
+            }
           />
+        )}
 
-          <mesh ref={playerMesh}>
-            <capsuleGeometry args={[0.5, 1.2, 4, 8]} />
+      {mode ===
+        "third" && (
+          <>
+            <OrbitControls
+              ref={
+                orbitRef
+              }
+              enablePan={
+                false
+              }
+              enableRotate={
+                controlsLocked
+              }
+              enableZoom={
+                controlsLocked
+              }
+              minDistance={
+                4
+              }
+              maxDistance={
+                8
+              }
+            />
 
-            <meshStandardMaterial color="lime" transparent opacity={0.35} />
-          </mesh>
-        </>
-      )}
+            <mesh
+              ref={
+                playerMesh
+              }
+            >
+              <capsuleGeometry
+                args={[
+                  0.5,
+                  1.2,
+                  4,
+                  8,
+                ]}
+              />
+
+              <meshStandardMaterial
+                color="lime"
+                transparent
+                opacity={
+                  0.35
+                }
+              />
+            </mesh>
+          </>
+        )}
     </>
   );
 }

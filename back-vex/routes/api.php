@@ -7,6 +7,7 @@ use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PameranController;
 use App\Http\Controllers\PublicPameranController;
+use App\Http\Controllers\GameAssetController;
 
 // Route::post('/test', function () {
 //     return response()->json(['message' => 'OK']);
@@ -29,6 +30,7 @@ Route::prefix('auth')->group(function () {
 
 Route::get('/pameran', [PameranController::class, 'index']);
 Route::get('/pameran/{id}', [PameranController::class, 'show']);
+Route::get('/game-assets', [GameAssetController::class, 'index']);
 
 // =============================
 // PROTECTED ROUTES
