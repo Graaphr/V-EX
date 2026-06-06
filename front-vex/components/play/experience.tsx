@@ -15,7 +15,7 @@ import Player from "./player";
 import CameraSwitcher from "./cameraSwitcher";
 
 import exhibitions from "@/public/data/Pameran.json";
-import axios from "@/lib/axios";
+import api from "@/lib/axios";
 
 type RemotePlayer = {
   id: string;
@@ -158,8 +158,8 @@ export default function Experience({
       async () => {
         try {
           const { data } =
-            await axios.get(
-              "/game-assets"
+            await api.get(
+              "/api/game-assets"
             );
 
           setAudioUrls({
