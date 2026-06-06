@@ -2,21 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
-import { ChevronDownIcon } from '@heroicons/react/20/solid';
+import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/20/solid';
+import axios from "@/lib/axios"
 
 export type TahunType = {
   id: number;
   name: string;
 };
 
-// TypeScript membedakan null dan undefined — keduanya bukan hal yang sama:
-
-// null = nilai yang sengaja dikosongkan
-// undefined = nilai yang belum ada/tidak diset
-
 interface SelectTahunProps {
-  selected: TahunType | undefined;
-  onChange: (tahun: TahunType) => void;
+  selected: TahunType | null;
+  onChange: (tahun: TahunType | null) => void;
 }
 
 export default function SelectTahun({ selected, onChange }: SelectTahunProps) {
@@ -25,18 +21,15 @@ export default function SelectTahun({ selected, onChange }: SelectTahunProps) {
   useEffect(() => {
     async function load() {
       try {
-        const res  = await fetch('/api/pameran');
-        const json = await res.json();
+        const res  = await axios.get('/api/pameran');
+        const json = res.data;
 
-        // Ambil tahun dari tanggal_mulai (format YYYY-MM-DD → ambil 4 karakter pertama)
         const unique = [...new Set<string>(
           (json.pameran ?? []).map((item: any) => item.date.slice(0, 4))
         )]
-          .sort((a, b) => Number(b) - Number(a)); // terbaru dulu
+          .sort((a, b) => Number(b) - Number(a));
 
-        setTahunList(
-          unique.map((name, index) => ({ id: index + 1, name }))
-        );
+        setTahunList(unique.map((name, index) => ({ id: index + 1, name })));
       } catch (err) {
         console.error('Gagal memuat tahun:', err);
       }
@@ -55,7 +48,18 @@ export default function SelectTahun({ selected, onChange }: SelectTahunProps) {
               {selected ? selected.name : 'Tahun'}
             </span>
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-[10px]">
-              <ChevronDownIcon className="h-5 w-5 text-black" />
+              {selected ? (
+                <XMarkIcon
+                  className="h-4 w-4 text-gray-500 hover:text-black pointer-events-auto cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onChange(null); // ← reset filter
+                  }}
+                />
+              ) : (
+                <ChevronDownIcon className="h-5 w-5 text-black" />
+              )}
             </span>
           </ListboxButton>
 
