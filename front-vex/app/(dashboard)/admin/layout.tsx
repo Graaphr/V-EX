@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Tilt_Warp, Poppins } from "next/font/google";
 import "@/app/globals.css";
 import Navbar from "@/components/layout/Navbar";
 import NavAdmin from "@/components/shared/ui/NavAdmin";
+import Footer from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "V-EX | Admin",
@@ -24,6 +25,7 @@ export default function IndexLayout({
       <Navbar menuItems={userMenu} />
       <NavAdmin />
       {children}
+      <Footer />
     </div>
   );
 }
