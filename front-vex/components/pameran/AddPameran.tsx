@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 // types
 import { PameranForm, PRODI_OPTIONS } from "@/types/pameran";
 import FormPameran from "./FormPameran";
+import { PostPameran } from "./apiPameran";
 
 export default function AddPameran() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function AddPameran() {
   const [form, setForm] = useState<PameranForm>({
     prodi: "",
     title: "",
+    capacity: 0,
     publishDate: "",
     endDate: "",
     prepareStart: "",
@@ -49,6 +51,7 @@ export default function AddPameran() {
     setForm({
       prodi: "",
       title: "",
+      capacity: 0,
       publishDate: "",
       endDate: "",
       prepareStart: "",
@@ -59,6 +62,7 @@ export default function AddPameran() {
 
     setPreview(null);
   };
+
 
   const handleSubmit = async () => {
     if (
@@ -77,38 +81,39 @@ export default function AddPameran() {
       setLoading(true);
 
       const formData = new FormData();
-      formData.append("prodi", form.prodi);
+      formData.append("category", form.prodi); // sesuai validate Laravel
       formData.append("title", form.title);
-      formData.append("publishDate", form.publishDate);
-      formData.append("endDate", form.endDate);
-      formData.append("prepareStart", form.prepareStart);
-      formData.append("prepareEnd", form.prepareEnd);
+      formData.append("capacity", String(form.capacity));
+      formData.append("start_date", form.publishDate);
+      formData.append("end_date", form.endDate);
+      formData.append("prepare_start", form.prepareStart);
+      formData.append("prepare_end", form.prepareEnd);
       formData.append("description", form.description);
-      if (form.image) {
-        formData.append("image", form.image);
+      if (form.image) formData.append("banner", form.image); // sesuai validate Laravel
+
+      console.log("TOKEN:", localStorage.getItem("token"));
+      for (const pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
       }
 
-      /* POST API add pameran  */
-      const res = await fetch("/api/pameran", {
-        method: "POST",
-        body: formData,
-      });
+      const data = await PostPameran(formData); // ← langsung dapat data, tidak perlu .json()
 
-      const data = await res.json();
-
-      if (data.success) {
+      if (data.status === "success") {
         alert("Pameran berhasil ditambahkan!");
-        const newId = data.data.id;
-        resetForm();
-
-        router.push(`/admin/pameran/${newId}`);
+        const newId = data.pameran?.id_pameran;
+        router.push(`/admin/pameran/detail/${newId}`);
       } else {
         alert("Gagal menambahkan pameran.");
       }
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      if (error.response) {
+        console.log("STATUS:", error.response.status);
+        console.log("DATA:", error.response.data);
+        console.log(JSON.stringify(error.response.data, null, 2));
+      }
 
       alert("Terjadi kesalahan.");
+      
     } finally {
       setLoading(false);
     }

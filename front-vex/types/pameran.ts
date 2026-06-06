@@ -1,11 +1,32 @@
 export const PRODI_OPTIONS = [
-  'Animasi',
-  'Teknik Informatika',
-  'Teknologi Rekayasa Perangkat Lunak',
-  'Rekayasa Keamanan Siber',
-  'Teknologi Permainan',
-  'Teknologi Rekayasa Multimedia',
-  'Teknik Geomatika',
+  {
+    kode: "AN",
+    nama: "Animasi",
+  },
+  {
+    kode: "IF",
+    nama: "Teknik Informatika",
+  },
+  {
+    kode: "TRPL",
+    nama: "Teknologi Rekayasa Perangkat Lunak",
+  },
+  {
+    kode: "RKS",
+    nama: "Rekayasa Keamanan Siber",
+  },
+  {
+    kode: "TP",
+    nama: "Teknologi Permainan",
+  },
+  {
+    kode: "TRM",
+    nama: "Teknologi Rekayasa Multimedia",
+  },
+  {
+    kode: "GM",
+    nama: "Teknologi Geomatika",
+  },
 ];
 
 export type ProdiOption = (typeof PRODI_OPTIONS)[number];
@@ -39,9 +60,10 @@ export type Pameran = {
   institution: string;
 };
 
-export type PameranForm = {
-  prodi: ProdiOption | '';
+export interface PameranForm {
+  prodi: string; // mengambil data string dari database
   title: string;
+  capacity: number;
   publishDate: string;
   endDate: string;
   prepareStart: string;
