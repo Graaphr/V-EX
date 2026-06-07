@@ -18,23 +18,15 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PenggunaSeeder::class
             ]);
+            $this->call([
+                ProdiSeeder::class
+                ]);
+                $this->call([
+                    ModelSeeder::class
+                    ]);
+                    $this->call([
+                        KelasSeeder::class
+                        ]);
     }
-    public function runProdi(): void
-    {
-        $this->call([
-            ProdiSeeder::class
-            ]);
-    }
-    public function runModel(): void
-    {
-        $this->call([
-            ModelSeeder::class
-            ]);
-    }
-    public function runKelas(): void
-    {
-        $this->call([
-            KelasSeeder::class
-            ]);
-    }
+  
 }
