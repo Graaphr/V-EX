@@ -13,14 +13,10 @@ export default function IndexLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const userMenu = [
-    { title: "BERANDA", subtitle: "UTAMA", link: "/" },
-    { title: "PAMERAN", subtitle: "3D BOOTH", link: "/pameran" },
-    { title: "DASHBOARD", subtitle: "KETUA PBL", link: "/ketua-pbl/karya" },
-  ];
+
   return (
     <div>
-      <Navbar menuItems={userMenu} />
+      <Navbar />
       <NavKetuaPBL />
       {children}
     </div>

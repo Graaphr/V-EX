@@ -1,4 +1,4 @@
-import api from '@/lib/axios';
+import url from '@/lib/axios';
 
 interface EmailPayload {
   email: string;
@@ -17,24 +17,24 @@ interface ResetPasswordPayload {
 
 // Kirim email reset password
 export async function forgotPassword(payload: EmailPayload) {
-  const res = await api.post('/api/auth/forgot-password', payload);
+  const res = await url.post('/api/auth/forgot-password', payload);
   return res.data;
 }
 
 // Kirim ulang email reset password
 export async function resendEmail(payload: EmailPayload) {
-  const res = await api.post('/api/auth/resend-email', payload);
+  const res = await url.post('/api/auth/resend-email', payload);
   return res.data;
 }
 
 // Verifikasi token dari email
 export async function verifyResetToken(payload: VerifyTokenPayload) {
-  const res = await api.post('/api/auth/verify-reset-token', payload);
+  const res = await url.post('/api/auth/verify-reset-token', payload);
   return res.data;
 }
 
 // Simpan password baru
 export async function resetPassword(payload: ResetPasswordPayload) {
-  const res = await api.post('/api/auth/reset-password', payload);
+  const res = await url.post('/api/auth/reset-password', payload);
   return res.data;
 }

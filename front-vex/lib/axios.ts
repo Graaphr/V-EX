@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const api = axios.create({
+const url = axios.create({
   baseURL: "http://localhost:8000",
   headers: {
     Accept: "application/json",
@@ -8,7 +8,7 @@ const api = axios.create({
   },
 });
 
-api.interceptors.request.use((config) => {
+url.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("token");
 
@@ -20,4 +20,4 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export default api;
+export default url;

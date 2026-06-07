@@ -1,7 +1,7 @@
-import api from '@/lib/axios';
+import url from '@/lib/axios';
 
 export async function GetRole(role: string){
-    const res = await api.get(`/api/pengguna/role/${role}`)
+    const res = await url.get(`/api/pengguna/role/${role}`)
     return res.data
 }
 
@@ -12,7 +12,7 @@ export async function CreateUser(data: {
   prodi: string;
   kelas: number;
 }) {
-  const res = await api.post(
+  const res = await url.post(
     "/api/pengguna/register-through-admin",
     data
   );
@@ -32,7 +32,7 @@ export async function UpdateUser(user: UserType) {
         ? user.program_studi : user.prodi?.kode_prodi,
   };
 
-  const res = await api.put(
+  const res = await url.put(
     `/api/pengguna/${user.id}`,
     payload
   );

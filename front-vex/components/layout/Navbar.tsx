@@ -11,6 +11,8 @@ import { FiLogOut } from 'react-icons/fi';
 // COMPONENT
 import { Logo, TextNav } from '@/components/shared/ui/Components';
 import { Button } from '@/components/shared/ui/Button';
+import NavAdmin from '@/components/shared/ui/NavAdmin';
+import NavKetuaPBL from '@/components/shared/ui/NavKetuaPBL';
 
 interface NavItem {
   title: string;
@@ -19,7 +21,7 @@ interface NavItem {
 }
 
 interface NavbarProps {
-  menuItems: NavItem[];
+  menuItems?: NavItem[];
 }
 
 export default function Navbar({ menuItems }: NavbarProps) {
@@ -29,35 +31,45 @@ export default function Navbar({ menuItems }: NavbarProps) {
 
   const { user, logout, loading } = useAuth();
 
-if (loading) {
-  return (
-    <nav className="bg-white px-6 shadow-sm">
-      <div className="autoMid flex h-[70px] items-center justify-between">
-        {/* Left Side */}
-        <div className="flex animate-pulse items-center gap-3">
-          <div className="h-10 w-30 rounded bg-gray-200" />
+  if (loading) {
+    return (
+      <nav className="bg-white px-6 shadow-sm">
+        <div className="autoMid flex h-[70px] items-center justify-between">
+          <div className="flex animate-pulse items-center gap-3">
+            <div className="h-10 w-30 rounded bg-gray-200" />
+          </div>
+          <div className="hidden md:flex animate-pulse items-center gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="h-4 w-28 rounded bg-gray-200" />
+                <div className="h-2 w-16 rounded bg-gray-200" />
+              </div>
+            ))}
+          </div>
+          <div className="flex animate-pulse items-center gap-3">
+            <div className="hidden sm:block h-9 w-24 rounded bg-gray-200" />
+            <div className="h-9 w-9 rounded-full bg-gray-200" />
+          </div>
         </div>
+      </nav>
+    );
+  }
 
-        {/* Center - hidden di mobile */}
-        <div className="hidden md:flex animate-pulse items-center gap-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="space-y-2">
-              <div className="h-4 w-28 rounded bg-gray-200" />
-              <div className="h-2 w-16 rounded bg-gray-200" />
-            </div>
-          ))}
-        </div>
-
-        {/* Right Side */}
-        <div className="flex animate-pulse items-center gap-3">
-          <div className="hidden sm:block h-9 w-24 rounded bg-gray-200" />
-          <div className="h-9 w-9 rounded-full bg-gray-200" />
-        </div>
-      </div>
-    </nav>
-  );
-}
   const isLogin = !!user;
+
+  const resolvedMenu: NavItem[] = user?.role === 'Admin'
+    ? [
+        { title: 'BERANDA', subtitle: 'UTAMA', link: '/' },
+        { title: 'PAMERAN', subtitle: '3D BOOTH', link: '/admin/pameran' },
+        { title: 'DASHBOARD', subtitle: 'ADMIN', link: '/admin/pengguna' },
+      ]
+    : user?.role === 'Ketua PBL'
+    ? [
+        { title: 'BERANDA', subtitle: 'UTAMA', link: '/' },
+        { title: 'PAMERAN', subtitle: '3D BOOTH', link: '/pameran' },
+        { title: 'DASHBOARD', subtitle: 'KETUA PBL', link: '/ketua-pbl/karya' },
+      ]
+    : menuItems ?? [];
 
   // ===== AUTH DESKTOP =====
   const AuthDesktop = () =>
@@ -107,7 +119,7 @@ if (loading) {
 
           {/* DESKTOP MENU */}
           <div className="hidden lg:flex items-center gap-10 select-none">
-            {menuItems.map((item, index) => (
+            {resolvedMenu.map((item, index) => (
               <TextNav key={index} link={item.link} title={item.title} subtitle={item.subtitle} />
             ))}
           </div>
@@ -130,14 +142,14 @@ if (loading) {
           }`}
         >
           <div className="px-4 pb-5 flex flex-col gap-4">
-            {menuItems.map((item, index) => (
+            {resolvedMenu.map((item, index) => (
               <TextNav key={index} link={item.link} title={item.title} subtitle={item.subtitle} />
             ))}
-
             <AuthMobile />
           </div>
         </div>
       </nav>
+
 
       {/* PROFILE SIDEBAR */}
       <div
@@ -160,13 +172,11 @@ if (loading) {
                 <div className="w-12 h-12 rounded-full bg-main-blue flex items-center justify-center text-white">
                   <FaUser size={20} className="rounded-full" />
                 </div>
-
                 <div>
                   <p className="font-semibold">{user?.nama || 'User'}</p>
                   <p className="text-xs text-gray-500 truncate max-w-[170px]">{user?.email || 'user@mail.com'}</p>
                 </div>
               </div>
-
               <button className="cursor-pointer" onClick={() => setOpenProfile(false)}>
                 <HiX size={24} />
               </button>

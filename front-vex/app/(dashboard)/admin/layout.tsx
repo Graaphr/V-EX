@@ -15,14 +15,10 @@ export default function IndexLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const userMenu = [
-    { title: "BERANDA", subtitle: "UTAMA", link: "/" },
-    { title: "PAMERAN", subtitle: "3D BOOTH", link: "/admin/pameran" },
-    { title: "DASHBOARD", subtitle: "ADMIN", link: "/admin/pengguna" },
-  ];
+
   return (
     <div>
-      <Navbar menuItems={userMenu} />
+      <Navbar />
       <NavAdmin />
       {children}
       <Footer />

@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import api from '@/lib/axios';
+import url from '@/lib/axios';
 
 type User = {
   id: number;
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const response = await api.get('/api/user');
+      const response = await url.get('/api/user');
 
       setUser(response.data.user ?? response.data);
     } catch (error: any) {
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // LOGOUT
   const logout = async () => {
     try {
-      await api.post('/api/logout');
+      await url.post('/api/logout');
     } catch (error) {
       console.warn('Logout request failed, clearing local session anyway.');
     } finally {

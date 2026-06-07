@@ -1,4 +1,4 @@
-import api from "@/lib/axios";
+import url from "@/lib/axios";
 
 interface LoginPayload{
     email : string;
@@ -7,7 +7,7 @@ interface LoginPayload{
 
 // Login API
 export async function Login(Payload: LoginPayload ) {
-    const res = await api.post('/api/auth/login',Payload);
+    const res = await url.post('/api/auth/login',Payload);
     return res.data;
     
 }

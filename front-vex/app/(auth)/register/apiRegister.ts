@@ -1,4 +1,4 @@
-import api from '@/lib/axios';
+import url from '@/lib/axios';
 
 interface RegisterPayload {
   nama: string;
@@ -9,6 +9,6 @@ interface RegisterPayload {
 
 // Register akun baru
 export async function Register(payload: RegisterPayload) {
-  const res = await api.post('/api/auth/register', payload);
+  const res = await url.post('/api/auth/register', payload);
   return res.data;
 }
