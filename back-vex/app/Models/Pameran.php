@@ -13,8 +13,6 @@ class Pameran extends Model
     protected $fillable = [
         'model_pameran',
         'kategori',
-        'tahun',
-        'semester',
         'banner',
         'judul',
         'deskripsi',
