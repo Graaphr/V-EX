@@ -7,7 +7,7 @@ yyuy
         halaman register (RegisterPage): OK,
         halaman lupa password :{
             email (LupaPasswordEmailPage): OK,
-            ganti-password (GantiPasswordPage): OK,
+            ubah-password (UbahPasswordPage): OK,
         },
         halaman verifikasi (VerifikasiPage): OK,
         halaman ganti email (GantiEmailPage) : OK 

@@ -1,5 +1,3 @@
-// app/settings/ganti-email/api.ts
-
 import api from '@/lib/axios';
 
 interface SendVerificationPayload {
@@ -11,21 +9,14 @@ interface VerifyPayload {
     otp: string;
 }
 
-/**
- * STEP 1 — POST /api/change-email/send
- * Kirim token verifikasi ke email baru.
- * Membutuhkan: Bearer token (auth middleware Laravel)
- */
+// STEP 1 — POST mengirim email verivikasi
 export async function sendVerification(payload: SendVerificationPayload) {
     const res = await api.post('/api/change-email/send', payload);
     return res.data;
 }
 
-/**
- * STEP 2 — POST /api/change-email/verify
- * Verifikasi token dan eksekusi penggantian email.
- * Membutuhkan: Bearer token (auth middleware Laravel)
- */
+
+// STEP 2 — POST veriviakasi token
 export async function verifyToken(payload: VerifyPayload) {
     const res = await api.post('/api/change-email/verify', payload);
     return res.data;

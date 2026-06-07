@@ -1,33 +1,28 @@
 'use client';
 import React, { useState } from 'react';
-import { motion, AnimatePresence, Transition } from 'framer-motion';
+import { motion, Transition } from 'framer-motion';
 import Link from 'next/link';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-
 // Komponen
 import { Logo } from '@/components/shared/ui/Components';
 import { Button, ButtonPutih } from '@/components/shared/ui/Button';
 import { VectorBox } from '@/components/shared/ui/BoxModel';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-
 // API
-import api from '@/lib/axios';
+import {Login} from "./apiLogin";
 import axios from 'axios';
 
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  // AUTH
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
-  // DATA
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!email || !password) {
       alert('Harap isi email dan kata sandi');
       return;
@@ -36,18 +31,16 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await api.post('/api/auth/login', {
-        email: email,
-        password: password,
-      });
+      const res = await Login (
+        {email, password}
+      );
 
-      const { token, user } = response.data;
-
+      const { token, user } = res;
       login(token, user);
       alert('Login Berhasil!');
 
       // VALIDASI
-      const direct = response.data['redirect_to'];
+      const direct = res['redirect_to'];
       if (user.role?.toLowerCase() === 'admin') {
         router.push(direct);
       } else {
@@ -64,7 +57,7 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
-  // Animate
+
   const slideUp = {
     initial: { y: '100vh', opacity: 0 },
     animate: { y: [0, -15, 0], opacity: 1 },
@@ -81,7 +74,6 @@ export default function LoginPage() {
     ease: 'easeOut',
   });
 
-  // Position
   const boxes = [
     {
       d: 0.2,
@@ -188,7 +180,7 @@ export default function LoginPage() {
           </div>
 
           <div className="flex justify-end">
-            <Link href="/lupa-password/email" className="text-sm hover:text-main-blue">
+            <Link href="/lupa-password" className="text-sm hover:text-main-blue">
               Lupa Kata Sandi?
             </Link>
           </div>
