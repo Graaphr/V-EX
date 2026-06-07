@@ -11,6 +11,15 @@ class PenggunaSeeder extends Seeder
 {
     public function run(): void
     {
+        // Pegunjung
+        Pengguna::create([
+            'nama'          => 'User',
+            'email'         => 'user@pbl.com',
+            'password'      => Hash::make('password123'),
+            'role'          => Pengguna::ROLE_PENGUNJUNG,
+            'kelas'         => null,
+            'program_studi' => null,
+        ]);
         // Admin
         Pengguna::create([
             'nama'          => 'Admin Utama',
