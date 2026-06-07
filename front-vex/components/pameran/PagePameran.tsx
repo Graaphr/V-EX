@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Link from "next/link";
+import { GetPameran } from "./apiPameran";
 
 import ProjectCard from "@/components/shared/ui/ProjectCard";
 import { ProdiType } from "@/components/shared/filter/SelectProdi";
@@ -45,13 +46,19 @@ export default function PagePameran({ href = "/pameran/" }: PameranProps) {
     });
   }, [data, search, selectedProdi, selectedTahun]);
 
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+
+  const upcomingData = filteredData
+    .filter((item) => new Date(item.date) > today) // hanya yang belum/sedang berlangsung
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // terdekat duluan
+    .slice(0, 5);
+
   // mengambil data dari API {sudah nyambung dengan API pameran yang ada di route front(data)}
   useEffect(() => {
     async function loadPameran() {
       try {
-        const response = await fetch("/api/pameran"); // Ambil data dari API
-
-        const data = await response.json();
+        const data = await GetPameran(); // Ambil data dari API
 
         setData(data.pameran || []);
       } catch (error) {
@@ -94,12 +101,19 @@ export default function PagePameran({ href = "/pameran/" }: PameranProps) {
             <h2 className="mb-5 md:mb-6 text-2xl sm:text-3xl md:text-[40px] text-white font-semibold border-b-2 md:border-b-3 pb-2">
               SEGERA HADIR
             </h2>
-            <CarouselSection
-              className="w-full text-white"
-              data={filteredData.slice(0, 5)}
-              href={href}
-              emblaRef={emblaRef}
-            />
+
+            {upcomingData.length === 0 ? (
+              <p className="text-white/60 text-sm py-4">
+                Tidak ada pameran dalam waktu dekat.
+              </p>
+            ) : (
+              <CarouselSection
+                className="w-full text-white"
+                data={upcomingData}
+                href={href}
+                emblaRef={emblaRef}
+              />
+            )}
           </div>
         </div>
       </section>

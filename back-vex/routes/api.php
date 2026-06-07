@@ -66,7 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // manajemen pameran
         Route::get('/pameran', [PameranController::class, 'index']);
-        Route::post('/pameran', [PameranController::class, 'store']);
+        Route::post('/pameran/add', [PameranController::class, 'store']);
         Route::get('/pameran/{id}', [PameranController::class, 'show']);
         Route::put('/pameran/{id}', [PameranController::class, 'update']);
         Route::delete('/pameran/{id}', [PameranController::class, 'destroy']);

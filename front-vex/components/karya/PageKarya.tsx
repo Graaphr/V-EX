@@ -22,7 +22,7 @@ export default function PageKarya({ href  }: Props) {
   const [selectedSemester, setSelectedSemester] = useState<SemesterType | null>(null);
   const [search, setSearch] = useState('');
   const [pages, setPages] = useState<Record<string, number>>({});
-  const PER_PAGE = 6;
+  const PER_PAGE = 4;
 
   const changePage = (category: string, type: 'next' | 'prev', totalPages: number) => {
     setPages((prev) => {

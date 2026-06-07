@@ -11,14 +11,14 @@ import { useParams } from 'next/navigation';
 
 import { Button } from '../shared/ui/Button';
 import { Pameran } from '@/types/pameran';
-
+import { GetDetailPameran } from './apiPameran';
 interface Status {
   isLogin?: boolean;
 }
 
 export default function PageDetailPameran({ isLogin = false }: Status) {
   const params = useParams();
-  const id = params.id as string;
+  const id = Number(params.id);
 
   const [pameran, setPameran] = useState<Pameran | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,12 +33,11 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
 
     async function load() {
       try {
-        const res  = await fetch(`/api/pameran/${id}`);
-        const json = await res.json();
+        const data  = await GetDetailPameran(id);
 
-        if (!res.ok) throw new Error(json.message ?? 'Pameran tidak ditemukan');
+        if (data.status !== 'success') throw new Error(data.message ?? 'Pameran tidak ditemukan');
 
-        setPameran(json.pameran);
+        setPameran(data.pameran);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -112,7 +111,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
               <img
                 src={bannerImage}
                 alt={title}
-                className="w-full h-full min-h-[100px] md:min-h-[168px] lg:min-h-[300px] object-cover rounded-lg shadow-lg/40"
+                className="w-full h-full max-h-[200px] md:max-h-[280px] lg:max-h-[340px] object-cover rounded-lg shadow-lg/40"
               />
             </div>
 

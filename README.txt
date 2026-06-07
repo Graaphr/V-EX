@@ -62,5 +62,26 @@ yyuy
 : Folder context menyimpan identitas User kredensial dan session
 : Folder types menyimpan types yang sering di gunakan dalam operasi
 
+{fitur backend implementasi}[
+    (GetPameranAll){
+        sudah terhubung dengan controller namun belum dioptimalisasi
+    }
+
+    (GetDetailPameran){
+        sudah terhubung dengan controller
+    }
+
+    (PostPameran){
+        sudah terhubung dengan controller.
+
+        *note: tampilan admin masih di dalam pameran/detail/[id]/page.tsx belum digabung
+    }
+]
+
+
 NOTE :
 
+* Loading nya lama
+* Saat back datanya ke load ulang bukannya ke refresh
+* Menyimpan kookies untuk load session page admin 
+* Unntuk menghubungkan melalui ApiPameran bukan lagi route jadi langsung terhubung dengan controller

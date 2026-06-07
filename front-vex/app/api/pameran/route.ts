@@ -93,87 +93,60 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
-    const title = formData.get("title") as string;
-    const prodi = formData.get("prodi") as string;
-    const publishDate = formData.get("publishDate") as string;
-    const endDate = formData.get("endDate") as string;
-    const prepareStart = formData.get("prepareStart") as string;
-    const prepareEnd = formData.get("prepareEnd") as string;
-    const description = formData.get("description") as string;
-    const fileImage = formData.get("image") as File | null;
-    const file = fs.readFileSync(jsonPath, "utf-8");
-    const data = JSON.parse(file);
-    const newId = String(data.length + 1);
-    const userFolder = path.join(uploadDir, newId);
-    if (!fs.existsSync(userFolder)) {
-      fs.mkdirSync(userFolder, {
-        recursive: true,
-      });
+
+    const authHeader = req.headers.get("authorization");
+
+    const backendForm = new FormData();
+
+    backendForm.append("kategori", formData.get("prodi") as string);
+
+    backendForm.append("semester", "6");
+
+    backendForm.append("judul", formData.get("title") as string);
+
+    backendForm.append("deskripsi", formData.get("description") as string);
+
+    backendForm.append("tanggal_mulai", formData.get("publishDate") as string);
+
+    backendForm.append("tanggal_akhir", formData.get("endDate") as string);
+
+    backendForm.append(
+      "tanggal_mulai_persiapan",
+      formData.get("prepareStart") as string,
+    );
+
+    backendForm.append(
+      "tanggal_akhir_persiapan",
+      formData.get("prepareEnd") as string,
+    );
+
+    const image = formData.get("image");
+
+    if (image) {
+      backendForm.append("banner", image as File);
     }
 
-    let bannerImage = "http://localhost:8000/storage/banner/default.jpg";
-
-    if (fileImage && fileImage.size > 0) {
-      const bytes = await fileImage.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const ext = fileImage.name.split(".").pop();
-      const fileName = `${Date.now()}.${ext}`;
-
-      if (!fs.existsSync(imageDir)) {
-        fs.mkdirSync(imageDir, {
-          recursive: true,
-        });
-      }
-
-      fs.writeFileSync(path.join(imageDir, fileName), buffer);
-
-      bannerImage = `/image/${fileName}`;
-    }
-
-    const newData = {
-      id: newId,
-      title,
-      subtitle: prodi,
-      category: prodi,
-      date: formatLongDate(publishDate),
-      bannerImage,
-      likes: 0,
-      karya: 0,
-      description: [
-        {
-          title: "Deskripsi",
-          content: description,
-        },
-      ],
-      stats: {
-        likes: 0,
-        karya: 0,
-        prepareStartDate: toSlashDate(prepareStart),
-        prepareEndDate: toSlashDate(prepareEnd),
-        startDate: toSlashDate(publishDate),
-        endDate: toSlashDate(endDate),
-        studyLevel: prodi,
+    const response = await api.post("/api/admin/pameran", backendForm, {
+      headers: {
+        "Content-Type": "multipart/form-data",
       },
-
-      institution: "Politeknik Negeri Batam",
-    };
-
-    data.push(newData);
-
-    fs.writeFileSync(jsonPath, JSON.stringify(data, null, 2));
+    });
 
     return NextResponse.json({
       success: true,
-      data: newData,
+      data: response.data.pameran,
     });
-
-  } catch (error) {
-
+  } catch (error: any) {
+    console.error(error.response?.data);
+    console.log("ERROR LARAVEL:", error.response?.data);
     return NextResponse.json(
       {
         success: false,
+        error: error.response?.data,
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }
