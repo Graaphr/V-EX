@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { PameranForm } from "@/types/pameran";
 import FormPameran from "./FormPameran";
 import { PostPameran } from "./apiPameran";
+import { showToast } from "@/components/shared/ui/ToastNotification";
 
 export default function AddPameran() {
   const router = useRouter();
@@ -62,7 +63,6 @@ export default function AddPameran() {
     setPreview(null);
   };
 
-
   const handleSubmit = async () => {
     if (
       !form.title ||
@@ -72,7 +72,7 @@ export default function AddPameran() {
       !form.prepareEnd ||
       !form.description
     ) {
-      alert("Lengkapi semua data terlebih dahulu.");
+      showToast("Lengkapi semua data terlebih dahulu.", "warning");
       return;
     }
 
@@ -98,21 +98,41 @@ export default function AddPameran() {
       const data = await PostPameran(formData); // ← langsung dapat data, tidak perlu .json()
 
       if (data.status === "success") {
-        alert("Pameran berhasil ditambahkan!");
+        showToast("Pameran berhasil ditambahkan!", "success");
         const newId = data.pameran?.id_pameran;
         router.push(`/admin/pameran/detail/${newId}`);
       } else {
-        alert("Gagal menambahkan pameran.");
+        showToast("Gagal menambahkan pameran.", "error");
       }
     } catch (error: any) {
       if (error.response) {
-        console.log("STATUS:", error.response.status);
-        console.log("DATA:", error.response.data);
-        console.log(JSON.stringify(error.response.data, null, 2));
-      }
+        const status = error.response.status;
+        const data = error.response.data;
 
-      alert("Terjadi kesalahan.");
-      
+        if (status === 422) {
+          // Validation error dari Laravel — ambil pesan pertama
+          const errors = data.errors;
+          const firstError = errors
+            ? (Object.values(errors)[0] as string[])
+            : null;
+          showToast(firstError?.[0] ?? "Data tidak valid.", "error");
+        } else if (status === 404) {
+          showToast(data.message ?? "Data tidak ditemukan.", "error");
+        } else if (status === 500) {
+          showToast(data.message ?? "Terjadi kesalahan pada server.", "error");
+        } else {
+          showToast(
+            `Error ${status}: ${data.message ?? "Terjadi kesalahan."}`,
+            "error",
+          );
+        }
+
+        console.error("STATUS:", status);
+        console.error("DATA:", JSON.stringify(data, null, 2));
+      } else {
+        // Network error / timeout
+        showToast("Tidak dapat terhubung ke server.", "error");
+      }
     } finally {
       setLoading(false);
     }

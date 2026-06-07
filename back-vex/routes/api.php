@@ -58,14 +58,10 @@ Route::prefix('auth')->group(function () {
     );
 
 
-    
+
 });
 
-Route::prefix('pengguna')->group(function(){
-    Route::post('/register-through-admin',[PenggunaController::class, 'registerThroughAdmin']);
-    Route::get('/role/{role}', [PenggunaController::class, 'getByRole']);
-    Route::put('/{id}', [PenggunaController::class, 'updateThroughAdmin']);
-});
+
 
 // Publik Akses
 Route::get('/pameran', [PameranController::class, 'index']);
@@ -102,30 +98,12 @@ Route::middleware('auth:sanctum')->group(function () {
                 return response()->json(['status' => 'success', 'page' => 'Admin Dashboard']);
             });
 
-            // Manajemen pengguna
-            Route::get('/pengguna', [AdminController::class, 'daftarPengguna']);
-            Route::post('/pengguna', [AdminController::class, 'tambahPengguna']);
-            Route::get('/pengguna/{id}', [AdminController::class, 'detailPengguna']);
-            Route::put('/pengguna/{id}', [AdminController::class, 'editPengguna']);
-            Route::patch('/pengguna/{id}/aktifkan', [AdminController::class, 'aktifkanAkun']);
-            Route::patch('/pengguna/{id}/nonaktifkan', [AdminController::class, 'nonaktifkanAkun']);
+            Route::post('/pengguna/register-through-admin', [PenggunaController::class, 'registerThroughAdmin']);
+            Route::get('/pengguna/role/{role}', [PenggunaController::class, 'getByRole']);
+            Route::put('/pengguna/{id}', [PenggunaController::class, 'updateThroughAdmin']);
 
-            // Manajemen pameran
-            Route::get('/pameran', [PameranController::class, 'index']);
-            Route::post('/pameran', [PameranController::class, 'store']);
-            Route::get('/pameran/{id}', [PameranController::class, 'show']);
-            Route::put('/pameran/{id}', [PameranController::class, 'update']);
-            Route::delete('/pameran/{id}', [PameranController::class, 'destroy']);
-       
-
-            // Manajemen pengguna
-            Route::get('/pengguna', [AdminController::class, 'daftarPengguna']);
-            Route::post('/pengguna', [AdminController::class, 'tambahPengguna']);
-            Route::get('/pengguna/{id}', [AdminController::class, 'detailPengguna']);
-            Route::put('/pengguna/{id}', [AdminController::class, 'editPengguna']);
-            Route::patch('/pengguna/{id}/aktifkan', [AdminController::class, 'aktifkanAkun']);
-            Route::patch('/pengguna/{id}/nonaktifkan', [AdminController::class, 'nonaktifkanAkun']);
-
+            
+    
             // Manajemen pameran
             Route::get('/pameran', [PameranController::class, 'index']);
             Route::post('/pameran/add', [PameranController::class, 'store']);

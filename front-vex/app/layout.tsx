@@ -1,6 +1,9 @@
 import "@/app/globals.css";
 import type { Metadata } from "next";
 import { Tilt_Warp, Poppins } from "next/font/google";
+import ToastContainer from "@/components/shared/ui/ToastNotification";
+
+// API
 import { AuthProvider } from "@/context/AuthContext";
 
 const poppins = Poppins({
@@ -29,6 +32,7 @@ export default function RootLayout({
       <body className={`${poppins.variable} ${tiltWarp.variable} font-poppins`}>
         <AuthProvider>
           {children}
+          <ToastContainer /> 
           </AuthProvider>
       </body>
     </html>

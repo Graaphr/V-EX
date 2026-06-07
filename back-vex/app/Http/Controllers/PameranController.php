@@ -87,6 +87,7 @@ class PameranController extends Controller
             'stats' => [
                 'likes' => 0,
                 'karya' => 0,
+                'kapasitas' => $pameran->kapasitas, 
                 'prepareStartDate' => $pameran->tanggal_mulai_persiapan,
                 'prepareEndDate' => $pameran->tanggal_akhir_persiapan,
                 'startDate' => $pameran->tanggal_mulai,
@@ -208,28 +209,6 @@ class PameranController extends Controller
             'status' => 'success',
             'message' => 'Pameran berhasil diubah.',
             'pameran' => $pameran,
-        ]);
-    }
-    // =============================
-    // HAPUS PAMERAN
-    // =============================
-    public function destroy($id)
-    {
-        $pameran = Pameran::find($id);
-
-        if (!$pameran) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Pameran tidak ditemukan.',
-            ], 404);
-        }
-
-        Storage::disk('public')->delete($pameran->banner);
-        $pameran->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Pameran berhasil dihapus.',
         ]);
     }
 }
