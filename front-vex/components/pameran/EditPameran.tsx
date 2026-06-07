@@ -5,16 +5,17 @@ import { useParams, useRouter } from "next/navigation";
 import { PameranForm, PRODI_OPTIONS } from "@/types/pameran";
 import FormPameran from "./FormPameran";
 import { GetDetailPameran, UpdatePameran } from "./apiPameran";
+import { showToast } from "@/components/shared/ui/ToastNotification";
 
 export default function EditPameran() {
   const params = useParams();
   const router = useRouter();
   const id = Number(Array.isArray(params?.id) ? params.id[0] : params?.id);
 
-  const [loading, setLoading]   = useState(false);
+  const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [preview, setPreview]   = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
 
   const [form, setForm] = useState<PameranForm>({
     prodi: "",
@@ -28,7 +29,6 @@ export default function EditPameran() {
     image: null,
   });
 
-  // Handle format "2024-12-31T00:00:00" → "2024-12-31"
   const toInputDate = (value?: string) => {
     if (!value) return "";
     if (value.includes("/")) {
@@ -52,20 +52,16 @@ export default function EditPameran() {
 
         const p = res.pameran;
 
-        // Cari nama prodi berdasarkan category dari API
-        // category berisi nama_prodi, langsung pakai untuk value dropdown
-        // const namaProdi = p.category || "";
-
         setForm({
-          prodi:        p.kode_prodi || "",
-          title:        p.title || "",
-          capacity:     p.stats?.kapasitas ?? 0,
-          publishDate:  toInputDate(p.stats?.startDate),
-          endDate:      toInputDate(p.stats?.endDate),
+          prodi: p.kode_prodi || "",
+          title: p.title || "",
+          capacity: p.stats?.kapasitas ?? 0,
+          publishDate: toInputDate(p.stats?.startDate),
+          endDate: toInputDate(p.stats?.endDate),
           prepareStart: toInputDate(p.stats?.prepareStartDate),
-          prepareEnd:   toInputDate(p.stats?.prepareEndDate),
-          description:  p.description?.[0]?.content || "",
-          image:        null,
+          prepareEnd: toInputDate(p.stats?.prepareEndDate),
+          description: p.description?.[0]?.content || "",
+          image: null,
         });
 
         setPreview(p.bannerImage || null);
@@ -80,7 +76,9 @@ export default function EditPameran() {
   }, [id]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -94,9 +92,15 @@ export default function EditPameran() {
   };
 
   const handleSubmit = async () => {
-    if (!form.title || !form.publishDate || !form.endDate ||
-        !form.prepareStart || !form.prepareEnd || !form.description) {
-      alert("Lengkapi semua data terlebih dahulu.");
+    if (
+      !form.title ||
+      !form.publishDate ||
+      !form.endDate ||
+      !form.prepareStart ||
+      !form.prepareEnd ||
+      !form.description
+    ) {
+      showToast("Lengkapi semua data terlebih dahulu.", "warning");
       return;
     }
 
@@ -104,8 +108,7 @@ export default function EditPameran() {
       setLoading(true);
 
       const formData = new FormData();
-      // formData.append("_method", "PUT");           // Laravel method spoofing
-      formData.append("kategori", form.prodi);     // nama_prodi langsung
+      formData.append("kategori", form.prodi);
       formData.append("judul", form.title);
       formData.append("kapasitas", String(form.capacity));
       formData.append("tanggal_mulai", form.publishDate);
@@ -118,33 +121,56 @@ export default function EditPameran() {
       const data = await UpdatePameran(id, formData);
 
       if (data.status === "success") {
-        alert("Pameran berhasil diupdate!");
+        showToast("Pameran berhasil diupdate!", "success");
         router.push(`/admin/pameran/detail/${id}`);
       } else {
-        alert("Gagal update pameran.");
+        showToast("Gagal mengupdate pameran.", "error");
       }
     } catch (error: any) {
       if (error.response) {
-        console.error("STATUS:", error.response.status);
-        console.error("DATA:", JSON.stringify(error.response.data, null, 2));
+        const status = error.response.status;
+        const data = error.response.data;
+
+        if (status === 422) {
+          const errors = data.errors as Record<string, string[]>;
+          if (errors) {
+            const firstField = Object.keys(errors)[0];
+            showToast(errors[firstField][0], "error");
+          } else {
+            showToast("Data yang dimasukkan tidak valid.", "error");
+          }
+        } else if (status === 404) {
+          showToast(data.message ?? "Data tidak ditemukan.", "error");
+        } else if (status === 500) {
+          showToast("Terjadi kesalahan pada server.", "error");
+        } else {
+          showToast(`Terjadi kesalahan (${status}).`, "error");
+        }
+
+        console.error("STATUS:", status);
+        console.error("DATA:", JSON.stringify(data, null, 2));
+      } else {
+        showToast("Tidak dapat terhubung ke server.", "error");
+        console.error(error);
       }
-      alert("Terjadi kesalahan saat update.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (fetching) return (
-    <div className="min-h-screen bg-secondary-color flex items-center justify-center">
-      <p className="text-white">Memuat data pameran...</p>
-    </div>
-  );
+  if (fetching)
+    return (
+      <div className="min-h-screen bg-secondary-color flex items-center justify-center">
+        <p className="text-white">Memuat data pameran...</p>
+      </div>
+    );
 
-  if (notFound) return (
-    <div className="min-h-screen bg-secondary-color flex items-center justify-center">
-      <p className="text-white">Data pameran tidak ditemukan.</p>
-    </div>
-  );
+  if (notFound)
+    return (
+      <div className="min-h-screen bg-secondary-color flex items-center justify-center">
+        <p className="text-white">Data pameran tidak ditemukan.</p>
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-secondary-color select-none pb-20 md:pb-30">

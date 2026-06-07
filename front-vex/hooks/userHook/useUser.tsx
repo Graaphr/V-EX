@@ -1,38 +1,39 @@
-import { useEffect, useMemo, useState } from 'react';
-import { StatusType } from '@/components/shared/filter/SelectStatus';
-import { UserType } from '@/types/pengguna';
-import { GetRole, CreateUser, UpdateUser } from "@/components/pengguna/apiPengguna";
+import { useEffect, useMemo, useState } from "react";
+import { StatusType } from "@/components/shared/filter/SelectStatus";
+import { UserType } from "@/types/pengguna";
+import {
+  GetRole,
+  CreateUser,
+  UpdateUser,
+} from "@/components/pengguna/apiPengguna";
 
 const ITEMS_PER_PAGE = 12;
 
 export function useUsers() {
   const [users, setUsers] = useState<UserType[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<StatusType | null>(null);
   const [pageMhs, setPageMhs] = useState(1);
-  const [isLoading, setIsLoading] = useState(true); 
+  const [isLoading, setIsLoading] = useState(true);
 
   /* ---------- Load ---------- */
   const loadUsers = async () => {
-  try {
-    setIsLoading(true);
+    try {
+      setIsLoading(true);
 
-    const [kpsRes, mhsRes] = await Promise.all([
-      GetRole("KPS"),
-      GetRole("Ketua PBL"),
-    ]);
+      const [kpsRes, mhsRes] = await Promise.all([
+        GetRole("KPS"),
+        GetRole("Ketua PBL"),
+      ]);
 
-    setUsers([
-      ...kpsRes.data,
-      ...mhsRes.data,
-    ]);
-  } catch (error) {
-    console.error(error);
-    setUsers([]);
-  } finally {
-    setIsLoading(false);
-  }
-};
+      setUsers([...kpsRes.data, ...mhsRes.data]);
+    } catch (error) {
+      console.error(error);
+      setUsers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadUsers();
@@ -41,18 +42,22 @@ export function useUsers() {
   /* ---------- Filter ---------- */
   const filterData = (data: UserType[]) =>
     data.filter((item) => {
-      const matchName = item.nama.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchStatus = selectedStatus ? item.status === selectedStatus.value : true;
+      const matchName = item.nama
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchStatus = selectedStatus
+        ? item.status === selectedStatus.value
+        : true;
       return matchName && matchStatus;
     });
 
   const filteredKps = useMemo(
-    () => filterData(users.filter((u) => u.role === 'KPS')),
+    () => filterData(users.filter((u) => u.role === "KPS")),
     [users, searchTerm, selectedStatus],
   );
 
   const filteredMhs = useMemo(
-    () => filterData(users.filter((u) => u.role !== 'KPS')),
+    () => filterData(users.filter((u) => u.role !== "KPS")),
     [users, searchTerm, selectedStatus],
   );
 
@@ -61,42 +66,54 @@ export function useUsers() {
     setPageMhs(1);
   }, [searchTerm, selectedStatus]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredMhs.length / ITEMS_PER_PAGE));
-  const paginatedMhs = filteredMhs.slice((pageMhs - 1) * ITEMS_PER_PAGE, pageMhs * ITEMS_PER_PAGE);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredMhs.length / ITEMS_PER_PAGE),
+  );
+  const paginatedMhs = filteredMhs.slice(
+    (pageMhs - 1) * ITEMS_PER_PAGE,
+    pageMhs * ITEMS_PER_PAGE,
+  );
 
   const nextPage = () => setPageMhs((p) => Math.min(p + 1, totalPages));
   const prevPage = () => setPageMhs((p) => Math.max(p - 1, 1));
 
   /* ---------- CRUD ---------- */
   const addUser = async (newUser: Omit<UserType, "id">) => {
-  try {
-    await CreateUser({
-      nama: newUser.nama,
-      email: newUser.email,
-      role: newUser.role,
-      kelas: newUser.kelas,
-      prodi: newUser.prodi,
-    });
+    try {
+      await CreateUser({
+        nama: newUser.nama,
+        email: newUser.email,
+        role: newUser.role,
+        kelas: newUser.kelas,
+        prodi: newUser.prodi,
+      });
+      await loadUsers();
+      return true; // ← tambah ini
+    } catch (error) {
+      console.error(error);
+      return false; // ← tambah ini
+    }
+  };
 
-    await loadUsers();
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-const updateUser = async (user: UserType) => {
-  try {
-    await UpdateUser(user);
-    await loadUsers();
-  } catch (error) {
-    console.error(error);
-  }
-};
+  const updateUser = async (user: UserType) => {
+    try {
+      await UpdateUser(user);
+      await loadUsers();
+      return true; // ← tambah ini
+    } catch (error) {
+      console.error(error);
+      return false; // ← tambah ini
+    }
+  };
 
   const toggleStatus = async (user: UserType) => {
-    const updated = { ...user, status: user.status === 'Aktif' ? 'Tidak Aktif' : 'Aktif' };
-    await updateUser(updated);
-    return updated;
+    const updated = {
+      ...user,
+      status: user.status === "Aktif" ? "Tidak Aktif" : "Aktif",
+    };
+    const success = await updateUser(updated);
+    return { updated, success }; // ← return keduanya
   };
 
   return {
@@ -114,6 +131,6 @@ const updateUser = async (user: UserType) => {
     addUser,
     updateUser,
     toggleStatus,
-    isLoading, 
+    isLoading,
   };
 }

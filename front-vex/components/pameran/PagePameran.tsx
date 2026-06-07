@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Link from "next/link";
 import { GetPameran } from "./apiPameran";
+import { useAuth } from "@/context/AuthContext";
 
 import ProjectCard from "@/components/shared/ui/ProjectCard";
 import { ProdiType } from "@/components/shared/filter/SelectProdi";
@@ -19,8 +20,10 @@ interface PameranProps {
 }
 
 export default function PagePameran({ href = "/pameran/" }: PameranProps) {
-  const [emblaRef] = useEmblaCarousel({ align: "start" });
+  const { user } = useAuth();
+  const isAdmin = user?.role === "Admin";
 
+  const [emblaRef] = useEmblaCarousel({ align: "start" });
   const [selectedProdi, setSelectedProdi] = useState<ProdiType | null>(null);
   const [selectedTahun, setSelectedTahun] = useState<TahunType | null>(null);
   const [selectedSemester, setSelectedSemester] = useState<SemesterType | null>(
@@ -30,18 +33,29 @@ export default function PagePameran({ href = "/pameran/" }: PameranProps) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  /* FILTER DATA */
+  useEffect(() => {
+    async function loadPameran() {
+      try {
+        const res = await GetPameran();
+        setData(res.pameran || []);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadPameran();
+  }, []);
+
   const filteredData = useMemo(() => {
     return data.filter((item) => {
       const matchSearch =
         item.title.toLowerCase().includes(search.toLowerCase()) ||
         item.category.toLowerCase().includes(search.toLowerCase());
-
       const matchProdi = !selectedProdi || item.category === selectedProdi.name;
       const matchTahun =
         !selectedTahun ||
         new Date(item.date).getFullYear().toString() === selectedTahun.name;
-
       return matchSearch && matchProdi && matchTahun;
     });
   }, [data, search, selectedProdi, selectedTahun]);
@@ -53,10 +67,11 @@ export default function PagePameran({ href = "/pameran/" }: PameranProps) {
   oneWeekLater.setDate(oneWeekLater.getDate() + 7);
   oneWeekLater.setHours(23, 59, 59, 999);
 
-  // Carousel: startDate antara besok s/d 7 hari ke depan (masih locked)
+  // Carousel: admin → semua yang belum mulai, user → 1-7 hari ke depan
   const upcomingData = filteredData
     .filter((item) => {
       const start = new Date(item.stats?.startDate);
+      if (isAdmin) return start > today;
       return start > today && start <= oneWeekLater;
     })
     .sort(
@@ -66,33 +81,16 @@ export default function PagePameran({ href = "/pameran/" }: PameranProps) {
     )
     .slice(0, 5);
 
-  // Category: sudah dibuka (startDate <= today <= endDate)
+  // Category: admin → semua, user → hanya yang sedang berlangsung
   const openData = filteredData.filter((item) => {
+    if (isAdmin) return true;
     const start = new Date(item.stats?.startDate);
     const end = new Date(item.stats?.endDate);
     end.setHours(23, 59, 59, 999);
     return today >= start && today <= end;
   });
 
-  // Category hanya dari prodi yang punya pameran terbuka
   const categories = [...new Set(openData.map((i) => i.category))];
-
-  // mengambil data dari API {sudah nyambung dengan API pameran yang ada di route front(data)}
-  useEffect(() => {
-    async function loadPameran() {
-      try {
-        const data = await GetPameran(); // Ambil data dari API
-
-        setData(data.pameran || []);
-      } catch (error) {
-        console.error(error); // Cetak error di console browser
-      } finally {
-        setLoading(false); // Matikan indikator loading
-      }
-    }
-
-    loadPameran();
-  }, []);
 
   if (loading) {
     return (
@@ -140,21 +138,29 @@ export default function PagePameran({ href = "/pameran/" }: PameranProps) {
 
       {/* CATEGORY */}
       <main className="autoMid py-10 space-y-10">
-        {categories.map((cat) => (
-          <CategorySection key={cat} title={cat}>
-            {openData
-              .filter((item) => item.category === cat)
-              .map((project) => (
-                <Link
-                  key={project.id}
-                  href={`${href}${project.id}`}
-                  className="group block"
-                >
-                  <ProjectCard project={project} />
-                </Link>
-              ))}
-          </CategorySection>
-        ))}
+        {categories.length === 0 ? (
+          <p className="text-gray-400 text-sm text-center py-10">
+            {isAdmin
+              ? "Belum ada pameran."
+              : "Tidak ada pameran yang sedang berlangsung."}
+          </p>
+        ) : (
+          categories.map((cat) => (
+            <CategorySection key={cat} title={cat}>
+              {openData
+                .filter((item) => item.category === cat)
+                .map((project) => (
+                  <Link
+                    key={project.id}
+                    href={`${href}${project.id}`}
+                    className="group block"
+                  >
+                    <ProjectCard project={project} />
+                  </Link>
+                ))}
+            </CategorySection>
+          ))
+        )}
       </main>
     </div>
   );
