@@ -11,8 +11,6 @@ import { FiLogOut } from 'react-icons/fi';
 // COMPONENT
 import { Logo, TextNav } from '@/components/shared/ui/Components';
 import { Button } from '@/components/shared/ui/Button';
-import NavAdmin from '@/components/shared/ui/NavAdmin';
-import NavKetuaPBL from '@/components/shared/ui/NavKetuaPBL';
 
 interface NavItem {
   title: string;
