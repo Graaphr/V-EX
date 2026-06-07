@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { sendVerification, verifyToken } from './api';
+import { sendVerification, verifyToken } from './apiGantiEmail';
 
 export function useChangeEmail() {
     const [step, setStep] = useState<1 | 2 | 3>(1);

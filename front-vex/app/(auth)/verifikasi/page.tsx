@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 // Component
 import { Button, ButtonPutih } from "@/components/shared/ui/Button";
 // API
-import api from "@/lib/axios";
+import { Verify,Resend } from "./apiVerify";
 
 export default function VerifikasiPage() {
   // handel
@@ -60,13 +60,13 @@ export default function VerifikasiPage() {
       setIsLoading(true);
 
       // post api
-      const res = await api.post("/api/auth/verify-otp", {
+      const res = await Verify({
         // get token from local
         token: localStorage.getItem("token"),
         otp,
       });
 
-      const {message} = res.data
+      const {message} = res
       setSuccess(message);
 
       localStorage.removeItem("token");
@@ -84,13 +84,13 @@ export default function VerifikasiPage() {
   // handler resend otp
   const handleResend = async () => {
     try {
-      const res = await api.post("/api/auth/resend-otp", {
+      const res = await Resend({
         token: localStorage.getItem("token"),
       });
 
       localStorage.setItem(
         "otp_expires_at",
-        res.data.otp_expires_at.toString(),
+        res.otp_expires_at.toString(),
       );
 
      setTimeout(() => {

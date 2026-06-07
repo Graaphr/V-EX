@@ -12,7 +12,7 @@ import { VectorBlueBox } from '@/components/shared/ui/BoxModel';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 // API
-import api from '@/lib/axios';
+import { Register } from './apiRegister';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -43,21 +43,20 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      // push and respose from API
-      const response = await api.post('/api/auth/register', {
+      const res = await Register( {
         nama: nama,
         email: email,
         password: password,
         password_confirmation: password_confirmation,
       });
 
-      alert(response.data.message);
+      alert(res.message);
 
-      // set local for token
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('otp_expires_at', response.data.otp_expires_at);
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('otp_expires_at', res.data.otp_expires_at);
 
       router.push('/verifikasi');
+
     } catch (error: any) {
       alert(error.response?.data?.message || 'Registrasi Gagal');
     } finally {
