@@ -10,7 +10,7 @@ class ProdiSeeder extends Seeder
     public function run(): void
     {
         DB::table('prodi')->insert([
-            ['kode_prodi' => 'IF', 'nama_prodi' => 'Informaika'],
+            ['kode_prodi' => 'IF', 'nama_prodi' => 'Informatika'],
             ['kode_prodi' => 'TRM', 'nama_prodi' => 'Teknologi Rekayasa Multimedia'],
             ['kode_prodi' => 'TRPL', 'nama_prodi' => 'Teknologi Rekayasa Perangkat Lunak'],
             ['kode_prodi' => 'AN', 'nama_prodi' => 'Animasi'],

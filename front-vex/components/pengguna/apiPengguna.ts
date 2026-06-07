@@ -1,7 +1,7 @@
 import api from '@/lib/axios';
 
 export async function GetRole(role: string){
-    const res = await api.get(`/api/pengguna/role/${role}`)
+    const res = await api.get(`/api/admin/pengguna/role/${role}`)
     return res.data
 }
 
@@ -13,7 +13,7 @@ export async function CreateUser(data: {
   kelas: number;
 }) {
   const res = await api.post(
-    "/api/pengguna/register-through-admin",
+    "/api/admin/pengguna/register-through-admin",
     data
   );
 
@@ -33,7 +33,7 @@ export async function UpdateUser(user: UserType) {
   };
 
   const res = await api.put(
-    `/api/pengguna/${user.id}`,
+    `/api/admin/pengguna/${user.id}`,
     payload
   );
 
