@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { FaCloudUploadAlt } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 // types
-import { PameranForm, PRODI_OPTIONS } from "@/types/pameran";
+import { PameranForm } from "@/types/pameran";
 import FormPameran from "./FormPameran";
 import { PostPameran } from "./apiPameran";
 
