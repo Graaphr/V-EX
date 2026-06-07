@@ -71,7 +71,7 @@ class ResetPasswordService
     public function generateResetLink(string $token, string $email): string
     {
         return config('app.frontend_url') 
-            . '/auth/lupa-password/ganti-password'
+            . '/lupa-password/ubah-password'
             . '?id=' . $token
             . '&email=' . urlencode($email);
     }

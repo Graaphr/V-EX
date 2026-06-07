@@ -14,7 +14,7 @@
 
     <!-- <div style="margin-top: 20px;">
         <p>Silakan klik tombol di bawah ini untuk memasukkan kode tersebut:</p>
-        <a href="{{ url('/Verifikasi') }}" 
+        <a href="{{ url('/lupa-password/ubah-password?') }}" 
            style="background-color: #4CAF50; 
                   color: white; 
                   padding: 12px 25px; 
@@ -28,7 +28,7 @@
 
     <p style="font-size: 12px; color: #777; margin-top: 30px;">
         Jika tombol di atas tidak berfungsi, salin dan tempel link berikut di browser Anda:<br>
-        {{ url('/Verifikasi') }}
+        {{ url('/lupa-password/ubah-password?') }}
     </p> -->
 </body>
 </html>
