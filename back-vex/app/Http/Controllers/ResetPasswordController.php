@@ -11,14 +11,13 @@ class ResetPasswordController extends Controller
 {
     protected ResetPasswordService $resetPasswordService;
 
-    /**
-     * Inject ResetPasswordService melalui constructor.
-     */
+
     public function __construct(ResetPasswordService $resetPasswordService)
     {
         $this->resetPasswordService = $resetPasswordService;
     }
 
+    // Lupa Password langsung
     public function forgotPassword(Request $request)
     {
         $request->validate([
@@ -29,14 +28,14 @@ class ResetPasswordController extends Controller
 
         if (!$user) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Email tidak ditemukan.',
             ], 404);
         }
 
         // Generate token & expired
         $resetToken = $this->resetPasswordService->generateToken();
-        $expiredAt  = $this->resetPasswordService->getExpiresAt();
+        $expiredAt = $this->resetPasswordService->getExpiresAt();
 
         // Simpan di cache
         $this->resetPasswordService->storeToCache($resetToken, $user->email, $expiredAt);
@@ -46,11 +45,53 @@ class ResetPasswordController extends Controller
         $this->resetPasswordService->sendResetEmail($user->email, $resetLink);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Link reset kata sandi telah dikirim ke email Anda.',
         ]);
     }
 
+    // Resend Email
+    public function resendEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $user = Pengguna::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Email tidak ditemukan.',
+            ], 404);
+        }
+
+        $resetToken = $this->resetPasswordService->generateToken();
+        $expiredAt = $this->resetPasswordService->getExpiresAt();
+
+        $this->resetPasswordService->storeToCache(
+            $resetToken,
+            $user->email,
+            $expiredAt
+        );
+
+        $resetLink = $this->resetPasswordService->generateResetLink(
+            $resetToken,
+            $user->email
+        );
+
+        $this->resetPasswordService->sendResetEmail(
+            $user->email,
+            $resetLink
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Email reset berhasil dikirim ulang.',
+        ]);
+    }
+
+    // Verivikasi token dari email
     public function verifyResetToken(Request $request)
     {
         $request->validate([
@@ -62,23 +103,24 @@ class ResetPasswordController extends Controller
 
         if (!$email) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Token tidak valid atau sudah kadaluarsa.',
             ], 410);
         }
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Token valid.',
-            'token'   => $request->token,
+            'token' => $request->token,
         ]);
     }
 
+    // Simpan password 
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'token'    => 'required',
-            'email'    => 'required|email',
+            'token' => 'required',
+            'email' => 'required|email',
             'password' => 'required|min:8|confirmed',
         ]);
 
@@ -87,7 +129,7 @@ class ResetPasswordController extends Controller
 
         if (!$email) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Token tidak valid atau sudah kadaluarsa.',
             ], 410);
         }
@@ -96,7 +138,7 @@ class ResetPasswordController extends Controller
 
         if (!$user) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'User tidak ditemukan.',
             ], 404);
         }
@@ -110,7 +152,7 @@ class ResetPasswordController extends Controller
         $this->resetPasswordService->forgetCache($request->token);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Kata sandi berhasil diubah. Silakan login.',
             // 'email' => $user->email
         ]);

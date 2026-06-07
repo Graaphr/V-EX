@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
-import GantiPasswordForm from './GantiPasswordForm';
+import UbahPasswordForm from './UbahPasswordForm';
 
-export default function GantiPasswordPage() {
+export default function UbahPasswordPage() {
   return (
     <Suspense
       fallback={
@@ -10,7 +10,7 @@ export default function GantiPasswordPage() {
         </div>
       }
     >
-      <GantiPasswordForm />
+      <UbahPasswordForm />
     </Suspense>
   );
 }

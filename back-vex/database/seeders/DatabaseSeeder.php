@@ -17,6 +17,16 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             PenggunaSeeder::class
-            ]);
+        ]);
+        $this->call([
+            ProdiSeeder::class
+        ]);
+        $this->call([
+            ModelSeeder::class
+        ]);
+        $this->call([
+            KelasSeeder::class
+        ]);
     }
+
 }

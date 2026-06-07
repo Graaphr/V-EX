@@ -27,6 +27,16 @@ class ModelSeeder extends Seeder
                 'nama_model'  => 'Stan B',
                 '3d_model'    => 'models/stan-b.glb',
             ],
+            [
+                'jenis'       => 'Stan',
+                'nama_model'  => 'Stan C',
+                '3d_model'    => 'models/stan-c.glb',
+            ],
+            [
+                'jenis'       => 'Stan',
+                'nama_model'  => 'Stan D',
+                '3d_model'    => 'models/stan-d.glb',
+            ],
         ]);
     }
 }

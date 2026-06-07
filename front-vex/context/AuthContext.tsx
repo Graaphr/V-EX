@@ -27,6 +27,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   // FETCH USER
+  // FETCH USER
   const fetchUser = async () => {
     try {
       setLoading(true);
@@ -41,11 +42,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const response = await api.get('/api/user');
 
       setUser(response.data.user ?? response.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Fetch user gagal:', error);
 
       localStorage.removeItem('token');
       setUser(null);
+
+      // Redirect ke halaman utama jika token expired/invalid
+      if (error?.response?.status === 401) {
+        window.location.href = '/';
+      }
     } finally {
       setLoading(false);
     }
@@ -62,14 +68,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // LOGOUT
+  // LOGOUT
   const logout = async () => {
     try {
       await api.post('/api/logout');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.warn('Logout request failed, clearing local session anyway.');
     } finally {
       localStorage.removeItem('token');
       setUser(null);
+      window.location.href = '/';
     }
   };
 

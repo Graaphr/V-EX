@@ -83,7 +83,7 @@ class Pengguna extends Authenticatable
         return $this->status === self::STATUS_AKTIF;
     }
 
-    public function kelasBelongsTo()
+    public function kelas()
     {
         return $this->belongsTo(Kelas::class, 'kelas', 'id_kelas');
     }

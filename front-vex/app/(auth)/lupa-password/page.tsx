@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { Button, ButtonPutih } from '@/components/shared/ui/Button';
-import api from '@/lib/axios';
+import {
+  forgotPassword,
+  resendEmail,
+} from './apiLupaPassword';
 
 export default function LupaPasswordEmailPage() {
   // RESPONSE
@@ -25,33 +28,37 @@ export default function LupaPasswordEmailPage() {
   // =================
   // handler kirim
   // =================
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    setError('');
-    setSuccess('');
+  setError('');
+  setSuccess('');
 
-    if (!email) {
-      setError('Email wajib diisi');
-      return;
-    }
+  if (!email) {
+    setError('Email wajib diisi');
+    return;
+  }
 
-    try {
-      setIsLoading(true);
+  try {
+    setIsLoading(true);
 
-      // const res = await api.post('/api/auth/resend-email', { email });
-      // setSuccess(res.data.message || 'Email berhasil dikrim');
+    const res = await forgotPassword({ email });
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setSuccess('Berhasil');
+    setSuccess(
+      res.message || 'Email berhasil dikirim'
+    );
 
-      localStorage.setItem('reset_email', email);
-      setEmailSent(true);
-    } catch {
-      setError('Gagal');
-    }
-  };
-
+    localStorage.setItem('reset_email', email);
+    setEmailSent(true);
+  } catch (err: any) {
+    setError(
+      err?.response?.data?.message ||
+      'Gagal mengirim email'
+    );
+  } finally {
+    setIsLoading(false);
+  }
+};
   // =================
   // handler resend
   // =================
@@ -60,17 +67,20 @@ export default function LupaPasswordEmailPage() {
       setError('');
       setSuccess('');
       setIsLoading(true);
-      const res = await api.post('/api/auth/resend-email', { email });
-      setSuccess(res.data.message || 'Email berhasil dikrim');
+      const res = await resendEmail( { email });
+      setSuccess(res.message || 'Email berhasil dikrim');
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setSuccess('Email berhasil dikirim ulang');
-    } catch {
-      setError('Gagal mengirim ulang email');
-    } finally {
-      setIsLoading(false);
-    }
+  } catch (err: any) {
+    setError(
+      err?.res?.data?.message ||
+      'Gagal mengirim email'
+    );
+  } finally {
+    setIsLoading(false);
+  }
   };
 
   // ============================

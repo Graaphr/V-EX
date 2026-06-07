@@ -29,6 +29,25 @@ export const PRODI_OPTIONS = [
   },
 ];
 
+export const KELAS_OPTIONS = [
+  {
+    id_kelas: 1,
+    nama_kelas: "A"
+  },
+  {
+    id_kelas: 2,
+    nama_kelas: "B"
+  },
+  {
+    id_kelas: 3,
+    nama_kelas: "C"
+  },
+  {
+    id_kelas: 4,
+    nama_kelas: "D"
+  },
+]
+
 export type ProdiOption = (typeof PRODI_OPTIONS)[number];
 
 export type PameranDescription = {
