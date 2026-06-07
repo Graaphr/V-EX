@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StatusType } from '@/components/shared/filter/SelectStatus';
 import { UserType } from '@/types/pengguna';
+import { GetRole, CreateUser, UpdateUser } from "@/components/pengguna/apiPengguna";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -13,19 +14,25 @@ export function useUsers() {
 
   /* ---------- Load ---------- */
   const loadUsers = async () => {
-    try {
-      setIsLoading(true); 
-      const res = await fetch('/api/pengguna');
-      if (!res.ok) throw new Error('Gagal fetch');
-      const data = await res.json();
-      setUsers(data);
-    } catch (error) {
-      console.error('ERROR:', error);
-      setUsers([]);
-    } finally {
-      setIsLoading(false); 
-    }
-  };
+  try {
+    setIsLoading(true);
+
+    const [kpsRes, mhsRes] = await Promise.all([
+      GetRole("KPS"),
+      GetRole("Ketua PBL"),
+    ]);
+
+    setUsers([
+      ...kpsRes.data,
+      ...mhsRes.data,
+    ]);
+  } catch (error) {
+    console.error(error);
+    setUsers([]);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   useEffect(() => {
     loadUsers();
@@ -61,26 +68,33 @@ export function useUsers() {
   const prevPage = () => setPageMhs((p) => Math.max(p - 1, 1));
 
   /* ---------- CRUD ---------- */
-  const addUser = async (newUser: Omit<UserType, 'id'>) => {
-    await fetch('/api/pengguna', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newUser),
+  const addUser = async (newUser: Omit<UserType, "id">) => {
+  try {
+    await CreateUser({
+      nama: newUser.nama,
+      email: newUser.email,
+      role: newUser.role,
+      kelas: newUser.kelas,
+      prodi: newUser.prodi,
     });
-    await loadUsers();
-  };
 
-  const updateUser = async (user: UserType) => {
-    await fetch('/api/pengguna', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(user),
-    });
     await loadUsers();
-  };
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const updateUser = async (user: UserType) => {
+  try {
+    await UpdateUser(user);
+    await loadUsers();
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   const toggleStatus = async (user: UserType) => {
-    const updated = { ...user, status: user.status === 'active' ? 'inactive' : 'active' };
+    const updated = { ...user, status: user.status === 'Aktif' ? 'Tidak Aktif' : 'Aktif' };
     await updateUser(updated);
     return updated;
   };

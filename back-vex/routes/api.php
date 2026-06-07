@@ -25,7 +25,13 @@ Route::prefix('auth')->group(function () {
     Route::post('/verify-reset-token', [ResetPasswordController::class, 'verifyResetToken']);
     Route::post('/reset-password', [ResetPasswordController::class, 'resetPassword']);
 
+    
+});
 
+Route::prefix('pengguna')->group(function(){
+    Route::post('/register-through-admin',[PenggunaController::class, 'registerThroughAdmin']);
+    Route::get('/role/{role}', [PenggunaController::class, 'getByRole']);
+    Route::put('/{id}', [PenggunaController::class, 'updateThroughAdmin']);
 });
 
 Route::get('/pameran', [PameranController::class, 'index']);

@@ -4,7 +4,7 @@ import { FiInfo } from 'react-icons/fi';
 import { HiPencilAlt } from 'react-icons/hi';
 import { UserType } from '@/types/pengguna';
 import { Button } from '@/components/shared/ui/Button';
-import { PRODI_OPTIONS } from '@/types/pameran';
+import { PRODI_OPTIONS, KELAS_OPTIONS } from '@/types/pameran';
 
 type Props = {
   selectedUser: UserType | null;
@@ -61,23 +61,27 @@ export default function UserDetail({ selectedUser, formData, isEdit, onToggleEdi
 
             {/* Program Studi */}
             <SelectField
-              label="Program Studi"
-              name="prodi"
-              value={formData?.prodi || ''}
-              isEdit={isEdit}
-              onChange={onFormChange}
-              options={PRODI_OPTIONS}
-            />
+  label="Program Studi"
+  name="program_studi"
+  value={formData?.program_studi ?? ''}
+  isEdit={isEdit}
+  onChange={onFormChange}
+  options={PRODI_OPTIONS}
+/>
 
             {/* Kelas — hanya untuk non-KPS */}
             {selectedUser.role !== 'KPS' && (
               <DetailField
-                label="Kelas"
-                name="kelas"
-                value={formData?.kelas || ''}
-                isEdit={isEdit}
-                onChange={onFormChange}
-              />
+  label="Kelas"
+  name="kelas"
+  value={
+    isEdit
+      ? String(formData?.kelas?.id_kelas ?? '')
+      : formData?.kelas?.nama_kelas ?? ''
+  }
+  isEdit={isEdit}
+  onChange={onFormChange}
+/>
             )}
 
             {/* Role + Status / Tombol Simpan */}
@@ -98,10 +102,10 @@ export default function UserDetail({ selectedUser, formData, isEdit, onToggleEdi
                 {!isEdit && (
                   <div
                     className={`w-full h-[42px] rounded-lg flex items-center justify-center ${
-                      selectedUser.status === 'active' ? 'bg-green-500 text-white' : 'bg-red-100 text-red-600'
+                      selectedUser.status === 'Aktif' ? 'bg-green-500 text-white' : 'bg-red-100 text-red-600'
                     }`}
                   >
-                    {selectedUser.status === 'active' ? 'Aktif' : 'Tidak Aktif'}
+                    {selectedUser.status === 'Aktif' ? 'Aktif' : 'Tidak Aktif'}
                   </div>
                 )}
 
@@ -128,38 +132,38 @@ type FieldProps = {
   className?: string;
 };
 
-function DetailField({ label, name, value, isEdit, onChange, className = '', ...props }: FieldProps) {
+function DetailField({
+  label,
+  name,
+  value,
+  isEdit,
+  onChange,
+  className = '',
+  ...props
+}: FieldProps) {
   return (
     <div className={className}>
-      <p className="text-sm font-semibold mb-1 text-gray-600">{label}</p>
-      <input
-        name={name}
-        value={value}
-        onChange={onChange as React.ChangeEventHandler<HTMLInputElement>}
-        disabled={!isEdit}
-        className={`w-full p-2 px-4 rounded-lg ${isEdit ? 'bg-gray-200' : 'bg-gray-200'}`}
-        {...props}
-      />
-    </div>
-  );
-}
+      <p className="text-sm font-semibold mb-1 text-gray-600">
+        {label}
+      </p>
 
-type SelectFieldProps = FieldProps & {
-  options: string[];
-};
-
-function SelectField({ label, name, value, isEdit, options, onChange, className = '', ...props }: SelectFieldProps) {
-  return (
-    <div className={className}>
-      <p className="text-sm font-semibold mb-1 text-gray-600">{label}</p>
-      {isEdit ? (
-        <select name={name} value={value} onChange={onChange} className="w-full bg-gray-200 p-2 px-3 rounded-lg">
-          <option value="" disabled>
-            -- Pilih Prodi --
+      {name === 'kelas' && isEdit ? (
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          className="w-full bg-gray-200 p-2 px-4 rounded-lg"
+        >
+          <option value="">
+            -- Pilih Kelas --
           </option>
-          {options.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
+
+          {KELAS_OPTIONS.map((kelas) => (
+            <option
+              key={kelas.id_kelas}
+              value={kelas.id_kelas}
+            >
+              {kelas.nama_kelas}
             </option>
           ))}
         </select>
@@ -167,10 +171,68 @@ function SelectField({ label, name, value, isEdit, options, onChange, className 
         <input
           name={name}
           value={value}
-          disabled
-          onChange={() => {}}
-          className="w-full bg-gray-200 p-2 px-4 rounded-lg"
+          onChange={onChange as React.ChangeEventHandler<HTMLInputElement>}
+          disabled={!isEdit}
+          className="w-full p-2 px-4 rounded-lg bg-gray-200"
           {...props}
+        />
+      )}
+    </div>
+  );
+}
+
+type ProdiOption = {
+  kode: string;
+  nama: string;
+};
+
+type SelectFieldProps = FieldProps & {
+  options: ProdiOption[];
+};
+
+function SelectField({
+  label,
+  name,
+  value,
+  isEdit,
+  options,
+  onChange,
+}: SelectFieldProps) {
+  return (
+    <div>
+      <p className="text-sm font-semibold mb-1 text-gray-600">
+        {label}
+      </p>
+
+      {isEdit ? (
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          className="w-full bg-gray-200 p-2 px-3 rounded-lg"
+        >
+          <option value="" disabled>
+            -- Pilih Prodi --
+          </option>
+
+          {options.map((opt) => (
+            <option
+              key={opt.kode}
+              value={opt.kode}
+            >
+              {opt.nama}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          value={
+            options.find(
+              (p) => p.kode === value
+            )?.nama ?? ''
+          }
+          disabled
+          className="w-full bg-gray-200 p-2 px-4 rounded-lg"
         />
       )}
     </div>

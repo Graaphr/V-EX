@@ -11,7 +11,7 @@ type Props = {
 };
 
 export default function UserCard({ user, onClick, isActive, onToggleStatus }: Props) {
-  const inactive = user.status === 'inactive';
+  const inactive = user.status === 'Tidak Aktif';
 
   return (
     <div

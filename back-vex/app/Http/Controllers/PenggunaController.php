@@ -70,6 +70,100 @@ class PenggunaController extends Controller
         }
     }
 
+    //Tambah pengguna melalui Admin
+
+    public function registerThroughAdmin(Request $request)
+    {
+        $request->validate([
+            'nama'  => 'required|string|max:255',
+            'email' => 'required|email',
+            'role'  => 'required|in:Ketua PBL,KPS',
+
+            'prodi' => 'required',
+        ]);
+
+        if (Pengguna::where('email', $request->email)->exists()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Email sudah terdaftar',
+            ], 409);
+        }
+
+        try {
+            $pengguna = Pengguna::create([
+                'nama'     => $request->nama,
+                'email'    => $request->email,
+                'password' => Hash::make($request->email),
+                'role'     => $request->role,
+                'status'   => 'aktif',
+
+                'program_studi' => $request->prodi,
+                'kelas' => $request->kelas
+            ]);
+
+            return response()->json([
+                'status'   => 'success',
+                'message'  => 'Pengguna berhasil ditambahkan',
+                'pengguna' => $pengguna,
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getByRole($role)
+    {
+        $pengguna = Pengguna::with([
+            'kelas',
+            'prodi'
+        ])
+        ->where('role', $role)
+        ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $pengguna
+        ]);
+    }
+
+    public function updateThroughAdmin(Request $request, $id)
+{
+    $request->validate([
+        'nama' => 'required|string|max:255',
+        'email' => 'required|email',
+        'role' => 'required',
+        'status' => 'required',
+    ]);
+
+    $pengguna = Pengguna::find($id);
+
+    if (!$pengguna) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Pengguna tidak ditemukan'
+        ], 404);
+    }
+
+    $pengguna->update([
+        'nama' => $request->nama,
+        'email' => $request->email,
+        'role' => $request->role,
+        'status' => $request->status,
+        'program_studi' => $request->program_studi,
+        'kelas' => $request->kelas,
+    ]);
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Pengguna berhasil diperbarui',
+        'data' => $pengguna
+    ]);
+}
+
     public function verifyOtp(Request $request)
     {
     // validasi inputan

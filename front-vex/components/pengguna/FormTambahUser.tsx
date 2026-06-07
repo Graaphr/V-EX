@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FaTimes, FaUser } from 'react-icons/fa';
 import { UserType } from '@/types/pengguna';
 import { Button, ButtonPutih } from '@/components/shared/ui/Button';
-import { PRODI_OPTIONS } from '@/types/pameran';
+import { PRODI_OPTIONS, KELAS_OPTIONS } from '@/types/pameran';
 
 type Props = {
   onClose: () => void;
@@ -19,7 +19,7 @@ const initialForm: FormState = {
   prodi: '',
   kelas: '',
   role: '',
-  status: 'active',
+  status: 'Aktif',
 };
 
 export default function FormTambahUser({ onClose, onSave }: Props) {
@@ -109,22 +109,37 @@ export default function FormTambahUser({ onClose, onSave }: Props) {
                 -- Pilih Prodi --
               </option>
               {PRODI_OPTIONS.map((prodi) => (
-                <option key={prodi} value={prodi}>
-                  {prodi}
-                </option>
-              ))}
+  <option
+    key={prodi.kode}
+    value={prodi.kode}
+  >
+    {prodi.nama}
+  </option>
+))}
             </select>
           </div>
           {/* Kelas — hanya untuk Ketua PBL */}
           {form.role === 'Ketua PBL' && (
             <div>
               <p className="text-sm font-semibold mb-1 text-gray-600">Kelas</p>
-              <input
+              <select
                 name="kelas"
                 value={form.kelas}
                 onChange={handleChange}
                 className="w-full bg-gray-200 p-2 px-4 rounded-lg"
-              />
+              >
+                <option value="" disabled>
+                  -- Pilih Kelas --
+                </option>
+                {KELAS_OPTIONS.map((kelas) => (
+                  <option
+                    key={kelas.id_kelas}
+                    value={kelas.id_kelas}
+                  >
+                    {kelas.nama_kelas}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 

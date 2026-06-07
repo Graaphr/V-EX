@@ -10,8 +10,10 @@ import UserCard from './UserCard';
 import UserDetail from './UserDetail';
 import SectionHeader from './SectionHeader';
 import FormTambahUser from './FormTambahUser';
+import { PRODI_OPTIONS, KELAS_OPTIONS } from '@/types/pameran'
 import { useUsers } from '@/hooks/userHook/useUser';
 import { UserType } from '@/types/pengguna';
+import { GetRole, CreateUser } from './apiPengguna';
 
 export default function Admin() {
   const {
@@ -41,13 +43,67 @@ export default function Admin() {
     setIsEdit(false);
   }, [selectedUser]);
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => prev && { ...prev, [name]: value });
-  };
+  const handleFormChange = (
+  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+) => {
+  const { name, value } = e.target;
+
+  // PRODI
+  if (name === "program_studi") {
+    const selectedProdi = PRODI_OPTIONS.find(
+      (p) => p.kode === value
+    );
+
+    setFormData(prev =>
+      prev
+        ? {
+            ...prev,
+            program_studi: value,
+            prodi: {
+              kode_prodi: value,
+              nama_prodi: selectedProdi?.nama || "",
+            },
+          }
+        : null
+    );
+
+    return;
+  }
+
+  // KELAS
+  if (name === "kelas") {
+    const selectedKelas = KELAS_OPTIONS.find(
+      (k) => String(k.id_kelas) === value
+    );
+
+    setFormData(prev =>
+      prev
+        ? {
+            ...prev,
+            kelas: {
+              id_kelas: Number(value),
+              nama_kelas: selectedKelas?.nama_kelas || "",
+            },
+          }
+        : null
+    );
+
+    return;
+  }
+
+  setFormData(prev =>
+    prev
+      ? {
+          ...prev,
+          [name]: value,
+        }
+      : null
+  );
+};
 
   const handleSaveEdit = async () => {
     if (!formData) return;
+    console.log(formData)
     await updateUser(formData);
     setSelectedUser(formData);
     setIsEdit(false);
