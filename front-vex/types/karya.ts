@@ -2,6 +2,7 @@ export interface KaryaItem {
   id: number;
   title: string;
   category: string;
+  capacity: 0,
   image: string;
   year: string;
   link?: string;

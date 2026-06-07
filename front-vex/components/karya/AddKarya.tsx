@@ -15,6 +15,7 @@ const initialForm: KaryaItem = {
   id: 0,
   title: '',
   category: '',
+  capacity: 0,
   image: '',
   thumbnail: '',
   year: '',
@@ -58,6 +59,7 @@ export default function AddKaryaPage() {
       formData.append('title', form.title);
       formData.append('category', form.category ?? '');
       formData.append('year', form.year ?? '');
+      formData.append('capacity', String(form.capacity));
       formData.append('semester', form.semester ?? '');
       formData.append('description', form.description ?? '');
       formData.append('booth', form.booth ?? '');
@@ -93,14 +95,14 @@ export default function AddKaryaPage() {
       <div className="max-w-[1200px] mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
           {/* KIRI - Form */}
-          <div>
-            <DetailForm form={form} onChange={handleChange} />
-          </div>
-
-          {/* TENGAH - Upload */}
           <div className="space-y-3">
             <DetailThumbnail preview={thumbnailPreview} onUpload={(e) => handleImageUpload(e, 'thumbnail')} />
             <DetailPoster preview={posterPreview} onUpload={(e) => handleImageUpload(e, 'poster')} />
+          </div>
+
+          {/* TENGAH - Upload */}
+          <div>
+            <DetailForm form={form} onChange={handleChange} />
           </div>
 
           {/* KANAN - Preview & Action */}

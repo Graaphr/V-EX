@@ -2,19 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
-import { ChevronDownIcon } from '@heroicons/react/20/solid';
+import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/20/solid';
+import axios from "@/lib/axios"
 
 export type SemesterType = { id: number; name: string };
 
 interface SelectSemesterProps {
-  selected: SemesterType | undefined;
-  onChange: (semester: SemesterType) => void;
+  selected: SemesterType | null;
+  onChange: (semester: SemesterType | null) => void;
 }
 
-// Ganjil  = Agustus (8) - Februari (2)
-// Genap   = Maret (3) - Agustus (7)
 function getSemester(dateStr: string): 'Ganjil' | 'Genap' {
-  const bulan = new Date(dateStr).getMonth() + 1; // 1-12
+  const bulan = new Date(dateStr).getMonth() + 1;
   return bulan >= 8 || bulan <= 2 ? 'Ganjil' : 'Genap';
 }
 
@@ -24,20 +23,16 @@ export default function SelectSemester({ selected, onChange }: SelectSemesterPro
   useEffect(() => {
     async function load() {
       try {
-        const res  = await fetch('/api/pameran');
-        const json = await res.json();
+        const res  = await axios.get('/api/pameran');
+        const json = res.data;
 
-        // Kumpulkan semester unik dari tanggal_mulai tiap pameran
         const unique = [...new Set<string>(
           (json.pameran ?? []).map((item: any) => getSemester(item.date))
         )];
 
-        // Urutkan: Ganjil dulu, lalu Genap
         const ordered = ['Ganjil', 'Genap'].filter((s) => unique.includes(s));
 
-        setSemesterList(
-          ordered.map((name, index) => ({ id: index + 1, name }))
-        );
+        setSemesterList(ordered.map((name, index) => ({ id: index + 1, name })));
       } catch (err) {
         console.error('Gagal memuat semester:', err);
       }
@@ -55,7 +50,18 @@ export default function SelectSemester({ selected, onChange }: SelectSemesterPro
               {selected ? selected.name : 'Semester'}
             </span>
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-[10px]">
-              <ChevronDownIcon className="h-5 w-5 text-black" aria-hidden="true" />
+              {selected ? (
+                <XMarkIcon
+                  className="h-4 w-4 text-gray-500 hover:text-black pointer-events-auto cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onChange(null);
+                  }}
+                />
+              ) : (
+                <ChevronDownIcon className="h-5 w-5 text-black" aria-hidden="true" />
+              )}
             </span>
           </ListboxButton>
 

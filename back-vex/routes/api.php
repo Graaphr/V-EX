@@ -110,6 +110,22 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/pameran/{id}', [PameranController::class, 'show']);
             Route::put('/pameran/{id}', [PameranController::class, 'update']);
             Route::delete('/pameran/{id}', [PameranController::class, 'destroy']);
+       
+
+            // Manajemen pengguna
+            Route::get('/pengguna', [AdminController::class, 'daftarPengguna']);
+            Route::post('/pengguna', [AdminController::class, 'tambahPengguna']);
+            Route::get('/pengguna/{id}', [AdminController::class, 'detailPengguna']);
+            Route::put('/pengguna/{id}', [AdminController::class, 'editPengguna']);
+            Route::patch('/pengguna/{id}/aktifkan', [AdminController::class, 'aktifkanAkun']);
+            Route::patch('/pengguna/{id}/nonaktifkan', [AdminController::class, 'nonaktifkanAkun']);
+
+            // Manajemen pameran
+            Route::get('/pameran', [PameranController::class, 'index']);
+            Route::post('/pameran/add', [PameranController::class, 'store']);
+            Route::get('/pameran/{id}', [PameranController::class, 'show']);
+            Route::put('/pameran/{id}', [PameranController::class, 'update']);
+            Route::delete('/pameran/{id}', [PameranController::class, 'destroy']);
         });
 
     // KPS

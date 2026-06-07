@@ -37,7 +37,7 @@ export default function FormPameran({
   return (
     <div className="flex flex-col lg:flex-row gap-10">
       {/* LEFT - THUMBNAIL */}
-      <div className="w-full lg:w-[40%]">
+      <div className="w-full lg:w-[62%]">
         <p className="text-xl font-semibold mt-10 mb-1.5">
           Thumbnail<span className="text-red-500">*</span>
         </p>
@@ -84,8 +84,8 @@ export default function FormPameran({
               -- Pilih Prodi --
             </option>
             {PRODI_OPTIONS.map((prodi) => (
-              <option key={prodi} value={prodi}>
-                {prodi}
+              <option key={prodi.kode} value={prodi.kode}>
+                {prodi.nama}
               </option>
             ))}
           </select>
@@ -102,6 +102,48 @@ export default function FormPameran({
             placeholder="Masukkan judul pameran"
             className={inputClass}
           />
+        </div>
+
+        {/* CAPACITY */}
+        <div>
+          <Label text="Kapasitas Pameran" required />
+          <div className="flex items-center mt-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                const current = Number(form.capacity);
+                if (current > 24) {
+                  onChange({
+                    target: { name: "capacity", value: String(current - 24) },
+                  } as any);
+                }
+              }}
+              className="px-3 py-2.5 border border-gray-300 rounded-l-lg bg-gray-50 hover:bg-gray-100 text-sm font-bold transition-all"
+            >
+              −
+            </button>
+
+            <input
+              type="number"
+              name="capacity"
+              value={form.capacity}
+              readOnly
+              className="w-full p-2.5 px-3 border-y border-gray-300 text-center text-sm focus:outline-none"
+            />
+
+            <button
+              type="button"
+              onClick={() => {
+                const current = Number(form.capacity);
+                onChange({
+                  target: { name: "capacity", value: String(current + 24) },
+                } as any);
+              }}
+              className="px-3 py-2.5 border border-gray-300 rounded-r-lg bg-gray-50 hover:bg-gray-100 text-sm font-bold transition-all"
+            >
+              +
+            </button>
+          </div>
         </div>
 
         {/* TANGGAL PAMERAN */}
