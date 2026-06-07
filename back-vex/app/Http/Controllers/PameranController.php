@@ -210,26 +210,4 @@ class PameranController extends Controller
             'pameran' => $pameran,
         ]);
     }
-    // =============================
-    // HAPUS PAMERAN
-    // =============================
-    public function destroy($id)
-    {
-        $pameran = Pameran::find($id);
-
-        if (!$pameran) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Pameran tidak ditemukan.',
-            ], 404);
-        }
-
-        Storage::disk('public')->delete($pameran->banner);
-        $pameran->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Pameran berhasil dihapus.',
-        ]);
-    }
 }
