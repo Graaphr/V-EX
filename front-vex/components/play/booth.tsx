@@ -42,7 +42,7 @@ export default function Booth({
     useMemo(() => {
       return (
         Math.floor(
-          Math.random() * 3
+          Math.random() * 4
         ) + 1
       );
     }, []);
