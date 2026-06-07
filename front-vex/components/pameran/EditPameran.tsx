@@ -2,134 +2,153 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-
-import { Pameran, PameranForm, ProdiOption } from "@/types/pameran";
+import { PameranForm, PRODI_OPTIONS } from "@/types/pameran";
 import FormPameran from "./FormPameran";
-import ALL_EXHIBITIONS from "@/public/data/Pameran.json"; // untuk mengganti referensi data dummy dari json ke database
+import { GetDetailPameran, UpdatePameran } from "./apiPameran";
 
 export default function EditPameran() {
   const params = useParams();
   const router = useRouter();
-
   const id = Number(Array.isArray(params?.id) ? params.id[0] : params?.id);
-  const data = (ALL_EXHIBITIONS as Pameran[]).find((item) => item.id === id);
 
-  const [loading, setLoading] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [loading, setLoading]   = useState(false);
+  const [fetching, setFetching] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [preview, setPreview]   = useState<string | null>(null);
 
   const [form, setForm] = useState<PameranForm>({
     prodi: "",
     title: "",
+    capacity: 0,
     publishDate: "",
     endDate: "",
     prepareStart: "",
     prepareEnd: "",
     description: "",
-    image: null as File | null,
+    image: null,
   });
 
+  // Handle format "2024-12-31T00:00:00" → "2024-12-31"
   const toInputDate = (value?: string) => {
     if (!value) return "";
-
-    const [day, month, year] = value.split("/");
-
-    return `${year}-${month}-${day}`;
+    if (value.includes("/")) {
+      const [day, month, year] = value.split("/");
+      return `${year}-${month}-${day}`;
+    }
+    return value.split("T")[0];
   };
 
   useEffect(() => {
-    if (!data) return;
+    if (!id) return;
+    const fetch = async () => {
+      try {
+        setFetching(true);
+        const res = await GetDetailPameran(id);
 
-    setForm({
-      prodi: (data.stats?.studyLevel as ProdiOption) || "",
-      title: data.title || "",
-      publishDate: toInputDate(data.stats?.startDate),
-      endDate: toInputDate(data.stats?.endDate),
-      prepareStart: toInputDate(data.stats?.prepareStartDate),
-      prepareEnd: toInputDate(data.stats?.prepareEndDate),
-      description: data.description?.[0]?.content || "",
-      image: null,
-    });
+        if (res.status !== "success" || !res.pameran) {
+          setNotFound(true);
+          return;
+        }
 
-    setPreview(data.bannerImage);
-  }, [data]);
+        const p = res.pameran;
+
+        // Cari nama prodi berdasarkan category dari API
+        // category berisi nama_prodi, langsung pakai untuk value dropdown
+        // const namaProdi = p.category || "";
+
+        setForm({
+          prodi:        p.kode_prodi || "",
+          title:        p.title || "",
+          capacity:     p.stats?.kapasitas ?? 0,
+          publishDate:  toInputDate(p.stats?.startDate),
+          endDate:      toInputDate(p.stats?.endDate),
+          prepareStart: toInputDate(p.stats?.prepareStartDate),
+          prepareEnd:   toInputDate(p.stats?.prepareEndDate),
+          description:  p.description?.[0]?.content || "",
+          image:        null,
+        });
+
+        setPreview(p.bannerImage || null);
+      } catch (err) {
+        console.error(err);
+        setNotFound(true);
+      } finally {
+        setFetching(false);
+      }
+    };
+    fetch();
+  }, [id]);
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: name === "prodi" ? (value as ProdiOption) : value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImage = (e: any) => {
+  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-
     if (!file) return;
-
-    setForm((prev) => ({
-      ...prev,
-      image: file,
-    }));
-
+    setForm((prev) => ({ ...prev, image: file }));
     setPreview(URL.createObjectURL(file));
   };
 
   const handleSubmit = async () => {
+    if (!form.title || !form.publishDate || !form.endDate ||
+        !form.prepareStart || !form.prepareEnd || !form.description) {
+      alert("Lengkapi semua data terlebih dahulu.");
+      return;
+    }
+
     try {
       setLoading(true);
 
       const formData = new FormData();
+      // formData.append("_method", "PUT");           // Laravel method spoofing
+      formData.append("kategori", form.prodi);     // nama_prodi langsung
+      formData.append("judul", form.title);
+      formData.append("kapasitas", String(form.capacity));
+      formData.append("tanggal_mulai", form.publishDate);
+      formData.append("tanggal_akhir", form.endDate);
+      formData.append("tanggal_mulai_persiapan", form.prepareStart);
+      formData.append("tanggal_akhir_persiapan", form.prepareEnd);
+      formData.append("deskripsi", form.description);
+      if (form.image) formData.append("banner", form.image);
 
-      formData.append("id", String(id));
-      formData.append("prodi", form.prodi);
-      formData.append("title", form.title);
-      formData.append("publishDate", form.publishDate);
-      formData.append("endDate", form.endDate);
-      formData.append("prepareStart", form.prepareStart);
-      formData.append("prepareEnd", form.prepareEnd);
-      formData.append("description", form.description);
+      const data = await UpdatePameran(id, formData);
 
-      if (form.image) {
-        formData.append("image", form.image);
-      }
-
-      const res = await fetch("/api/pameran", {
-        method: "PUT",
-        body: formData,
-      });
-
-      const result = await res.json();
-
-      if (result.success) {
+      if (data.status === "success") {
         alert("Pameran berhasil diupdate!");
-
-        router.push("/admin/pameran");
-
-        router.refresh();
+        router.push(`/admin/pameran/detail/${id}`);
       } else {
-        alert("Gagal update.");
+        alert("Gagal update pameran.");
       }
-    } catch (error) {
-      console.log(error);
-
-      alert("Terjadi error.");
+    } catch (error: any) {
+      if (error.response) {
+        console.error("STATUS:", error.response.status);
+        console.error("DATA:", JSON.stringify(error.response.data, null, 2));
+      }
+      alert("Terjadi kesalahan saat update.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!data) {
-    return <div className="p-10">Data tidak ditemukan</div>;
-  }
+  if (fetching) return (
+    <div className="min-h-screen bg-secondary-color flex items-center justify-center">
+      <p className="text-white">Memuat data pameran...</p>
+    </div>
+  );
+
+  if (notFound) return (
+    <div className="min-h-screen bg-secondary-color flex items-center justify-center">
+      <p className="text-white">Data pameran tidak ditemukan.</p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-secondary-color select-none pb-20 md:pb-30">
-      <section className="autoMid ">
+      <section className="autoMid">
         <FormPameran
           form={form}
           preview={preview}

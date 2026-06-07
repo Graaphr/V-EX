@@ -17,3 +17,10 @@ export async function PostPameran(formData: FormData) {
     });
     return res.data;
 }
+
+export async function UpdatePameran(id: number, formData: FormData) {
+    const res = await api.post(`/api/admin/pameran/${id}/update`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return res.data;
+}

@@ -49,10 +49,33 @@ export default function PagePameran({ href = "/pameran/" }: PameranProps) {
   const today = new Date();
   today.setHours(23, 59, 59, 999);
 
+  const oneWeekLater = new Date();
+  oneWeekLater.setDate(oneWeekLater.getDate() + 7);
+  oneWeekLater.setHours(23, 59, 59, 999);
+
+  // Carousel: startDate antara besok s/d 7 hari ke depan (masih locked)
   const upcomingData = filteredData
-    .filter((item) => new Date(item.date) > today) // hanya yang belum/sedang berlangsung
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // terdekat duluan
+    .filter((item) => {
+      const start = new Date(item.stats?.startDate);
+      return start > today && start <= oneWeekLater;
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.stats?.startDate).getTime() -
+        new Date(b.stats?.startDate).getTime(),
+    )
     .slice(0, 5);
+
+  // Category: sudah dibuka (startDate <= today <= endDate)
+  const openData = filteredData.filter((item) => {
+    const start = new Date(item.stats?.startDate);
+    const end = new Date(item.stats?.endDate);
+    end.setHours(23, 59, 59, 999);
+    return today >= start && today <= end;
+  });
+
+  // Category hanya dari prodi yang punya pameran terbuka
+  const categories = [...new Set(openData.map((i) => i.category))];
 
   // mengambil data dari API {sudah nyambung dengan API pameran yang ada di route front(data)}
   useEffect(() => {
@@ -70,9 +93,6 @@ export default function PagePameran({ href = "/pameran/" }: PameranProps) {
 
     loadPameran();
   }, []);
-
-  /* AUTO CATEGORY */
-  const categories = [...new Set(filteredData.map((i) => i.category))];
 
   if (loading) {
     return (
@@ -122,10 +142,14 @@ export default function PagePameran({ href = "/pameran/" }: PameranProps) {
       <main className="autoMid py-10 space-y-10">
         {categories.map((cat) => (
           <CategorySection key={cat} title={cat}>
-            {filteredData
+            {openData
               .filter((item) => item.category === cat)
               .map((project) => (
-                <Link key={project.id} href={`${href}${project.id}`}>
+                <Link
+                  key={project.id}
+                  href={`${href}${project.id}`}
+                  className="group block"
+                >
                   <ProjectCard project={project} />
                 </Link>
               ))}

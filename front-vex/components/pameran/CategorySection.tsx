@@ -1,3 +1,4 @@
+import React from "react";
 export default function CategorySection({
   title,
   children,
@@ -5,6 +6,7 @@ export default function CategorySection({
   title: string;
   children: React.ReactNode;
 }) {
+  const hasChildren = React.Children.count(children) > 0;
   if (!children) return null;
 
   return (

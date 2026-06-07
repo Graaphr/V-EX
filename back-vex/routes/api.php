@@ -70,6 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pameran/{id}', [PameranController::class, 'show']);
         Route::put('/pameran/{id}', [PameranController::class, 'update']);
         Route::delete('/pameran/{id}', [PameranController::class, 'destroy']);
+        Route::post('/pameran/{id}/update', [PameranController::class, 'update']);
     });
 
     // KPS

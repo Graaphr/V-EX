@@ -21,6 +21,7 @@ class PameranController extends Controller
             'title' => $item->judul,
             'subtitle' => $item->prodi?->nama_prodi ?? $item->kategori,
             'category' => $item->prodi?->nama_prodi ?? $item->kategori,
+            'kode_prodi' => $item->kategori,
             'date' => $item->tanggal_mulai,
             'bannerImage' => "http://localhost:8000/storage/{$item->banner}",
             'likes' => 0,
@@ -71,6 +72,7 @@ class PameranController extends Controller
             'id' => $pameran->id_pameran,
             'title' => $pameran->judul,
             'subtitle' => $pameran->prodi?->nama_prodi ?? $pameran->kategori,
+            'kode_prodi' => $pameran->kategori,
             'category' => $pameran->prodi?->nama_prodi ?? $pameran->kategori,
             'date' => $pameran->tanggal_mulai,
             'bannerImage' => "http://localhost:8000/storage/{$pameran->banner}",
@@ -107,7 +109,6 @@ class PameranController extends Controller
     {
         $request->validate([
             'category' => 'required|exists:prodi,kode_prodi',
-            // 'semester' => 'required|integer|min:1|max:8',
             'banner' => 'required|image|mimes:png,jpg,jpeg|max:2048',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -118,7 +119,6 @@ class PameranController extends Controller
             'prepare_end' => 'required|date|after:prepare_start',
         ]);
 
-        // ✅ Ambil otomatis model pameran
         $modelPameran = ModelPameran::where('jenis', 'Pameran')->first();
 
         if (!$modelPameran) {
@@ -128,29 +128,24 @@ class PameranController extends Controller
             ], 404);
         }
 
-        // Upload banner
-        $bannerPath = $request
-            ->file('banner')
-            ->store('banner', 'public');
+        // Upload banner ke folder banner seperti biasa
+        $bannerPath = $request->file('banner')->store('banner', 'public');
 
         $pameran = Pameran::create([
             'model_pameran' => $modelPameran->id_model,
             'kategori' => $request->category,
-            // 'tahun' => now()->year,
-
             'banner' => $bannerPath,
-
             'judul' => $request->title,
             'deskripsi' => $request->description,
-
             'kapasitas' => $request->capacity ?? 24,
-
             'tanggal_mulai' => $request->start_date,
             'tanggal_akhir' => $request->end_date,
-
             'tanggal_mulai_persiapan' => $request->prepare_start,
             'tanggal_akhir_persiapan' => $request->prepare_end,
         ]);
+
+        // Buat folder pameran/{id} di storage
+        Storage::disk('public')->makeDirectory("pameran/{$pameran->id_pameran}");
 
         return response()->json([
             'status' => 'success',
@@ -175,26 +170,39 @@ class PameranController extends Controller
 
         $request->validate([
             'kategori' => 'sometimes|exists:prodi,kode_prodi',
-            'semester' => 'sometimes|integer|min:1|max:8',
             'banner' => 'sometimes|image|mimes:png,jpg,jpeg|max:2048',
             'judul' => 'sometimes|string|max:255',
             'deskripsi' => 'sometimes|string',
             'kapasitas' => 'sometimes|integer',
             'tanggal_mulai' => 'sometimes|date',
-            'tanggal_akhir' => 'sometimes|date|after:tanggal_mulai',
+            'tanggal_akhir' => 'sometimes|date',
             'tanggal_mulai_persiapan' => 'sometimes|date',
-            'tanggal_akhir_persiapan' => 'sometimes|date|after:tanggal_mulai_persiapan',
+            'tanggal_akhir_persiapan' => 'sometimes|date',
         ]);
 
-        // Update banner jika ada file baru
         if ($request->hasFile('banner')) {
             Storage::disk('public')->delete($pameran->banner);
-            $bannerPath = $request->file('banner')->store('banner', 'public');
-            $pameran->banner = $bannerPath;
-            $pameran->save();
+            $pameran->banner = $request->file('banner')->store('banner', 'public');
         }
 
-        $pameran->update($request->except('banner'));
+        if ($request->filled('judul'))
+            $pameran->judul = $request->judul;
+        if ($request->filled('deskripsi'))
+            $pameran->deskripsi = $request->deskripsi;
+        if ($request->filled('kategori'))
+            $pameran->kategori = $request->kategori;
+        if ($request->filled('kapasitas'))
+            $pameran->kapasitas = $request->kapasitas;
+        if ($request->filled('tanggal_mulai'))
+            $pameran->tanggal_mulai = $request->tanggal_mulai;
+        if ($request->filled('tanggal_akhir'))
+            $pameran->tanggal_akhir = $request->tanggal_akhir;
+        if ($request->filled('tanggal_mulai_persiapan'))
+            $pameran->tanggal_mulai_persiapan = $request->tanggal_mulai_persiapan;
+        if ($request->filled('tanggal_akhir_persiapan'))
+            $pameran->tanggal_akhir_persiapan = $request->tanggal_akhir_persiapan;
+
+        $pameran->save();
 
         return response()->json([
             'status' => 'success',
@@ -202,7 +210,6 @@ class PameranController extends Controller
             'pameran' => $pameran,
         ]);
     }
-
     // =============================
     // HAPUS PAMERAN
     // =============================
