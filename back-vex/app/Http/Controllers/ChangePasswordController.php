@@ -10,10 +10,8 @@ use Illuminate\Support\Facades\Validator;
 
 class ChangePasswordController extends Controller
 {
-    /**
-     * Ganti Kata Sandi
-     * POST /api/change-password
-     */
+
+    // Ganti password dan simpan
     public function changePassword(Request $request)
     {
         // Validasi input 
@@ -24,13 +22,13 @@ class ChangePasswordController extends Controller
         ]);
 
         // Skenario Alternatif: Validasi gagal
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        // if ($validator->fails()) {
+        //     return response()->json([
+        //         'status' => 'error',
+        //         'message' => 'Validasi gagal',
+        //         'errors' => $validator->errors()
+        //     ], 422);
+        // }
 
         $user = Auth::user();
 
