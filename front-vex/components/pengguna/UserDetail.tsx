@@ -61,27 +61,23 @@ export default function UserDetail({ selectedUser, formData, isEdit, onToggleEdi
 
             {/* Program Studi */}
             <SelectField
-  label="Program Studi"
-  name="program_studi"
-  value={formData?.program_studi ?? ''}
-  isEdit={isEdit}
-  onChange={onFormChange}
-  options={PRODI_OPTIONS}
-/>
+              label="Program Studi"
+              name="program_studi"
+              value={formData?.program_studi ?? ''}
+              isEdit={isEdit}
+              onChange={onFormChange}
+              options={PRODI_OPTIONS}
+            />
 
             {/* Kelas — hanya untuk non-KPS */}
             {selectedUser.role !== 'KPS' && (
               <DetailField
-  label="Kelas"
-  name="kelas"
-  value={
-    isEdit
-      ? String(formData?.kelas?.id_kelas ?? '')
-      : formData?.kelas?.nama_kelas ?? ''
-  }
-  isEdit={isEdit}
-  onChange={onFormChange}
-/>
+                label="Kelas"
+                name="kelas"
+                value={isEdit ? String(formData?.kelas?.id_kelas ?? '') : (formData?.kelas?.nama_kelas ?? '')}
+                isEdit={isEdit}
+                onChange={onFormChange}
+              />
             )}
 
             {/* Role + Status / Tombol Simpan */}
@@ -132,37 +128,17 @@ type FieldProps = {
   className?: string;
 };
 
-function DetailField({
-  label,
-  name,
-  value,
-  isEdit,
-  onChange,
-  className = '',
-  ...props
-}: FieldProps) {
+function DetailField({ label, name, value, isEdit, onChange, className = '', ...props }: FieldProps) {
   return (
     <div className={className}>
-      <p className="text-sm font-semibold mb-1 text-gray-600">
-        {label}
-      </p>
+      <p className="text-sm font-semibold mb-1 text-gray-600">{label}</p>
 
       {name === 'kelas' && isEdit ? (
-        <select
-          name={name}
-          value={value}
-          onChange={onChange}
-          className="w-full bg-gray-200 p-2 px-4 rounded-lg"
-        >
-          <option value="">
-            -- Pilih Kelas --
-          </option>
+        <select name={name} value={value} onChange={onChange} className="w-full bg-gray-200 p-2 px-4 rounded-lg">
+          <option value="">-- Pilih Kelas --</option>
 
           {KELAS_OPTIONS.map((kelas) => (
-            <option
-              key={kelas.id_kelas}
-              value={kelas.id_kelas}
-            >
+            <option key={kelas.id_kelas} value={kelas.id_kelas}>
               {kelas.nama_kelas}
             </option>
           ))}
@@ -190,47 +166,26 @@ type SelectFieldProps = FieldProps & {
   options: ProdiOption[];
 };
 
-function SelectField({
-  label,
-  name,
-  value,
-  isEdit,
-  options,
-  onChange,
-}: SelectFieldProps) {
+function SelectField({ label, name, value, isEdit, options, onChange }: SelectFieldProps) {
   return (
     <div>
-      <p className="text-sm font-semibold mb-1 text-gray-600">
-        {label}
-      </p>
+      <p className="text-sm font-semibold mb-1 text-gray-600">{label}</p>
 
       {isEdit ? (
-        <select
-          name={name}
-          value={value}
-          onChange={onChange}
-          className="w-full bg-gray-200 p-2 px-3 rounded-lg"
-        >
+        <select name={name} value={value} onChange={onChange} className="w-full bg-gray-200 p-2 px-3 rounded-lg">
           <option value="" disabled>
             -- Pilih Prodi --
           </option>
 
           {options.map((opt) => (
-            <option
-              key={opt.kode}
-              value={opt.kode}
-            >
+            <option key={opt.kode} value={opt.kode}>
               {opt.nama}
             </option>
           ))}
         </select>
       ) : (
         <input
-          value={
-            options.find(
-              (p) => p.kode === value
-            )?.nama ?? ''
-          }
+          value={options.find((p) => p.kode === value)?.nama ?? ''}
           disabled
           className="w-full bg-gray-200 p-2 px-4 rounded-lg"
         />

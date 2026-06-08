@@ -70,7 +70,7 @@ function StrengthBar({ password }: StrengthBarProps) {
 }
 
 
-export default function GantiPasswordForm() {
+export default function GantiPasswordPage() {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirmation, setNewPasswordConfirmation] = useState('');

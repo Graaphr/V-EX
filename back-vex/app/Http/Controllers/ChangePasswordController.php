@@ -21,15 +21,6 @@ class ChangePasswordController extends Controller
             'new_password_confirmation' => 'required|string|min:8'
         ]);
 
-        // Skenario Alternatif: Validasi gagal
-        // if ($validator->fails()) {
-        //     return response()->json([
-        //         'status' => 'error',
-        //         'message' => 'Validasi gagal',
-        //         'errors' => $validator->errors()
-        //     ], 422);
-        // }
-
         $user = Auth::user();
 
         // Skenario Alternatif: Password lama salah
