@@ -1,80 +1,128 @@
-
 import { useState } from 'react';
 import { sendVerification, verifyToken } from './apiGantiEmail';
 
 export function useChangeEmail() {
-    const [step, setStep] = useState<1 | 2 | 3>(1);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-    const [newEmail, setNewEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [token, setToken] = useState('');
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [isLoading, setIsLoading] = useState(false);
 
-    const reset = () => {
-        setStep(1);
-        setError('');
-        setSuccess('');
-        setToken('');
-        setPassword('');
-    };
+  const [success, setSuccess] = useState('');
+  const [globalError, setGlobalError] = useState('');
 
-    // STEP 1: POST /api/change-email/send
-    const handleSendVerification = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setSuccess('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [tokenError, setTokenError] = useState('');
 
-        if (!newEmail || !password) {
-            return setError('Email baru dan password wajib diisi');
-        }
+  const [newEmail, setNewEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [token, setToken] = useState('');
 
-        try {
-            setIsLoading(true);
-            const res = await sendVerification({ new_email: newEmail, password });
-            setSuccess(res.message || 'Kode verifikasi telah dikirim');
-            setStep(2);
-        } catch (err: any) {
-            setError(err?.response?.data?.message || 'Gagal mengirim kode verifikasi');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const reset = () => {
+    setStep(1);
 
-    // STEP 2: POST /api/change-email/verify
-    const handleVerify = async () => {
-        setError('');
-        setSuccess('');
+    setSuccess('');
+    setGlobalError('');
 
-        if (!token) {
-            return setError('Kode verifikasi wajib diisi');
-        }
+    setEmailError('');
+    setPasswordError('');
+    setTokenError('');
 
-        try {
-            setIsLoading(true);
-            const res = await verifyToken({ otp: token });
-            setSuccess(res.message || 'Email berhasil diubah');
-            setStep(3);
-        } catch (err: any) {
-            setError(err?.response?.data?.message || 'Verifikasi gagal');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    setToken('');
+    setPassword('');
+  };
 
-    return {
-        step,
-        isLoading,
-        error,
-        success,
-        newEmail,
-        setNewEmail,
+  const handleSendVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setSuccess('');
+    setGlobalError('');
+
+    setEmailError('');
+    setPasswordError('');
+
+    let hasError = false;
+
+    if (!newEmail.trim()) {
+      setEmailError('Email baru wajib diisi');
+      hasError = true;
+    }
+
+    if (!password.trim()) {
+      setPasswordError('Password wajib diisi');
+      hasError = true;
+    }
+
+    if (hasError) return;
+
+    try {
+      setIsLoading(true);
+
+      const res = await sendVerification({
+        new_email: newEmail,
         password,
-        setPassword,
-        token,
-        setToken,
-        handleSendVerification,
-        handleVerify,
-        handleReset: reset,
-    };
+      });
+
+      setSuccess(res.message || 'Kode verifikasi telah dikirim');
+      setStep(2);
+    } catch (err: any) {
+      setGlobalError(err?.response?.data?.message || 'Gagal mengirim kode verifikasi');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    setSuccess('');
+    setGlobalError('');
+    setTokenError('');
+
+    if (!token.trim()) {
+      setTokenError('Kode verifikasi wajib diisi');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const res = await verifyToken({
+        otp: token,
+      });
+
+      setSuccess(res.message || 'Email berhasil diubah');
+      setStep(3);
+    } catch (err: any) {
+      if (err.res?.status === 401) {
+        setPasswordError(err.res.message);
+        return;
+      }
+
+      // setGlobalError(err.response?.data?.message || 'Terjadi kesalahan');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    step,
+    isLoading,
+
+    success,
+    globalError,
+
+    emailError,
+    passwordError,
+    tokenError,
+
+    newEmail,
+    setNewEmail,
+
+    password,
+    setPassword,
+
+    token,
+    setToken,
+
+    handleSendVerification,
+    handleVerify,
+    handleReset: reset,
+  };
 }

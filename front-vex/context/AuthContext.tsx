@@ -40,18 +40,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       const response = await url.get('/api/user');
+      
 
       setUser(response.data.user ?? response.data);
     } catch (error: any) {
       console.error('Fetch user gagal:', error);
 
+       if (error?.response?.status === 401) {
       localStorage.removeItem('token');
       setUser(null);
 
-      // Redirect ke halaman utama jika token expired/invalid
-      if (error?.response?.status === 401) {
-        window.location.href = '/';
-      }
+      window.location.href = '/';
+      return;
+    }
+
+    setUser(null);
     } finally {
       setLoading(false);
     }

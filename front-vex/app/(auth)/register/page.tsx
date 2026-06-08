@@ -10,6 +10,7 @@ import { Logo } from '@/components/shared/ui/Components';
 import { Button, ButtonPutih } from '@/components/shared/ui/Button';
 import { VectorBlueBox } from '@/components/shared/ui/BoxModel';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { InputField, PasswordField } from '@/components/shared/ui/InputFields';
 
 // API
 import { Register } from './apiRegister';
@@ -26,39 +27,78 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [password_confirmation, setPasswordConfirmation] = useState('');
 
+  const [success, setSuccess] = useState("");
+  const [namaError, setNamaError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordConfirmationError, setPasswordConfirmationError] = useState('');
+
   // handle_register
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!nama || !email || !password || !password_confirmation) {
-      alert('Semua kolom wajib diisi!');
-      return;
+    setNamaError('');
+    setEmailError('');
+    setPasswordError('');
+    setPasswordConfirmationError('');
+    setSuccess('');
+
+    let hasError = false;
+
+    if (!nama.trim()) {
+      setNamaError('Nama wajib diisi');
+      hasError = true;
+    }
+    if (!email.trim()) {
+      setEmailError('Email wajib diisi');
+      hasError = true;
+    }
+    if (!password.trim()) {
+      setPasswordError('Kata sandi wajib diisi');
+      hasError = true;
+    }
+    if (!password_confirmation.trim()) {
+      setPasswordConfirmationError('Kata sandi wajib diisi');
+      hasError = true;
+    }
+    if (password !== password_confirmation) {
+      setPasswordConfirmationError('Password tidak sama!');
+      hasError = true;
     }
 
-    if (password !== password_confirmation) {
-      alert('Password tidak sama!');
+    if (hasError) {
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const res = await Register( {
+      const res = await Register({
         nama: nama,
         email: email,
         password: password,
         password_confirmation: password_confirmation,
       });
 
-      alert(res.message);
+      setSuccess(res.message);
 
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('otp_expires_at', res.data.otp_expires_at);
+      localStorage.setItem('token', res.token);
+      localStorage.setItem('otp_expires_at', res.otp_expires_at);
 
       router.push('/verifikasi');
 
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Registrasi Gagal');
+      const response = error.response?.data;
+
+      if (response?.errors) {
+        setNamaError(response.errors.nama?.[0] || '');
+        setEmailError(response.errors.email?.[0] || '');
+        setPasswordError(response.errors.password?.[0] || '');
+        setPasswordConfirmationError(
+          response.errors.password_confirmation?.[0] || ''
+        );
+      }
+
     } finally {
       setIsLoading(false);
     }
@@ -143,58 +183,56 @@ export default function RegisterPage() {
         className="z-10 bg-white text-black rounded-xl shadow-2xl w-full max-w-md p-8 flex flex-col items-center"
       >
         <Logo />
+        {success && <div className="bg-green-50 text-green-600 text-sm p-3 rounded-lg mb-4">{success}</div>}
 
         <form onSubmit={handleRegister} className="w-full space-y-4 mt-6 select-none">
-          <input
+          <InputField
+            type="text"
             value={nama}
-            onChange={(e) => setNama(e.target.value)}
-            placeholder="Nama Lengkap"
-            className="input-form"
+            placeholder="Masukkan Nama"
+            error={namaError}
+            className={'input-form transition-all duration-200'}
+            onChange={(e) => {
+              setNama(e.target.value);
+              setNamaError('');
+            }}
           />
-
-          <input
+          <InputField
+            type="text"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            type="email"
-            placeholder="Email"
-            className="input-form"
+            placeholder="Masukkan Email"
+            error={emailError}
+            className={'input-form transition-all duration-200'}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailError('');
+            }}
           />
 
-          {/* PASSWORD */}
-          <div className="relative">
-            <input
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Kata Sandi"
-              className="input-form"
-            />
-
-            <motion.span
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
-            >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </motion.span>
-          </div>
-
-          {/* CONFIRM */}
-          <div className="relative">
-            <input
-              value={password_confirmation}
-              onChange={(e) => setPasswordConfirmation(e.target.value)}
-              type={showConfirm ? 'text' : 'password'}
-              placeholder="Konfirmasi Kata Sandi"
-              className="input-form"
-            />
-
-            <motion.span
-              onClick={() => setShowConfirm((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
-            >
-              {showConfirm ? <FaEyeSlash /> : <FaEye />}
-            </motion.span>
-          </div>
+          <PasswordField
+            value={password}
+            placeholder="Kata Sandi"
+            showPassword={showPassword}
+            error={passwordError}
+            className={'input-form transition-all duration-200'}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setPasswordError('');
+            }}
+            onToggle={() => setShowPassword((prev) => !prev)}
+          />
+          <PasswordField
+            value={password_confirmation}
+            placeholder="Kata Sandi"
+            showPassword={showConfirm}
+            error={passwordConfirmationError}
+            className={'input-form transition-all duration-200'}
+            onChange={(e) => {
+              setPasswordConfirmation(e.target.value);
+              setPasswordConfirmationError('');
+            }}
+            onToggle={() => setShowConfirm((prev) => !prev)}
+          />
 
           <div className="w-full mt-8 border-b-2 border-gray-300 pb-8">
             <ButtonPutih onClick={handleRegister} disabled={isLoading} className="w-full py-3 rounded-lg font-bold">

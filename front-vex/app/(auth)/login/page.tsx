@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { motion, Transition } from 'framer-motion';
 import Link from 'next/link';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
 // Komponen
 import { Logo } from '@/components/shared/ui/Components';
 import { Button, ButtonPutih } from '@/components/shared/ui/Button';
@@ -12,6 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 // API
 import { Login } from './apiLogin';
 import axios from 'axios';
+import { InputField, PasswordField } from '@/components/shared/ui/InputFields';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,11 +20,32 @@ export default function LoginPage() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  // Succes
+  const [success, setSuccess] = useState('');
+
+  // Eror
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      alert('Harap isi email dan kata sandi');
+
+    setEmailError('');
+    setPasswordError('');
+
+    let hasError = false;
+
+    if (!email.trim()) {
+      setEmailError('Email wajib diisi');
+      hasError = true;
+    }
+
+    if (!password.trim()) {
+      setPasswordError('Kata sandi wajib diisi');
+      hasError = true;
+    }
+
+    if (hasError) {
       return;
     }
 
@@ -34,23 +55,26 @@ export default function LoginPage() {
       const res = await Login({ email, password });
 
       const { token, user } = res;
-      login(token, user);
-      alert('Login Berhasil!');
 
-      // VALIDASI
+      login(token, user);
+
+      setSuccess('Login Berhasil !');
+
       const direct = res['redirect_to'];
+
       if (user.role?.toLowerCase() === 'admin') {
         router.push(direct);
       } else {
         router.push('/');
       }
     } catch (error) {
-      let message = 'Terjadi kesalahan';
+      let message = 'Email atau Kata Sandi salah';
 
       if (axios.isAxiosError(error)) {
-        message = error.response?.data?.message ?? 'Email atau Kata Sandi salah';
+        message = error.response?.data?.message ?? message;
       }
-      alert(message);
+
+      setEmailError(message);
     } finally {
       setIsLoading(false);
     }
@@ -150,31 +174,32 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleLogin} className="w-full space-y-5 select-none">
-          <input
-            name="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+          {success && <div className="bg-green-50 text-green-600 text-sm p-3 rounded-lg mb-4">{success}</div>}
+          <InputField
             type="email"
+            value={email}
             placeholder="Email"
-            className="input-form"
+            error={emailError}
+            className={'input-form transition-all duration-200'}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailError('');
+            }}
           />
 
           <div className="relative">
-            <input
-              name="password"
+            <PasswordField
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type={showPassword ? 'text' : 'password'}
               placeholder="Kata Sandi"
-              className="input-form"
+              showPassword={showPassword}
+              error={passwordError}
+              className={'input-form transition-all duration-200'}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setPasswordError('');
+              }}
+              onToggle={() => setShowPassword((prev) => !prev)}
             />
-
-            <motion.span
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
-            >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </motion.span>
           </div>
 
           <div className="flex justify-end">

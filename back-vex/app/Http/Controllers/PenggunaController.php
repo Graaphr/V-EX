@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 class PenggunaController extends Controller
 {
 
-// construktor
+    // construktor
     protected OtpService $otpService;
 
     public function __construct(OtpService $otpService)
@@ -22,49 +22,49 @@ class PenggunaController extends Controller
     public function register(Request $request)
     {
 
-    // validasi inputan user
+        // validasi inputan user
         $request->validate([
-            'nama'     => 'required|string|max:255',
-            'email'    => 'required|email',
+            'nama' => 'required|string|max:255',
+            'email' => 'required|email',
             'password' => 'required|min:8|confirmed',
         ]);
 
-    // cek email 
+        // cek email 
         if (Pengguna::where('email', $request->email)->exists()) {
             return response()->json([
                 'message' => 'Email sudah terdaftar',
             ], 409);
         }
 
-    // buat token dan simpan data sementara di local
+        // buat token dan simpan data sementara di local
         try {
-            $token     = Str::uuid();
-            $otpCode   = $this->otpService->generateOtp();
+            $token = Str::uuid();
+            $otpCode = $this->otpService->generateOtp();
             $expiresAt = $this->otpService->getExpiresAt();
 
             $userData = [
-                'nama'           => $request->nama,
-                'email'          => $request->email,
-                'role'           => 'Pengunjung',
-                'password'       => Hash::make($request->password),
-                'otp_code'       => $otpCode,
+                'nama' => $request->nama,
+                'email' => $request->email,
+                'role' => 'Pengunjung',
+                'password' => Hash::make($request->password),
+                'otp_code' => $otpCode,
                 'otp_expires_at' => $expiresAt->timestamp * 1000,
             ];
-    
-    // kirim otp ke email
+
+            // kirim otp ke email
             $this->otpService->storeToCache($token, $userData, $expiresAt);
             $this->otpService->sendOtpEmail($request->email, $otpCode);
 
             return response()->json([
-                'status'         => 'success',
-                'message'        => 'Silakan cek email OTP Anda.',
-                'token'          => $token,
+                'status' => 'success',
+                'message' => 'Silakan cek email OTP Anda.',
+                'token' => $token,
                 'otp_expires_at' => $expiresAt->timestamp * 1000,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => $e->getMessage()
             ], 500);
         }
@@ -75,40 +75,40 @@ class PenggunaController extends Controller
     public function registerThroughAdmin(Request $request)
     {
         $request->validate([
-            'nama'  => 'required|string|max:255',
+            'nama' => 'required|string|max:255',
             'email' => 'required|email',
-            'role'  => 'required|in:Ketua PBL,KPS',
+            'role' => 'required|in:Ketua PBL,KPS',
             'prodi' => 'required',
         ]);
 
         if (Pengguna::where('email', $request->email)->exists()) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Email sudah terdaftar',
             ], 409);
         }
 
         try {
             $pengguna = Pengguna::create([
-                'nama'     => $request->nama,
-                'email'    => $request->email,
+                'nama' => $request->nama,
+                'email' => $request->email,
                 'password' => Hash::make($request->email),
-                'role'     => $request->role,
-                'status'   => 'aktif',
+                'role' => $request->role,
+                'status' => 'aktif',
 
                 'program_studi' => $request->prodi,
                 'kelas' => $request->kelas
             ]);
 
             return response()->json([
-                'status'   => 'success',
-                'message'  => 'Pengguna berhasil ditambahkan',
+                'status' => 'success',
+                'message' => 'Pengguna berhasil ditambahkan',
                 'pengguna' => $pengguna,
             ], 201);
 
         } catch (\Exception $e) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => $e->getMessage(),
             ], 500);
         }
@@ -120,8 +120,8 @@ class PenggunaController extends Controller
             'kelas',
             'prodi'
         ])
-        ->where('role', $role)
-        ->get();
+            ->where('role', $role)
+            ->get();
 
         return response()->json([
             'status' => 'success',
@@ -130,45 +130,50 @@ class PenggunaController extends Controller
     }
 
     public function updateThroughAdmin(Request $request, $id)
-{
-    $request->validate([
-        'nama' => 'required|string|max:255',
-        'email' => 'required|email',
-        'role' => 'required',
-        'status' => 'required',
-    ]);
+    {
+        $request->validate([
+            'nama' => 'required|string|max:255',
+            'email' => 'required|email',
+            'role' => 'required',
+            'status' => 'required',
+        ]);
 
-    $pengguna = Pengguna::find($id);
+        $pengguna = Pengguna::find($id);
 
-    if (!$pengguna) {
+        if (!$pengguna) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pengguna tidak ditemukan'
+            ], 404);
+        }
+
+        $pengguna->update([
+            'nama' => $request->nama,
+            'email' => $request->email,
+            'role' => $request->role,
+            'status' => $request->status,
+            'program_studi' => $request->program_studi,
+            'kelas' => $request->kelas,
+        ]);
+
         return response()->json([
-            'status' => 'error',
-            'message' => 'Pengguna tidak ditemukan'
-        ], 404);
+            'status' => 'success',
+            'message' => 'Pengguna berhasil diperbarui',
+            'data' => $pengguna
+        ]);
     }
-
-    $pengguna->update([
-        'nama' => $request->nama,
-        'email' => $request->email,
-        'role' => $request->role,
-        'status' => $request->status,
-        'program_studi' => $request->program_studi,
-        'kelas' => $request->kelas,
-    ]);
-
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Pengguna berhasil diperbarui',
-        'data' => $pengguna
-    ]);
-}
 
     public function verifyOtp(Request $request)
     {
-    // validasi inputan
+        if (!$request->token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi Kesalahan'
+            ], 400);
+        }
         $request->validate([
             'token' => 'required',
-            'otp'   => 'required|digits:6',
+            'otp' => 'required|digits:6',
         ]);
 
         // cek token cache user
@@ -176,23 +181,23 @@ class PenggunaController extends Controller
 
         if (!$tempUser) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'OTP expired atau tidak ditemukan'
             ], 408);
         }
 
         // buat data user ke db
         Pengguna::create([
-            'nama'     => $tempUser['nama'],
-            'email'    => $tempUser['email'],
+            'nama' => $tempUser['nama'],
+            'email' => $tempUser['email'],
             'password' => $tempUser['password'],
-            'role'     => $tempUser['role'],
+            'role' => $tempUser['role'],
         ]);
 
         $this->otpService->forgetCache($request->token);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Akun berhasil diverifikasi!',
         ]);
     }
@@ -200,11 +205,11 @@ class PenggunaController extends Controller
     public function resendOtp(Request $request)
     {
         // ambil token
-        $token    = $request->token;
+        $token = $request->token;
         $tempUser = $this->otpService->getFromCache($token);
 
         // buat kode otp baru
-        $otpCode   = $this->otpService->generateOtp();
+        $otpCode = $this->otpService->generateOtp();
         $expiresAt = $this->otpService->getExpiresAt();
 
         $tempUser['otp_code'] = $otpCode;
@@ -214,8 +219,8 @@ class PenggunaController extends Controller
         $this->otpService->sendOtpEmail($tempUser['email'], $otpCode);
 
         return response()->json([
-            'status'         => 'success',
-            'message'        => 'Silakan cek email OTP Anda.',
+            'status' => 'success',
+            'message' => 'Silakan cek email OTP Anda.',
             'otp_expires_at' => $expiresAt->timestamp * 1000,
         ]);
     }
@@ -227,6 +232,7 @@ class PenggunaController extends Controller
                 'email' => 'required|email',
                 'password' => 'required',
             ]);
+
 
             $user = Pengguna::where('email', $request->email)->first();
 
@@ -281,9 +287,7 @@ class PenggunaController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => config('app.debug')
-                    ? $e->getMessage()
-                    : 'Terjadi kesalahan pada server.',
+                'message' => 'Terjadi kesalahan pada server.',
             ], 500);
         }
     }
@@ -293,7 +297,7 @@ class PenggunaController extends Controller
         $request->user()->tokens()->delete();
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Logout berhasil'
         ]);
     }
