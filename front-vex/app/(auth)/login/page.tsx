@@ -10,7 +10,7 @@ import { VectorBox } from '@/components/shared/ui/BoxModel';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 // API
-import {Login} from "./apiLogin";
+import { Login } from './apiLogin';
 import axios from 'axios';
 
 export default function LoginPage() {
@@ -31,9 +31,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const res = await Login (
-        {email, password}
-      );
+      const res = await Login({ email, password });
 
       const { token, user } = res;
       login(token, user);

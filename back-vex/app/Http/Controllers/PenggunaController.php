@@ -78,7 +78,6 @@ class PenggunaController extends Controller
             'nama'  => 'required|string|max:255',
             'email' => 'required|email',
             'role'  => 'required|in:Ketua PBL,KPS',
-
             'prodi' => 'required',
         ]);
 

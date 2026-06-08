@@ -7,7 +7,7 @@ import {
   resendEmail,
 } from './apiLupaPassword';
 
-export default function LupaPasswordEmailPage() {
+export default function LupaPasswordPage() {
   // RESPONSE
   const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState('');
