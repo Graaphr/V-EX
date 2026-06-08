@@ -8,13 +8,16 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PameranController;
 use App\Http\Controllers\PublicPameranController;
 use App\Http\Controllers\GameAssetController;
+use App\Http\Controllers\KaryaController;
+use App\Http\Controllers\KomentarController;
+use App\Http\Controllers\SukaController;
 
 // Route::post('/test', function () {
 //     return response()->json(['message' => 'OK']);
 // });
 
 // =============================
-// PUBLIC ROUTES
+// PUBLIC ROUTES SETELAH LOGIN
 // =============================
 Route::prefix('auth')->group(function () {
 
@@ -63,10 +66,11 @@ Route::prefix('auth')->group(function () {
 
 
 
-// Publik Akses
+// Publik Akses Global
 Route::get('/pameran', [PameranController::class, 'index']);
 Route::get('/pameran/{id}', [PameranController::class, 'show']);
 Route::get('/game-assets', [GameAssetController::class, 'index']);
+Route::get('/karya/{id_karya}/komentar', [KomentarController::class, 'index']);   // lihat komentar
 
 // =============================
 // PROTECTED ROUTES
@@ -102,8 +106,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/pengguna/role/{role}', [PenggunaController::class, 'getByRole']);
             Route::put('/pengguna/{id}', [PenggunaController::class, 'updateThroughAdmin']);
 
-            
-    
+
+
             // Manajemen pameran
             Route::get('/pameran', [PameranController::class, 'index']);
             Route::post('/pameran/add', [PameranController::class, 'store']);
@@ -111,6 +115,9 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/pameran/{id}', [PameranController::class, 'update']);
             Route::delete('/pameran/{id}', [PameranController::class, 'destroy']);
             Route::post('/pameran/{id}/update', [PameranController::class, 'update']);
+
+            // Manajemen Karya (Admin)
+            Route::delete('/karya/{id}', [KaryaController::class, 'destroy']);
         });
 
     // KPS
@@ -125,6 +132,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', function () {
             return response()->json(['status' => 'success', 'page' => 'Ketua PBL Dashboard']);
         });
+
+        // Manajemen Karya (Ketua PBL)
+        Route::get('/karya', [KaryaController::class, 'index']);
+        Route::post('/karya', [KaryaController::class, 'store']);
+        Route::put('/karya/{id}', [KaryaController::class, 'update']);
+        Route::post('/karya/{id}/update', [KaryaController::class, 'update']);
+        Route::delete('/karya/{id}', [KaryaController::class, 'destroy']);
     });
 
     // GANTI EMAIL
@@ -144,5 +158,13 @@ Route::middleware('auth:sanctum')->group(function () {
         '/change-password',
         [App\Http\Controllers\ChangePasswordController::class, 'changePassword']
     );
+
+    // KOMENTAR DAN SUKA
+     Route::prefix('karya')->group(function () {
+        Route::post('/{id_karya}/komentar', [KomentarController::class, 'store']);   // tambah komentar
+        Route::post('/{id_karya}/suka',     [SukaController::class,     'toggle']);  // toggle like
+        Route::get('/{id_karya}/suka',      [SukaController::class,     'status']);  // cek status like
+    });
+    
 
 });
