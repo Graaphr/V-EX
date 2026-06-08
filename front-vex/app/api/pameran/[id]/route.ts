@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import api from "@/lib/axios";
+import url from "@/lib/axios";
 
 /* ===================== */
 /* GET /api/pameran/[id] */
@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const response = await api.get(`/api/pameran/${id}`);
+    const response = await url.get(`/api/pameran/${id}`);
     const item = response.data.pameran;
 
     const transformed = {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { Pameran } from "@/types/pameran";
-import api from "@/lib/axios";
+import url from "@/lib/axios";
 
 const jsonPath = path.join(process.cwd(), "public/data/Pameran.json");
 const imageDir = path.join(process.cwd(), "public/image");
@@ -14,7 +14,7 @@ const uploadDir = path.join(process.cwd(), "public/uploads");
 
 export async function GET() {
   try {
-    const response = await api.get("/api/pameran");
+    const response = await url.get("/api/pameran");
     // mengambil api dari backend
     const transformed = response.data.pameran.map((item: any) => ({
       id: item.id_pameran,
@@ -126,7 +126,7 @@ export async function POST(req: Request) {
       backendForm.append("banner", image as File);
     }
 
-    const response = await api.post("/api/admin/pameran", backendForm, {
+    const response = await url.post("/api/admin/pameran", backendForm, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
