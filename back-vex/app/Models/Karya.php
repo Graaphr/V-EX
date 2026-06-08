@@ -38,4 +38,22 @@ class Karya extends Model
     {
         return $this->belongsTo(Pameran::class, 'id_pameran', 'id_pameran');
     }
+
+    // ✅ Relasi ke komentar
+    public function komentar()
+    {
+        return $this->hasMany(Komentar::class, 'id_karya', 'id_karya');
+    }
+
+    // ✅ Relasi ke suka
+    public function suka()
+    {
+        return $this->hasMany(Suka::class, 'id_karya', 'id_karya');
+    }
+
+    // ✅ Hitung total suka
+    public function totalSuka()
+    {
+        return $this->suka()->count();
+    }
 }

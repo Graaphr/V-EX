@@ -9,13 +9,15 @@ use App\Http\Controllers\PameranController;
 use App\Http\Controllers\PublicPameranController;
 use App\Http\Controllers\GameAssetController;
 use App\Http\Controllers\KaryaController;
+use App\Http\Controllers\KomentarController;
+use App\Http\Controllers\SukaController;
 
 // Route::post('/test', function () {
 //     return response()->json(['message' => 'OK']);
 // });
 
 // =============================
-// PUBLIC ROUTES
+// PUBLIC ROUTES SETELAH LOGIN
 // =============================
 Route::prefix('auth')->group(function () {
 
@@ -64,10 +66,11 @@ Route::prefix('auth')->group(function () {
 
 
 
-// Publik Akses
+// Publik Akses Global
 Route::get('/pameran', [PameranController::class, 'index']);
 Route::get('/pameran/{id}', [PameranController::class, 'show']);
 Route::get('/game-assets', [GameAssetController::class, 'index']);
+Route::get('/karya/{id_karya}/komentar', [KomentarController::class, 'index']);   // lihat komentar
 
 // =============================
 // PROTECTED ROUTES
@@ -155,5 +158,13 @@ Route::middleware('auth:sanctum')->group(function () {
         '/change-password',
         [App\Http\Controllers\ChangePasswordController::class, 'changePassword']
     );
+
+    // KOMENTAR DAN SUKA
+     Route::prefix('karya')->group(function () {
+        Route::post('/{id_karya}/komentar', [KomentarController::class, 'store']);   // tambah komentar
+        Route::post('/{id_karya}/suka',     [SukaController::class,     'toggle']);  // toggle like
+        Route::get('/{id_karya}/suka',      [SukaController::class,     'status']);  // cek status like
+    });
+    
 
 });
