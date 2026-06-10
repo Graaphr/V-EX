@@ -19,6 +19,11 @@ class Karya extends Model
         'tautan',
         'gambar_poster',
         'gambar_sampul',
+        'is_terbaik',
+    ];
+
+    protected $casts = [
+        'is_terbaik' => 'boolean', // ✅ cast ke boolean
     ];
 
     // Relasi ke pengguna (Ketua PBL)
