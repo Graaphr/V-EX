@@ -20,11 +20,13 @@ class Karya extends Model
         'gambar_poster',
         'gambar_sampul',
         'id_pameran',
+        'lantai',
         'is_terbaik',
     ];
 
     protected $casts = [
         'is_terbaik' => 'boolean', // ✅ cast ke boolean
+        'lantai' => 'integer',
     ];
 
     // Relasi ke pengguna (Ketua PBL)
@@ -40,13 +42,6 @@ class Karya extends Model
     }
 
     public function pameran(){
-        return $this->belongsTo(Pameran::class, 'id_pameran', 'id_pameran');
-    }
-
-
-    // Relasi ke pameran
-    public function pameran()
-    {
         return $this->belongsTo(Pameran::class, 'id_pameran', 'id_pameran');
     }
 
