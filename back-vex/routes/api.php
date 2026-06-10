@@ -37,13 +37,13 @@ Route::get('/karya-terbaik', [KpsController::class, 'karyaTerbaik']); // ✅ pub
 // !! JANGAN DISENTUH !!
 //-----------------------
 
-Route::prefix('experience')->group(function()){
+Route::prefix('experience')->group(function(){
     Route::get('/game-assets', [GameAssetController::class, 'index']);
     //Butuh route untuk ambil 3D model dari setiap booth
     //Butuh route untuk ambil data karya setiap booth (data karyanya beserta komentar likes dan penilaiannya)
     //Butuh route untuk ambil 3D model pameran
 
-}
+});
 
 // =============================
 // PROTECTED ROUTES
