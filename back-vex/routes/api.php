@@ -17,22 +17,33 @@ use App\Http\Controllers\KpsController;
 // PUBLIC ROUTES
 // =============================
 Route::prefix('auth')->group(function () {
-    Route::post('/register',           [PenggunaController::class,      'register']);
-    Route::post('/verify-otp',         [PenggunaController::class,      'verifyOtp']);
-    Route::post('/resend-otp',         [PenggunaController::class,      'resendOtp']);
-    Route::post('/login',              [PenggunaController::class,      'login']);
-    Route::post('/forgot-password',    [ResetPasswordController::class, 'forgotPassword']);
-    Route::post('/resend-email',       [ResetPasswordController::class, 'resendEmail']);
+    Route::post('/register', [PenggunaController::class, 'register']);
+    Route::post('/verify-otp', [PenggunaController::class, 'verifyOtp']);
+    Route::post('/resend-otp', [PenggunaController::class, 'resendOtp']);
+    Route::post('/login', [PenggunaController::class, 'login']);
+    Route::post('/forgot-password', [ResetPasswordController::class, 'forgotPassword']);
+    Route::post('/resend-email', [ResetPasswordController::class, 'resendEmail']);
     Route::post('/verify-reset-token', [ResetPasswordController::class, 'verifyResetToken']);
-    Route::post('/reset-password',     [ResetPasswordController::class, 'resetPassword']);
+    Route::post('/reset-password', [ResetPasswordController::class, 'resetPassword']);
 });
 
 // Publik Akses Global
-Route::get('/pameran',                         [PameranController::class,  'index']);
-Route::get('/pameran/{id}',                    [PameranController::class,  'show']);
-Route::get('/game-assets',                     [GameAssetController::class,'index']);
-Route::get('/karya/{id_karya}/komentar',       [KomentarController::class, 'index']);
-Route::get('/karya-terbaik',                   [KpsController::class,      'karyaTerbaik']); // ✅ public
+Route::get('/pameran', [PameranController::class, 'index']);
+Route::get('/pameran/{id}', [PameranController::class, 'show']);
+Route::get('/karya/{id_karya}/komentar', [KomentarController::class, 'index']);
+Route::get('/karya-terbaik', [KpsController::class, 'karyaTerbaik']); // ✅ public
+
+//-----------------------
+// !! JANGAN DISENTUH !!
+//-----------------------
+
+Route::prefix('experience')->group(function()){
+    Route::get('/game-assets', [GameAssetController::class, 'index']);
+    //Butuh route untuk ambil 3D model dari setiap booth
+    //Butuh route untuk ambil data karya setiap booth (data karyanya beserta komentar likes dan penilaiannya)
+    //Butuh route untuk ambil 3D model pameran
+
+}
 
 // =============================
 // PROTECTED ROUTES
@@ -42,7 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return response()->json([
             'status' => 'success',
-            'user'   => $request->user(),
+            'user' => $request->user(),
         ]);
     })->name('auth.user');
 
@@ -57,19 +68,19 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
         Route::post('/pengguna/register-through-admin', [PenggunaController::class, 'registerThroughAdmin']);
-        Route::get('/pengguna/role/{role}',             [PenggunaController::class, 'getByRole']);
-        Route::put('/pengguna/{id}',                    [PenggunaController::class, 'updateThroughAdmin']);
+        Route::get('/pengguna/role/{role}', [PenggunaController::class, 'getByRole']);
+        Route::put('/pengguna/{id}', [PenggunaController::class, 'updateThroughAdmin']);
 
         // Manajemen Pameran
-        Route::get('/pameran',              [PameranController::class, 'index']);
-        Route::post('/pameran/add',         [PameranController::class, 'store']);
-        Route::get('/pameran/{id}',         [PameranController::class, 'show']);
-        Route::put('/pameran/{id}',         [PameranController::class, 'update']);
-        Route::delete('/pameran/{id}',      [PameranController::class, 'destroy']);
+        Route::get('/pameran', [PameranController::class, 'index']);
+        Route::post('/pameran/add', [PameranController::class, 'store']);
+        Route::get('/pameran/{id}', [PameranController::class, 'show']);
+        Route::put('/pameran/{id}', [PameranController::class, 'update']);
+        Route::delete('/pameran/{id}', [PameranController::class, 'destroy']);
         Route::post('/pameran/{id}/update', [PameranController::class, 'update']);
 
         // Manajemen Karya (Admin)
-        Route::delete('/karya/{id}',        [KaryaController::class,   'destroy']);
+        Route::delete('/karya/{id}', [KaryaController::class, 'destroy']);
     });
 
     // =============================
@@ -81,8 +92,8 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
         // ✅ Manajemen karya terbaik
-        Route::get('/karya',                       [KpsController::class, 'daftarKarya']);
-        Route::patch('/karya/{id_karya}/terbaik',  [KpsController::class, 'pilihTerbaik']);
+        Route::get('/karya', [KpsController::class, 'daftarKarya']);
+        Route::patch('/karya/{id_karya}/terbaik', [KpsController::class, 'pilihTerbaik']);
         Route::patch('/karya/{id_karya}/batalkan', [KpsController::class, 'batalkanTerbaik']);
     });
 
@@ -95,18 +106,18 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
         // Manajemen Karya
-        Route::get('/karya',              [KaryaController::class, 'index']);
-        Route::post('/karya',             [KaryaController::class, 'store']);
-        Route::put('/karya/{id}',         [KaryaController::class, 'update']);
+        Route::get('/karya', [KaryaController::class, 'index']);
+        Route::post('/karya', [KaryaController::class, 'store']);
+        Route::put('/karya/{id}', [KaryaController::class, 'update']);
         Route::post('/karya/{id}/update', [KaryaController::class, 'update']);
-        Route::delete('/karya/{id}',      [KaryaController::class, 'destroy']);
+        Route::delete('/karya/{id}', [KaryaController::class, 'destroy']);
     });
 
     // =============================
     // GANTI EMAIL
     // =============================
     Route::prefix('change-email')->group(function () {
-        Route::post('/send',   [App\Http\Controllers\ChangeEmailController::class, 'sendVerification']);
+        Route::post('/send', [App\Http\Controllers\ChangeEmailController::class, 'sendVerification']);
         Route::post('/verify', [App\Http\Controllers\ChangeEmailController::class, 'verify']);
     });
 
@@ -120,7 +131,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // =============================
     Route::prefix('karya')->group(function () {
         Route::post('/{id_karya}/komentar', [KomentarController::class, 'store']);
-        Route::post('/{id_karya}/suka',     [SukaController::class,     'toggle']);
-        Route::get('/{id_karya}/suka',      [SukaController::class,     'status']);
+        Route::post('/{id_karya}/suka', [SukaController::class, 'toggle']);
+        Route::get('/{id_karya}/suka', [SukaController::class, 'status']);
     });
 });
