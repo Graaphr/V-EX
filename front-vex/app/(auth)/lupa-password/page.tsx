@@ -2,124 +2,99 @@
 
 import { useEffect, useState } from 'react';
 import { Button, ButtonPutih } from '@/components/shared/ui/Button';
-import {
-  forgotPassword,
-  resendEmail,
-} from './apiLupaPassword';
+import { InputField } from '@/components/shared/ui/InputFields';
+import { forgotPassword, resendEmail } from './apiLupaPassword';
 
-export default function LupaPasswordEmailPage() {
-  // RESPONSE
+export default function LupaPasswordPage() {
   const [emailSent, setEmailSent] = useState(false);
-  const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  // DATA
   const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('reset_email');
-
     if (savedEmail) {
       setEmail(savedEmail);
       setEmailSent(true);
     }
   }, []);
 
-  // =================
-  // handler kirim
-  // =================
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailError('');
+    setSuccess('');
+    setError('');
 
-  setError('');
-  setSuccess('');
+    if (!email.trim()) {
+      setEmailError('Email wajib diisi');
+      return;
+    }
 
-  if (!email) {
-    setError('Email wajib diisi');
-    return;
-  }
-
-  try {
-    setIsLoading(true);
-
-    const res = await forgotPassword({ email });
-
-    setSuccess(
-      res.message || 'Email berhasil dikirim'
-    );
-
-    localStorage.setItem('reset_email', email);
-    setEmailSent(true);
-  } catch (err: any) {
-    setError(
-      err?.response?.data?.message ||
-      'Gagal mengirim email'
-    );
-  } finally {
-    setIsLoading(false);
-  }
-};
-  // =================
-  // handler resend
-  // =================
-  const handleResend = async () => {
     try {
-      setError('');
-      setSuccess('');
       setIsLoading(true);
-      const res = await resendEmail( { email });
-      setSuccess(res.message || 'Email berhasil dikrim');
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setSuccess('Email berhasil dikirim ulang');
-  } catch (err: any) {
-    setError(
-      err?.res?.data?.message ||
-      'Gagal mengirim email'
-    );
-  } finally {
-    setIsLoading(false);
-  }
+      const res = await forgotPassword({ email });
+      setSuccess(res.message || 'Email berhasil dikirim');
+      localStorage.setItem('reset_email', email);
+      setEmailSent(true);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Gagal mengirim email');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // ============================
-  // handler ganti email (button)
-  // ============================
+  const handleResend = async () => {
+    setEmailError('');
+    setSuccess('');
+    setError('');
+
+    try {
+      setIsLoading(true);
+      const res = await resendEmail({ email });
+      setSuccess(res.message || 'Email berhasil dikirim ulang');
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Gagal mengirim email');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleChangeEmail = () => {
     setEmailSent(false);
     setSuccess('');
     setError('');
+
+    setEmailError('');
     localStorage.removeItem('reset_email');
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-main-blue px-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8">
-        {/* HEADER */}
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold">Lupa Password</h1>
-
           <p className="text-sm text-gray-500 mt-2">
             {!emailSent ? 'Masukkan email aktif yang terkait akun anda' : 'Cek email Anda'}
           </p>
         </div>
 
-        {/* ERROR */}
+        {success && <div className="bg-green-50 text-green-600 text-sm p-3 rounded-lg mb-4">{success}</div>}
         {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-4">{error}</div>}
 
-        {/* SUCCESS */}
-        {success && <div className="bg-green-50 text-green-600 text-sm p-3 rounded-lg mb-4">{success}</div>}
-
-        {/* FORM EMAIL */}
         {!emailSent ? (
           <form onSubmit={handleSubmit} className="space-y-5">
-            <input
+            <InputField
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
               placeholder="Masukkan email"
-              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              error={emailError}
+              className="input-form transition-all duration-200"
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError('');
+              }}
             />
 
             <Button type="submit" disabled={isLoading} className="w-full py-3 rounded-lg disabled:opacity-50">
@@ -128,14 +103,16 @@ const handleSubmit = async (e: React.FormEvent) => {
           </form>
         ) : (
           <div className="space-y-4">
-            <input
+            <InputField
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
               placeholder="Masukkan email"
-              className="opacity-60 w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              error={emailError}
+              className="input-form opacity-60 transition-all duration-200"
+              onChange={(e) => setEmail(e.target.value)}
               disabled
             />
+
             <Button
               type="button"
               onClick={handleResend}

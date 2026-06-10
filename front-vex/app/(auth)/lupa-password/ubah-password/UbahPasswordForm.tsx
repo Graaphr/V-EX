@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/shared/ui/Button';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { PasswordField } from '@/components/shared/ui/InputFields';
 import { resetPassword } from '../apiLupaPassword';
 
 export default function UbahPasswordForm() {
@@ -17,38 +17,63 @@ export default function UbahPasswordForm() {
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
-  const [error, setError] = useState('');
+
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordConfirmError, setPasswordConfirmError] = useState('');
   const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setPasswordError('');
+    setPasswordConfirmError('');
     setSuccess('');
+    setError('');
+    let hasError = false;
 
-    if (password.length < 6) {
-      setError('Password minimal 6 karakter');
-      return;
+    if (!password.trim()) {
+      setPasswordError('Kata sandi wajib diisi');
+      hasError = true;
+    } else if (password.length < 6) {
+      setPasswordError('Password minimal 6 karakter');
+      hasError = true;
     }
-    if (password !== passwordConfirmation) {
-      setError('Konfirmasi password tidak sama');
-      return;
+
+    if (!passwordConfirmation.trim()) {
+      setPasswordConfirmError('Konfirmasi kata sandi wajib diisi');
+      hasError = true;
+    } else if (password !== passwordConfirmation) {
+      setPasswordConfirmError('Konfirmasi password tidak sama');
+      hasError = true;
     }
+
+    if (hasError) return;
 
     try {
       setIsLoading(true);
-
       const res = await resetPassword({
         email,
         token,
         password,
         password_confirmation: passwordConfirmation,
       });
-
       setSuccess(res.message || 'Password berhasil diubah');
       setTimeout(() => router.push('/login'), 1500);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal mengubah password');
+      const message = err.response?.data?.message || 'Gagal mengubah password';
+      const msgLower = message.toLowerCase();
+
+      if (
+        msgLower.includes('konfirmasi') ||
+        msgLower.includes('confirmation') ||
+        msgLower.includes('cocok') ||
+        msgLower.includes('match')
+      ) {
+        setPasswordError(message);
+      } else {
+        setError(message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -62,40 +87,38 @@ export default function UbahPasswordForm() {
           <p className="text-sm text-gray-500 mt-2">Masukkan kata sandi baru Anda</p>
         </div>
 
-        {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-4">{error}</div>}
         {success && <div className="bg-green-50 text-green-600 text-sm p-3 rounded-lg mb-4">{success}</div>}
+        {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-4">{error}</div>}
 
         <form onSubmit={handleChangePassword} className="space-y-4">
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Kata Sandi Baru"
+          <div>
+            <PasswordField
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Kata Sandi Baru"
+              showPassword={showPassword}
+              error={passwordError}
+              className="input-form transition-all duration-200"
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setPasswordError('');
+              }}
+              onToggle={() => setShowPassword((prev) => !prev)}
             />
-            <span
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
-            >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </span>
           </div>
 
-          <div className="relative">
-            <input
-              type={showPasswordConfirm ? 'text' : 'password'}
-              placeholder="Konfirmasi Kata Sandi"
+          <div>
+            <PasswordField
               value={passwordConfirmation}
-              onChange={(e) => setPasswordConfirmation(e.target.value)}
-              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Konfirmasi Kata Sandi"
+              showPassword={showPasswordConfirm}
+              error={passwordConfirmError}
+              className="input-form transition-all duration-200"
+              onChange={(e) => {
+                setPasswordConfirmation(e.target.value);
+                setPasswordConfirmError('');
+              }}
+              onToggle={() => setShowPasswordConfirm((prev) => !prev)}
             />
-            <span
-              onClick={() => setShowPasswordConfirm((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
-            >
-              {showPasswordConfirm ? <FaEyeSlash /> : <FaEye />}
-            </span>
           </div>
 
           <Button type="submit" disabled={isLoading} className="w-full py-3 rounded-lg disabled:opacity-50">
