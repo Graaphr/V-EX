@@ -8,6 +8,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PameranController;
 use App\Http\Controllers\PublicPameranController;
 use App\Http\Controllers\GameAssetController;
+use App\Http\Controllers\KaryaController;
 
 // Route::post('/test', function () {
 //     return response()->json(['message' => 'OK']);
@@ -66,7 +67,16 @@ Route::prefix('auth')->group(function () {
 // Publik Akses
 Route::get('/pameran', [PameranController::class, 'index']);
 Route::get('/pameran/{id}', [PameranController::class, 'show']);
-Route::get('/game-assets', [GameAssetController::class, 'index']);
+
+// Publik Akses Experience
+Route::prefix('experience')->group(function () {
+    Route::get('/game-assets', [GameAssetController::class, 'index']);
+    Route::get('/3d-models/{exhibitionId}', [GameAssetController::class, 'get3DModel']);
+    Route::get('/3d-models/{modelId}', [GameAssetController::class, 'get3DModel']);
+    Route::get('/karya/pameran/{id_pameran}', [KaryaController::class, 'showInExperience']);
+});
+
+
 
 // =============================
 // PROTECTED ROUTES
@@ -102,8 +112,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/pengguna/role/{role}', [PenggunaController::class, 'getByRole']);
             Route::put('/pengguna/{id}', [PenggunaController::class, 'updateThroughAdmin']);
 
-            
-    
+
+
             // Manajemen pameran
             Route::get('/pameran', [PameranController::class, 'index']);
             Route::post('/pameran/add', [PameranController::class, 'store']);

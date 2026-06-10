@@ -1,5 +1,4 @@
 import url from '@/lib/axios';
-import { PameranForm } from '@/types/pameran';
 
 export async function GetPameran() {
     const res = await url.get("/api/pameran");

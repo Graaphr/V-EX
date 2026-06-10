@@ -18,6 +18,7 @@ class Karya extends Model
         'tautan',
         'gambar_poster',
         'gambar_sampul',
+        'id_pameran',
     ];
 
     // Relasi ke pengguna (Ketua PBL)
@@ -27,8 +28,13 @@ class Karya extends Model
     }
 
     // Relasi ke stan
-    public function stan()
+    public function model()
     {
-        return $this->belongsTo(Stan::class, 'id_stan', 'id_stan');
+        return $this->belongsTo(Stan::class, 'id_stan', 'id_model');
     }
+
+    public function pameran(){
+        return $this->belongsTo(Pameran::class, 'id_pameran', 'id_pameran');
+    }
+
 }
