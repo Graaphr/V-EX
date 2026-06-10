@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('tautan');
             $table->string('gambar_poster');
             $table->string('gambar_sampul');
+            $table->unsignedBigInteger('lantai');
             $table->boolean('is_terbaik')->default(false);
         });
     }
