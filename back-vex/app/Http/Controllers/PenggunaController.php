@@ -265,7 +265,7 @@ class PenggunaController extends Controller
 
             $redirectTo = match ($user->role) {
                 Pengguna::ROLE_ADMIN => '/admin/pengguna',
-                Pengguna::ROLE_KPS => '/',
+                Pengguna::ROLE_KPS => '/kps/karya',
                 Pengguna::ROLE_KETUA_PBL => '/ketua-pbl/karya',
                 default => '/',
             };
