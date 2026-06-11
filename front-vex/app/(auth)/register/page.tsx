@@ -183,9 +183,9 @@ export default function RegisterPage() {
         className="z-10 bg-white text-black rounded-xl shadow-2xl w-full max-w-md p-8 flex flex-col items-center"
       >
         <Logo />
-        {success && <div className="bg-green-50 text-green-600 text-sm p-3 rounded-lg mb-4">{success}</div>}
 
         <form onSubmit={handleRegister} className="w-full space-y-4 mt-6 select-none">
+        {success && <div className="bg-green-50 text-green-600 text-sm p-3 rounded-lg mb-4">{success}</div>}
           <InputField
             type="text"
             value={nama}

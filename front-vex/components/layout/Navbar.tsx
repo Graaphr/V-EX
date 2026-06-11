@@ -193,7 +193,7 @@ export default function Navbar({ menuItems }: NavbarProps) {
                 className="p-3 flex items-center gap-3 hover:bg-gray-100 transition border-b-2"
               >
                 <FaLock size={18} />
-                Ganti Password
+                Ganti Kata Sandi
               </Link>
             </div>
             <div className="flex flex-col mt-4">

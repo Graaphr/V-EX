@@ -16,14 +16,18 @@ return new class extends Migration
 
             $table->unsignedBigInteger('id_pengguna');
             $table->unsignedBigInteger('id_stan');
+            $table->unsignedBigInteger('id_pameran');
 
             $table->foreign('id_pengguna')->references('id')->on('pengguna')->cascadeOnDelete();
             $table->foreign('id_stan')->references('id_stan')->on('stan')->cascadeOnDelete();
+            $table->foreign('id_pameran')->references('id_pameran')->on('pameran')->cascadeOnDelete();
             $table->string('judul');
             $table->string('deskripsi');
             $table->string('tautan');
             $table->string('gambar_poster');
             $table->string('gambar_sampul');
+            $table->unsignedBigInteger('lantai');
+            $table->boolean('is_terbaik')->default(false);
         });
     }
 

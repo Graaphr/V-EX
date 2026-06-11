@@ -2,7 +2,7 @@ import url from '@/lib/axios';
 import { UserType, KelasType, ProdiType } from '@/types/pengguna';
 
 export async function GetRole(role: string) {
-  const res = await url.get(`/api/pengguna/role/${role}`);
+  const res = await url.get(`/api/admin/pengguna/role/${role}`);
   return res.data;
 }
 
