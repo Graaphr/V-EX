@@ -1,30 +1,19 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 
 type BoothProps = {
   position?: [number, number, number];
-
   quaternion?: [number, number, number, number];
-
   boothName: string;
-
-  poster: string;
-
-  video?: string;
-
-  openPoster: (
-    src: string,
-    booth: string
-  ) => void;
+  poster: string;       // URL gambar poster → PanelPoster
+  sampul: string;       // URL gambar sampul → PanelVideo
+  tautan?: string;      // embed URL → dikirim ke parent saat PanelVideo diklik
+  modelPath: string;
+  openPoster: (src: string, booth: string) => void;
+  openTautan: (url: string, booth: string) => void; // ← callback ke page.tsx
 };
 
 export default function Booth({
@@ -32,123 +21,38 @@ export default function Booth({
   quaternion = [0, 0, 0, 1],
   boothName,
   poster,
-  video,
+  sampul,
+  tautan,
+  modelPath,
   openPoster,
+  openTautan,
 }: BoothProps) {
-  const [canRender, setCanRender] =
-    useState(false);
+  const [canRender, setCanRender] = useState(false);
 
-  const randomNumber =
-    useMemo(() => {
-      return (
-        Math.floor(
-          Math.random() * 4
-        ) + 1
-      );
-    }, []);
+  const gltf = useGLTF(modelPath);
+  const scene = useMemo(() => gltf.scene.clone(), [gltf]);
 
-  const gltf = useGLTF(
-    `/models/stand${randomNumber}.glb`
-  );
-
-  const scene = useMemo(
-    () => gltf.scene.clone(),
-    [gltf]
-  );
-
-  const posterMesh =
-    useRef<THREE.Mesh | null>(
-      null
-    );
-
-  const videoMesh =
-    useRef<THREE.Mesh | null>(
-      null
-    );
-
-  const videoElement =
-    useRef<HTMLVideoElement | null>(
-      null
-    );
+  const posterMesh = useRef<THREE.Mesh | null>(null);
+  const sampulMesh = useRef<THREE.Mesh | null>(null);
 
   /* ===================== */
-  /* CHECK FILE EXISTS */
-  /* ===================== */
-
-  const fileExists = async (
-    path: string
-  ) => {
-    try {
-      const res = await fetch(
-        path,
-        {
-          method: "HEAD",
-        }
-      );
-
-      return res.ok;
-    } catch {
-      return false;
-    }
-  };
-
-  /* ===================== */
-  /* CHECK BOOTH DATA */
+  /* CHECK POSTER EXISTS   */
   /* ===================== */
 
   useEffect(() => {
-    const check =
-      async () => {
-        const posterOk =
-          await fileExists(
-            poster
-          );
-
-        if (!posterOk) {
-          setCanRender(
-            false
-          );
-          return;
-        }
-
-        setCanRender(true);
-      };
-
+    const check = async () => {
+      try {
+        const res = await fetch(poster, { method: "HEAD" });
+        setCanRender(res.ok);
+      } catch {
+        setCanRender(false);
+      }
+    };
     check();
   }, [poster]);
 
   /* ===================== */
-  /* SAFE LOAD TEXTURE */
-  /* ===================== */
-
-  const loadTextureSafe = async (
-    path: string,
-    onLoad: (
-      texture: THREE.Texture
-    ) => void
-  ) => {
-    const exists =
-      await fileExists(path);
-
-    if (!exists) return;
-
-    const loader =
-      new THREE.TextureLoader();
-
-    loader.load(
-      path,
-      (texture) => {
-        texture.flipY = false;
-        texture.colorSpace =
-          THREE.SRGBColorSpace;
-
-        onLoad(texture);
-      }
-    );
-  };
-
-  /* ===================== */
-  /* SETUP */
+  /* SETUP MESH            */
   /* ===================== */
 
   useEffect(() => {
@@ -156,199 +60,90 @@ export default function Booth({
 
     scene.traverse((obj: any) => {
       if (!obj.isMesh) return;
-
-      const name =
-        obj.name?.toLowerCase() ||
-        "";
-
-      if (
-        name.includes(
-          "collider"
-        )
-      ) {
+      const name = obj.name?.toLowerCase() || "";
+      if (name.includes("collider")) {
         obj.visible = false;
-        obj.userData.collider =
-          true;
+        obj.userData.collider = true;
       }
     });
 
-    posterMesh.current =
-      scene.getObjectByName(
-        "PanelPoster"
-      ) as THREE.Mesh;
-
-    videoMesh.current =
-      scene.getObjectByName(
-        "PanelVideo"
-      ) as THREE.Mesh;
-  }, [
-    scene,
-    canRender,
-  ]);
+    posterMesh.current = scene.getObjectByName("PanelPoster") as THREE.Mesh;
+    sampulMesh.current = scene.getObjectByName("PanelVideo") as THREE.Mesh;
+  }, [scene, canRender]);
 
   /* ===================== */
-  /* POSTER */
+  /* LOAD TEXTURE HELPER   */
   /* ===================== */
 
-  useEffect(() => {
-    if (
-      !canRender ||
-      !posterMesh.current
-    )
-      return;
-
-    loadTextureSafe(
-      poster,
-      (texture) => {
-        if (!posterMesh.current)
-          return;
-
-        posterMesh.current.material =
-          new THREE.MeshBasicMaterial(
-            {
-              map: texture,
-              toneMapped:
-                false,
-            }
-          );
-      }
-    );
-  }, [
-    canRender,
-    poster,
-  ]);
-
-  /* ===================== */
-  /* VIDEO */
-  /* ===================== */
-
-  useEffect(() => {
-    const setup =
-      async () => {
-        if (
-          !canRender ||
-          !video ||
-          !videoMesh.current
-        )
-          return;
-
-        const exists =
-          await fileExists(
-            video
-          );
-
-        if (!exists) return;
-
-        const htmlVideo =
-          document.createElement(
-            "video"
-          );
-
-        htmlVideo.src =
-          video;
-        htmlVideo.loop =
-          true;
-        htmlVideo.muted =
-          false;
-        htmlVideo.playsInline =
-          true;
-
-        videoElement.current =
-          htmlVideo;
-
-        const texture =
-          new THREE.VideoTexture(
-            htmlVideo
-          );
-
-        texture.colorSpace =
-          THREE.SRGBColorSpace;
-
-        videoMesh.current!.material =
-          new THREE.MeshBasicMaterial(
-            {
-              map: texture,
-              toneMapped:
-                false,
-            }
-          );
-      };
-
-    setup();
-
-    return () => {
-      videoElement.current?.pause();
-      videoElement.current?.remove();
-      videoElement.current =
-        null;
-    };
-  }, [
-    canRender,
-    video,
-  ]);
-
-  /* ===================== */
-  /* CLICK */
-  /* ===================== */
-
-  const handleClick = (
-    e: any
-  ) => {
-    const clicked =
-      e?.object?.name;
-
-    if (
-      clicked ===
-        "PanelPoster" &&
-      poster
-    ) {
-      openPoster(
-        poster,
-        boothName
-      );
-    }
-
-    if (
-      clicked ===
-        "PanelVideo" &&
-      videoElement.current
-    ) {
-      const vid =
-        videoElement.current;
-
-      if (vid.paused) {
-        vid.play().catch(
-          () => {}
-        );
-      } else {
-        vid.pause();
-      }
-    }
+  const loadTexture = (path: string, onLoad: (tex: THREE.Texture) => void) => {
+    const loader = new THREE.TextureLoader();
+    loader.load(path, (tex) => {
+      tex.flipY = false;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      onLoad(tex);
+    });
   };
 
   /* ===================== */
-  /* NO POSTER = NO BOOTH */
+  /* POSTER TEXTURE        */
   /* ===================== */
+
+  useEffect(() => {
+    if (!canRender || !posterMesh.current) return;
+    loadTexture(poster, (tex) => {
+      if (!posterMesh.current) return;
+      posterMesh.current.material = new THREE.MeshBasicMaterial({
+        map: tex,
+        toneMapped: false,
+      });
+    });
+  }, [canRender, poster]);
+
+  /* ===================== */
+  /* SAMPUL TEXTURE        */
+  /* di PanelVideo mesh    */
+  /* ===================== */
+
+  useEffect(() => {
+    if (!canRender || !sampulMesh.current || !sampul) return;
+    loadTexture(sampul, (tex) => {
+      if (!sampulMesh.current) return;
+      sampulMesh.current.material = new THREE.MeshBasicMaterial({
+        map: tex,
+        toneMapped: false,
+      });
+    });
+  }, [canRender, sampul]);
+
+  /* ===================== */
+  /* CLICK                 */
+  /* ===================== */
+
+  const handleClick = (e: any) => {
+    const clicked = e?.object?.name;
+
+    // Klik poster → buka gambar poster
+    if (clicked === "PanelPoster" && poster) {
+      openPoster(poster, boothName);
+    }
+
+    // Klik sampul (PanelVideo) → kirim tautan ke page.tsx untuk embed
+    if (clicked === "PanelVideo" && tautan) {
+      openTautan(tautan, boothName);
+    }
+  };
 
   if (!canRender) return null;
 
   return (
     <group
       position={position}
-      quaternion={
-        new THREE.Quaternion(
-          ...quaternion
-        )
-      }
+      quaternion={new THREE.Quaternion(...quaternion)}
     >
       <primitive
         object={scene}
-        position={[
-          0, 0, -1.2,
-        ]}
-        onClick={
-          handleClick
-        }
+        position={[0, 0, -1.2]}
+        onClick={handleClick}
       />
     </group>
   );

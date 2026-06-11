@@ -34,4 +34,9 @@ class Pameran extends Model
     {
         return $this->belongsTo(Prodi::class, 'kategori', 'kode_prodi');
     }
+
+    public function karya()
+    {
+        return $this->hasMany(Karya::class, 'id_pameran', 'id_pameran');
+    }
 }

@@ -19,6 +19,14 @@ class Karya extends Model
         'tautan',
         'gambar_poster',
         'gambar_sampul',
+        'id_pameran',
+        'lantai',
+        'is_terbaik',
+    ];
+
+    protected $casts = [
+        'is_terbaik' => 'boolean', // ✅ cast ke boolean
+        'lantai' => 'integer',
     ];
 
     // Relasi ke pengguna (Ketua PBL)
@@ -28,14 +36,12 @@ class Karya extends Model
     }
 
     // Relasi ke stan
-    public function stan()
+    public function model()
     {
-        return $this->belongsTo(Stan::class, 'id_stan', 'id_stan');
+        return $this->belongsTo(Stan::class, 'id_stan', 'id_model');
     }
 
-    // Relasi ke pameran
-    public function pameran()
-    {
+    public function pameran(){
         return $this->belongsTo(Pameran::class, 'id_pameran', 'id_pameran');
     }
 

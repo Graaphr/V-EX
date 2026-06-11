@@ -79,6 +79,9 @@ export default function Page() {
     booth: "",
   });
 
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const [embedData, setEmbedData] = useState({ url: "", booth: "" });
+
   /* ====================== */
   /* PLAYER MULTIPLAYER */
   /* ====================== */
@@ -295,9 +298,15 @@ export default function Page() {
     setPosterOpen(true);
   };
 
+  const openTautan = (url: string, booth: string) => {
+    document.exitPointerLock?.();
+    setEmbedData({ url, booth });
+    setEmbedOpen(true);
+  };
+
   const controlsLocked =
     !posterOpen &&
-    !menuOpen;
+    !menuOpen && !embedOpen;
 
   return (
     <div className="w-screen h-screen bg-black overflow-hidden relative touch-none select-none">
@@ -331,6 +340,7 @@ export default function Page() {
               >
                 <Experience
                   exhibitionId={id}
+                  openTautan={openTautan}
                   openPoster={openPoster}
                   controlsLocked={controlsLocked}
                   soundOn={soundOn}
@@ -438,7 +448,29 @@ export default function Page() {
           }
         />
       )}
+
+      {/* EMBED VIDEO */}
+      {embedOpen && (
+        <div className="fixed inset-0 z-[99997] bg-black/90 flex flex-col items-center justify-center">
+          <div className="relative w-full max-w-4xl aspect-video px-4">
+            <button
+              onClick={() => setEmbedOpen(false)}
+              className="absolute -top-10 right-4 text-white text-2xl font-bold"
+            >
+              ✕
+            </button>
+            <iframe
+              src={embedData.url}
+              className="w-full h-full rounded-xl"
+              allowFullScreen
+              allow="autoplay; encrypted-media"
+            />
+          </div>
+        </div>
+      )}
     </div>
+
+
   );
 }
 
