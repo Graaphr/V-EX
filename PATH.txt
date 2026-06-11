@@ -1,0 +1,75 @@
+front-vex
+├── app
+│   ├── api
+│   │   ├── karya
+│   │   ├── pameran
+│   │   │   └── [id]
+│   │   ├── pengguna
+│   │   ├── player
+│   │   └── player-name
+│   ├── (auth)
+│   │   ├── ganti-email
+│   │   ├── ganti-password
+│   │   ├── login
+│   │   ├── lupa-password
+│   │   │   └── ubah-password
+│   │   ├── register
+│   │   └── verifikasi
+│   ├── (dashboard)
+│   │   ├── admin
+│   │   │   ├── karya
+│   │   │   │   └── [id]
+│   │   │   ├── pameran
+│   │   │   │   ├── detail
+│   │   │   │   │   └── [id]
+│   │   │   │   └── edit
+│   │   │   │       └── [id]
+│   │   │   └── pengguna
+│   │   └── ketua-pbl
+│   │       └── karya
+│   │           └── [id]
+│   ├── (index)
+│   ├── (pameran)
+│   │   └── pameran
+│   │       └── [id]
+│   ├── (play)
+│   │   └── exhibition
+│   │       └── [id]
+│   └── test
+├── components
+│   ├── karya
+│   ├── layout
+│   ├── pameran
+│   ├── pengguna
+│   ├── play
+│   └── shared
+│       ├── filter
+│       └── ui
+├── context
+├── hooks
+│   └── userHook
+├── lib
+├── public
+│   ├── data
+│   ├── icon
+│   ├── image
+│   ├── model
+│   ├── models
+│   ├── prodi
+│   │   ├── animasi
+│   │   ├── rekayasa-keamanan-siber
+│   │   ├── teknik-geomatika
+│   │   ├── teknik-informatika
+│   │   ├── teknologi-permainan
+│   │   ├── teknologi-rekayasa-multimedia
+│   │   └── teknologi-rekayasa-perangkat-lunak
+│   └── uploads
+│       ├── 1
+│       ├── 12
+│       ├── 2
+│       ├── 3
+│       ├── 4
+│       ├── 5
+│       ├── 6
+│       └── 7
+└── types

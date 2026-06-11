@@ -109,13 +109,13 @@ export default function FormTambahUser({ onClose, onSave }: Props) {
                 -- Pilih Prodi --
               </option>
               {PRODI_OPTIONS.map((prodi) => (
-  <option
-    key={prodi.kode}
-    value={prodi.kode}
-  >
-    {prodi.nama}
-  </option>
-))}
+                <option
+                  key={prodi.kode}
+                  value={prodi.kode}
+                >
+                  {prodi.nama}
+                </option>
+              ))}
             </select>
           </div>
           {/* Kelas — hanya untuk Ketua PBL */}

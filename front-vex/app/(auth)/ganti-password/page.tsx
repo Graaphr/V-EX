@@ -100,7 +100,7 @@ export default function GantiPasswordPage() {
       setSuccess(res.message || 'Kata sandi berhasil diperbarui.');
       setTimeout(() => router.back(), 1500);
     } catch (err: any) {
-      // Map error dari API ke field yang sesuai
+      
       const message = err?.response?.data?.message || 'Gagal mengganti kata sandi';
       const msgLower = message.toLowerCase();
 
