@@ -15,7 +15,7 @@ const initialForm: KaryaItem = {
   id: 0,
   title: '',
   category: '',
-  capacity: 0,
+  // capacity: 0,
   image: '',
   thumbnail: '',
   year: '',
@@ -59,7 +59,7 @@ export default function AddKaryaPage() {
       formData.append('title', form.title);
       formData.append('category', form.category ?? '');
       formData.append('year', form.year ?? '');
-      formData.append('capacity', String(form.capacity));
+      // formData.append('capacity', String(form.capacity));
       formData.append('semester', form.semester ?? '');
       formData.append('description', form.description ?? '');
       formData.append('booth', form.booth ?? '');
