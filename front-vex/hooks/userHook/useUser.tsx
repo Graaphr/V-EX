@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { StatusType } from "@/components/shared/filter/SelectStatus";
-import { UserType } from "@/types/pengguna";
+import { UserType, KelasType, ProdiType } from "@/types/pengguna";
 import {
   GetRole,
   CreateUser,
@@ -80,21 +80,30 @@ export function useUsers() {
 
   /* ---------- CRUD ---------- */
   const addUser = async (newUser: Omit<UserType, "id">) => {
-    try {
-      await CreateUser({
-        nama: newUser.nama,
-        email: newUser.email,
-        role: newUser.role,
-        kelas: newUser.kelas,
-        prodi: newUser.prodi,
-      });
-      await loadUsers();
-      return true; // ← tambah ini
-    } catch (error) {
-      console.error(error);
-      return false; // ← tambah ini
-    }
-  };
+  try {
+    await CreateUser({
+      nama: newUser.nama,
+      email: newUser.email,
+      role: newUser.role,
+
+      prodi:
+        typeof newUser.prodi === "object"
+          ? newUser.prodi.kode_prodi
+          : newUser.prodi,
+
+      kelas:
+        typeof newUser.kelas === "object"
+          ? String(newUser.kelas.id_kelas)
+          : newUser.kelas,
+    });
+
+    await loadUsers();
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+};
 
   const updateUser = async (user: UserType) => {
     try {

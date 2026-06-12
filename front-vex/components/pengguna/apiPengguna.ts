@@ -23,6 +23,6 @@ export async function UpdateUser(user: UserType) {
     program_studi: typeof user.prodi === 'object' ? user.prodi.kode_prodi : user.prodi,
   };
 
-  const res = await url.put(`/api/pengguna/${user.id}`, payload);
+  const res = await url.put(`/api/admin/pengguna/${user.id}`, payload);
   return res.data;
 }
