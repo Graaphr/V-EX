@@ -25,11 +25,13 @@ type PosterData = {
 };
 
 type InfoData = {
+  id_karya: number | null;
   judul: string;
-  tim: string;
   deskripsi: string;
   likes: number;
+  liked: boolean;
   penilaian: string;
+  tautan: string | null;
   komentar: {
     nama: string;
     isi: string;
@@ -37,421 +39,215 @@ type InfoData = {
 };
 
 export default function Page() {
-  const router =
-    useRouter();
+  const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
 
-  const params =
-    useParams();
+  const [isMobile, setIsMobile] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
+  const [posterOpen, setPosterOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
 
-  const id =
-    params.id as string;
+  const [posterData, setPosterData] = useState<PosterData>({ src: "", booth: "" });
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const [embedUrl, setEmbedUrl] = useState("");
 
-  const [
-    isMobile,
-    setIsMobile,
-  ] = useState(false);
+  /* ====================== */
+  /* PLAYER MULTIPLAYER     */
+  /* ====================== */
 
-  const [
-    isPortrait,
-    setIsPortrait,
-  ] = useState(false);
-
-  const [
-    posterOpen,
-    setPosterOpen,
-  ] = useState(false);
-
-  const [
-    menuOpen,
-    setMenuOpen,
-  ] = useState(false);
-
-  const [
-    soundOn,
-    setSoundOn,
-  ] = useState(true);
-
-  const [
-    posterData,
-    setPosterData,
-  ] = useState<PosterData>({
-    src: "",
-    booth: "",
+  const [playerId] = useState(() => {
+    if (typeof window === "undefined") {
+      return typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : Math.random().toString(36).substring(2);
+    }
+    const existing = sessionStorage.getItem("playerId");
+    if (existing) return existing;
+    const newId = uuidv4();
+    sessionStorage.setItem("playerId", newId);
+    return newId;
   });
 
-  const [embedOpen, setEmbedOpen] = useState(false);
-  const [embedData, setEmbedData] = useState({ url: "", booth: "" });
-
-  /* ====================== */
-  /* PLAYER MULTIPLAYER */
-  /* ====================== */
-
-  const [playerId] =
-    useState(() => {
-      if (
-        typeof window ===
-        "undefined"
-      ) {
-        return typeof crypto !== "undefined" &&
-          crypto.randomUUID
-          ? crypto.randomUUID()
-          : Math.random().toString(36).substring(2);
-      }
-
-      const existing =
-        sessionStorage.getItem(
-          "playerId"
-        );
-
-      if (existing)
-        return existing;
-
-      const id = uuidv4();
-
-      sessionStorage.setItem(
-        "playerId",
-        id
-      );
-
-      return id;
-    });
-
   const generateGuestName = () => {
-    const num =
-      Math.floor(
-        Math.random() * 999
-      ) + 1;
-
-    return `guest${String(
-      num
-    ).padStart(3, "0")}`;
+    const num = Math.floor(Math.random() * 999) + 1;
+    return `guest${String(num).padStart(3, "0")}`;
   };
 
-  const [playerName, setPlayerName] =
-    useState("");
+  const [playerName, setPlayerName] = useState("");
 
   useEffect(() => {
     const initPlayerName = async () => {
       try {
-        const res = await fetch(
-          "/api/player-name"
-        );
-
-        const data =
-          await res.json();
-
-        setPlayerName(
-          data.name
-        );
+        const res = await fetch("/api/player-name");
+        const data = await res.json();
+        setPlayerName(data.name);
       } catch {
-        setPlayerName(
-          generateGuestName()
-        );
+        setPlayerName(generateGuestName());
       }
     };
-
     initPlayerName();
   }, []);
 
-  /* MOVE */
-  const [
-    mobileMove,
-    setMobileMove,
-  ] = useState({
-    w: false,
-    a: false,
-    s: false,
-    d: false,
-  });
-
-  /* LOOK */
-  const lookDelta =
-    useRef({
-      x: 0,
-      y: 0,
-    });
+  const [mobileMove, setMobileMove] = useState({ w: false, a: false, s: false, d: false });
+  const lookDelta = useRef({ x: 0, y: 0 });
 
   /* ====================== */
-  /* DETECT MOBILE */
+  /* DETECT MOBILE          */
   /* ====================== */
 
   useEffect(() => {
     const check = () => {
-      setIsMobile(
-        window.innerWidth <
-        1024
-      );
-
-      setIsPortrait(
-        window.matchMedia(
-          "(orientation: portrait)"
-        ).matches
-      );
+      setIsMobile(window.innerWidth < 1024);
+      setIsPortrait(window.matchMedia("(orientation: portrait)").matches);
     };
-
     check();
-
-    window.addEventListener(
-      "resize",
-      check
-    );
-
-    window.addEventListener(
-      "orientationchange",
-      check
-    );
-
+    window.addEventListener("resize", check);
+    window.addEventListener("orientationchange", check);
     return () => {
-      window.removeEventListener(
-        "resize",
-        check
-      );
-
-      window.removeEventListener(
-        "orientationchange",
-        check
-      );
+      window.removeEventListener("resize", check);
+      window.removeEventListener("orientationchange", check);
     };
   }, []);
 
   /* ====================== */
-  /* REMOVE PLAYER */
+  /* REMOVE PLAYER          */
   /* ====================== */
 
   useEffect(() => {
     const removePlayer = () => {
-      fetch(
-        `/api/player?id=${playerId}`,
-        {
-          method: "DELETE",
-          keepalive: true,
-        }
-      );
+      fetch(`/api/player?id=${playerId}`, { method: "DELETE", keepalive: true });
     };
-
-    window.addEventListener(
-      "beforeunload",
-      removePlayer
-    );
-
+    window.addEventListener("beforeunload", removePlayer);
     return () => {
       removePlayer();
-
-      window.removeEventListener(
-        "beforeunload",
-        removePlayer
-      );
+      window.removeEventListener("beforeunload", removePlayer);
     };
   }, [playerId]);
 
-  /* ====================== */
-  /* EXIT POINTERLOCK SAAT POSTER BUKA */
-  /* ====================== */
-
   useEffect(() => {
-    if (posterOpen) {
-      document.exitPointerLock?.();
-    }
+    if (posterOpen) document.exitPointerLock?.();
   }, [posterOpen]);
 
-  /* ====================== */
-  /* ESC MENU */
-  /* ====================== */
-
   useEffect(() => {
-    const down = (
-      e: KeyboardEvent
-    ) => {
-      if (
-        e.key ===
-        "Escape" &&
-        !posterOpen
-      ) {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !posterOpen) {
         setMenuOpen(true);
         document.exitPointerLock?.();
       }
     };
-
-    window.addEventListener(
-      "keydown",
-      down
-    );
-
-    return () =>
-      window.removeEventListener(
-        "keydown",
-        down
-      );
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
   }, [posterOpen]);
 
-  const openPoster = (
-    src: string,
-    booth: string
-  ) => {
+  const openPoster = (src: string, booth: string) => {
     document.exitPointerLock?.();
-
-    setPosterData({
-      src,
-      booth,
-    });
-
+    setPosterData({ src, booth });
     setPosterOpen(true);
   };
 
-  const openTautan = (url: string, booth: string) => {
+  // Dipanggil saat klik PanelVideo di booth → langsung buka embed
+  const openTautan = (url: string, _booth: string) => {
     document.exitPointerLock?.();
-    setEmbedData({ url, booth });
+    setEmbedUrl(url);
     setEmbedOpen(true);
   };
 
-  const controlsLocked =
-    !posterOpen &&
-    !menuOpen && !embedOpen;
+  // Dipanggil dari PosterViewer tombol "Tonton Video"
+  const openEmbedFromPoster = (url: string) => {
+    setPosterOpen(false);
+    setEmbedUrl(url);
+    setEmbedOpen(true);
+  };
+
+  const controlsLocked = !posterOpen && !menuOpen && !embedOpen;
 
   return (
     <div className="w-screen h-screen bg-black overflow-hidden relative touch-none select-none">
 
       {/* PORTRAIT WARNING */}
-      {isMobile &&
-        isPortrait && (
-          <div className="fixed inset-0 z-[999999] bg-black text-white flex flex-col items-center justify-center text-center px-6">
-            <h1 className="text-4xl font-bold mb-4">
-              Putar HP Anda
-            </h1>
-
-            <p className="text-white/70 text-lg">
-              Gunakan mode
-              landscape untuk
-              masuk pameran 3D
-            </p>
-          </div>
-        )}
+      {isMobile && isPortrait && (
+        <div className="fixed inset-0 z-[999999] bg-black text-white flex flex-col items-center justify-center text-center px-6">
+          <h1 className="text-4xl font-bold mb-4">Putar HP Anda</h1>
+          <p className="text-white/70 text-lg">Gunakan mode landscape untuk masuk pameran 3D</p>
+        </div>
+      )}
 
       {/* GAME */}
-      {(!isMobile ||
-        !isPortrait) && (
-          <>
-            {playerName && (
-              <Canvas
-                camera={{
-                  position: [0, 2, 5],
-                  fov: 75,
-                }}
-              >
-                <Experience
-                  exhibitionId={id}
-                  openTautan={openTautan}
-                  openPoster={openPoster}
-                  controlsLocked={controlsLocked}
-                  soundOn={soundOn}
-                  mobile={isMobile}
-                  mobileMove={mobileMove}
-                  lookDelta={lookDelta}
+      {(!isMobile || !isPortrait) && (
+        <>
+          {playerName && (
+            <Canvas camera={{ position: [0, 2, 5], fov: 75 }}>
+              <Experience
+                exhibitionId={id}
+                openTautan={openTautan}
+                openPoster={openPoster}
+                controlsLocked={controlsLocked}
+                soundOn={soundOn}
+                mobile={isMobile}
+                mobileMove={mobileMove}
+                lookDelta={lookDelta}
+                playerId={playerId}
+                playerName={playerName}
+              />
+            </Canvas>
+          )}
 
-                  /* MULTIPLAYER */
-                  playerId={playerId}
-                  playerName={playerName}
-                />
-              </Canvas>
-            )}
+          {!isMobile && controlsLocked && <Crosshair />}
 
-            {!isMobile &&
-              controlsLocked && (
-                <Crosshair />
-              )}
-
-            {isMobile &&
-              controlsLocked && (
-                <MobileHUD
-                  setMobileMove={
-                    setMobileMove
-                  }
-                  lookDelta={
-                    lookDelta
-                  }
-                />
-              )}
-          </>
-        )}
+          {isMobile && controlsLocked && (
+            <MobileHUD setMobileMove={setMobileMove} lookDelta={lookDelta} />
+          )}
+        </>
+      )}
 
       {/* MENU */}
       {menuOpen && (
         <div className="fixed inset-0 z-[99998] bg-black/75 flex items-center justify-center">
           <div className="w-[380px] max-w-[90%] rounded-2xl bg-zinc-900 p-6 text-white space-y-4">
-
-            <h1 className="text-2xl font-bold">
-              Menu
-            </h1>
-
+            <h1 className="text-2xl font-bold">Menu</h1>
             <button
-              onClick={() =>
-                setSoundOn(
-                  !soundOn
-                )
-              }
+              onClick={() => setSoundOn(!soundOn)}
               className="w-full h-12 rounded-xl bg-white/10"
             >
-              Sound :
-              {soundOn
-                ? " ON"
-                : " OFF"}
+              Sound : {soundOn ? " ON" : " OFF"}
             </button>
-
             <button
-              onClick={() =>
-                setMenuOpen(
-                  false
-                )
-              }
+              onClick={() => setMenuOpen(false)}
               className="w-full h-12 rounded-xl bg-green-500 font-bold"
             >
               Lanjut
             </button>
-
             <button
               onClick={async () => {
-                await fetch(
-                  `/api/player?id=${playerId}`,
-                  {
-                    method: "DELETE",
-                  }
-                );
-
+                await fetch(`/api/player?id=${playerId}`, { method: "DELETE" });
                 sessionStorage.removeItem("playerId");
                 sessionStorage.removeItem("playerName");
-
                 router.push(`/pameran/${id}`);
               }}
               className="w-full h-12 rounded-xl bg-red-500 font-bold"
             >
               Keluar
             </button>
-
           </div>
         </div>
       )}
 
-      {/* POSTER */}
+      {/* POSTER + DETAIL */}
       {posterOpen && (
         <PosterViewer
           id={id}
-          src={
-            posterData.src
-          }
-          booth={
-            posterData.booth
-          }
-          onClose={() =>
-            setPosterOpen(
-              false
-            )
-          }
+          src={posterData.src}
+          booth={posterData.booth}
+          onClose={() => setPosterOpen(false)}
+          onOpenTautan={openEmbedFromPoster}
         />
       )}
 
       {/* EMBED VIDEO */}
       {embedOpen && (
-        <div className="fixed inset-0 z-[99997] bg-black/90 flex flex-col items-center justify-center">
+        <div className="fixed inset-0 z-[99999] bg-black/90 flex flex-col items-center justify-center">
           <div className="relative w-full max-w-4xl aspect-video px-4">
             <button
               onClick={() => setEmbedOpen(false)}
@@ -460,7 +256,7 @@ export default function Page() {
               ✕
             </button>
             <iframe
-              src={embedData.url}
+              src={toEmbedUrl(embedUrl)}
               className="w-full h-full rounded-xl"
               allowFullScreen
               allow="autoplay; encrypted-media"
@@ -469,220 +265,85 @@ export default function Page() {
         </div>
       )}
     </div>
-
-
   );
 }
 
 /* ======================= */
-/* MOBILE HUD */
+/* YOUTUBE EMBED HELPER    */
 /* ======================= */
 
-function MobileHUD({
-  setMobileMove,
-  lookDelta,
-}: any) {
+function toEmbedUrl(url: string): string {
+  if (!url) return "";
+  // Sudah embed → langsung pakai
+  if (url.includes("youtube.com/embed/")) return url;
+  // youtu.be/VIDEO_ID
+  const short = url.match(/youtu\.be\/([^?&]+)/);
+  if (short) return `https://www.youtube.com/embed/${short[1]}`;
+  // youtube.com/watch?v=VIDEO_ID
+  const watch = url.match(/[?&]v=([^&]+)/);
+  if (watch) return `https://www.youtube.com/embed/${watch[1]}`;
+  // Fallback (misal Vimeo atau link lain)
+  return url;
+}
+
+/* ======================= */
+/* MOBILE HUD              */
+/* ======================= */
+
+function MobileHUD({ setMobileMove, lookDelta }: any) {
   const moveBase = useRef<any>(null);
   const moveStick = useRef<any>(null);
-
   const lookBase = useRef<any>(null);
   const lookStick = useRef<any>(null);
+  const moveTouchId = useRef<number | null>(null);
+  const lookTouchId = useRef<number | null>(null);
 
-  const moveTouchId =
-    useRef<number | null>(null);
+  const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
-  const lookTouchId =
-    useRef<number | null>(null);
-
-  const clamp = (
-    n: number,
-    min: number,
-    max: number
-  ) =>
-    Math.max(
-      min,
-      Math.min(max, n)
-    );
-
-  const updateMove = (
-    touch: Touch
-  ) => {
-    const rect =
-      moveBase.current.getBoundingClientRect();
-
-    const x =
-      touch.clientX -
-      rect.left -
-      rect.width / 2;
-
-    const y =
-      touch.clientY -
-      rect.top -
-      rect.height / 2;
-
+  const updateMove = (touch: Touch) => {
+    const rect = moveBase.current.getBoundingClientRect();
+    const x = touch.clientX - rect.left - rect.width / 2;
+    const y = touch.clientY - rect.top - rect.height / 2;
     const dx = clamp(x, -35, 35);
     const dy = clamp(y, -35, 35);
-
-    moveStick.current.style.transform =
-      `translate(${dx}px,${dy}px)`;
-
-    setMobileMove({
-      w: dy < -10,
-      s: dy > 10,
-      a: dx < -10,
-      d: dx > 10,
-    });
+    moveStick.current.style.transform = `translate(${dx}px,${dy}px)`;
+    setMobileMove({ w: dy < -10, s: dy > 10, a: dx < -10, d: dx > 10 });
   };
 
-  const updateLook = (
-    touch: Touch
-  ) => {
-    const rect =
-      lookBase.current.getBoundingClientRect();
-
-    const x =
-      touch.clientX -
-      rect.left -
-      rect.width / 2;
-
-    const y =
-      touch.clientY -
-      rect.top -
-      rect.height / 2;
-
+  const updateLook = (touch: Touch) => {
+    const rect = lookBase.current.getBoundingClientRect();
+    const x = touch.clientX - rect.left - rect.width / 2;
+    const y = touch.clientY - rect.top - rect.height / 2;
     const dx = clamp(x, -35, 35);
     const dy = clamp(y, -35, 35);
-
-    lookStick.current.style.transform =
-      `translate(${dx}px,${dy}px)`;
-
-    lookDelta.current = {
-      x: dx * 0.0015,
-      y: dy * 0.0015,
-    };
+    lookStick.current.style.transform = `translate(${dx}px,${dy}px)`;
+    lookDelta.current = { x: dx * 0.0015, y: dy * 0.0015 };
   };
 
-  /* MOVE START */
-  const moveStart = (e: any) => {
-    const touch =
-      e.changedTouches[0];
+  const moveStart = (e: any) => { moveTouchId.current = e.changedTouches[0].identifier; updateMove(e.changedTouches[0]); };
+  const moveMove  = (e: any) => { for (const t of e.touches) if (t.identifier === moveTouchId.current) updateMove(t); };
+  const moveEnd   = (e: any) => { for (const t of e.changedTouches) if (t.identifier === moveTouchId.current) { moveTouchId.current = null; moveStick.current.style.transform = "translate(0px,0px)"; setMobileMove({ w: false, a: false, s: false, d: false }); } };
 
-    moveTouchId.current =
-      touch.identifier;
-
-    updateMove(touch);
-  };
-
-  const moveMove = (e: any) => {
-    for (const touch of e.touches) {
-      if (
-        touch.identifier ===
-        moveTouchId.current
-      ) {
-        updateMove(touch);
-      }
-    }
-  };
-
-  const moveEnd = (e: any) => {
-    for (const touch of e.changedTouches) {
-      if (
-        touch.identifier ===
-        moveTouchId.current
-      ) {
-        moveTouchId.current =
-          null;
-
-        moveStick.current.style.transform =
-          `translate(0px,0px)`;
-
-        setMobileMove({
-          w: false,
-          a: false,
-          s: false,
-          d: false,
-        });
-      }
-    }
-  };
-
-  /* LOOK START */
-  const lookStart = (e: any) => {
-    const touch =
-      e.changedTouches[0];
-
-    lookTouchId.current =
-      touch.identifier;
-
-    updateLook(touch);
-  };
-
-  const lookMove = (e: any) => {
-    for (const touch of e.touches) {
-      if (
-        touch.identifier ===
-        lookTouchId.current
-      ) {
-        updateLook(touch);
-      }
-    }
-  };
-
-  const lookEnd = (e: any) => {
-    for (const touch of e.changedTouches) {
-      if (
-        touch.identifier ===
-        lookTouchId.current
-      ) {
-        lookTouchId.current =
-          null;
-
-        lookStick.current.style.transform =
-          `translate(0px,0px)`;
-
-        lookDelta.current = {
-          x: 0,
-          y: 0,
-        };
-      }
-    }
-  };
+  const lookStart = (e: any) => { lookTouchId.current = e.changedTouches[0].identifier; updateLook(e.changedTouches[0]); };
+  const lookMove  = (e: any) => { for (const t of e.touches) if (t.identifier === lookTouchId.current) updateLook(t); };
+  const lookEnd   = (e: any) => { for (const t of e.changedTouches) if (t.identifier === lookTouchId.current) { lookTouchId.current = null; lookStick.current.style.transform = "translate(0px,0px)"; lookDelta.current = { x: 0, y: 0 }; } };
 
   return (
     <>
-      {/* LEFT */}
-      <div
-        ref={moveBase}
-        onTouchStart={moveStart}
-        onTouchMove={moveMove}
-        onTouchEnd={moveEnd}
-        className="fixed bottom-5 left-5 z-[99999] w-28 h-28 rounded-full bg-white/10 border border-white/20"
-      >
-        <div
-          ref={moveStick}
-          className="absolute left-1/2 top-1/2 w-10 h-10 -ml-5 -mt-5 rounded-full bg-white/60"
-        />
+      <div ref={moveBase} onTouchStart={moveStart} onTouchMove={moveMove} onTouchEnd={moveEnd}
+        className="fixed bottom-5 left-5 z-[99999] w-28 h-28 rounded-full bg-white/10 border border-white/20">
+        <div ref={moveStick} className="absolute left-1/2 top-1/2 w-10 h-10 -ml-5 -mt-5 rounded-full bg-white/60" />
       </div>
-
-      {/* RIGHT */}
-      <div
-        ref={lookBase}
-        onTouchStart={lookStart}
-        onTouchMove={lookMove}
-        onTouchEnd={lookEnd}
-        className="fixed bottom-5 right-5 z-[99999] w-28 h-28 rounded-full bg-white/10 border border-white/20"
-      >
-        <div
-          ref={lookStick}
-          className="absolute left-1/2 top-1/2 w-10 h-10 -ml-5 -mt-5 rounded-full bg-white/60"
-        />
+      <div ref={lookBase} onTouchStart={lookStart} onTouchMove={lookMove} onTouchEnd={lookEnd}
+        className="fixed bottom-5 right-5 z-[99999] w-28 h-28 rounded-full bg-white/10 border border-white/20">
+        <div ref={lookStick} className="absolute left-1/2 top-1/2 w-10 h-10 -ml-5 -mt-5 rounded-full bg-white/60" />
       </div>
     </>
   );
 }
 
 /* ======================= */
-/* POSTER */
+/* POSTER VIEWER           */
 /* ======================= */
 
 function PosterViewer({
@@ -690,42 +351,37 @@ function PosterViewer({
   src,
   booth,
   onClose,
+  onOpenTautan,
 }: {
   id: string;
   src: string;
   booth: string;
   onClose: () => void;
+  onOpenTautan: (url: string) => void;
 }) {
-  const [zoom, setZoom] =
-    useState(1);
+  const [zoom, setZoom] = useState(1);
+  const [tab, setTab] = useState<"detail" | "komentar">("detail");
+  const [newComment, setNewComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const [tab, setTab] =
-    useState<
-      "detail" | "komentar"
-    >("detail");
+  const [info, setInfo] = useState<InfoData>({
+    id_karya: null,
+    judul: "Loading...",
+    deskripsi: "Loading...",
+    likes: 0,
+    liked: false,
+    penilaian: "-",
+    tautan: null,
+    komentar: [],
+  });
 
-  const [liked, setLiked] =
-    useState(false);
-
-  const [newComment, setNewComment] =
-    useState("");
-
-  const [info, setInfo] =
-    useState<InfoData>({
-      judul:
-        "Loading...",
-      tim: "-",
-      deskripsi:
-        "Loading...",
-      likes: 0,
-      penilaian: "-",
-      komentar: [],
-    });
+  /* ====================== */
+  /* LOAD DATA KARYA        */
+  /* ====================== */
 
   useEffect(() => {
     const load = async () => {
       try {
-        // Fetch all karya for this pameran, then match by booth name
         const res = await fetch(`/api/experience/karya/pameran/${id}`);
         const list: any[] = await res.json();
 
@@ -733,43 +389,49 @@ function PosterViewer({
           (k) =>
             k.booth_name === booth ||
             k.judul === booth ||
-            String(k.id_stan) === booth
+            String(k.id_stan).toLowerCase() === booth.toLowerCase()
         );
 
         if (!karya) throw new Error("Karya tidak ditemukan");
 
-        // Fetch komentar
+        // Ambil status like user saat ini
+        const sukaRes = await fetch(`/api/karya/${karya.id_karya}/suka`, {
+          headers: { Accept: "application/json" },
+        });
+        const sukaData = sukaRes.ok ? await sukaRes.json() : { liked: false };
+
+        // Ambil komentar terbaru
         const komentarRes = await fetch(`/api/karya/${karya.id_karya}/komentar`);
         const komentarData = komentarRes.ok ? await komentarRes.json() : [];
 
         const komentar = Array.isArray(komentarData)
           ? komentarData.map((k: any) => ({
-            nama: k.nama ?? k.pengguna?.nama ?? "Anonim",
-            isi: k.isi ?? "",
-          }))
+              nama: k.pengguna?.nama ?? k.nama ?? "Anonim",
+              isi: k.isi ?? "",
+            }))
           : [];
 
-        const penilaian = [
-          karya.is_terbaik ? "Karya Terbaik" : "",
-        ]
-          .filter(Boolean)
-          .join(", ") || "-";
+        const penilaian = karya.is_terbaik ? "Karya Terbaik" : "-";
 
         setInfo({
+          id_karya: karya.id_karya,
           judul: karya.judul ?? "-",
-          tim: karya.deskripsi ? "" : "-",   // tim field not in model; use deskripsi
           deskripsi: karya.deskripsi ?? "-",
           likes: karya.total_suka ?? 0,
+          liked: sukaData.liked ?? false,
           penilaian,
+          tautan: karya.tautan ?? null,
           komentar,
         });
       } catch {
         setInfo({
+          id_karya: null,
           judul: "Data Tidak Ditemukan",
-          tim: "-",
           deskripsi: "Data karya belum tersedia.",
           likes: 0,
+          liked: false,
           penilaian: "-",
+          tautan: null,
           komentar: [],
         });
       }
@@ -778,89 +440,73 @@ function PosterViewer({
     load();
   }, [id, booth]);
 
-  const wheel = (
-    e: React.WheelEvent
-  ) => {
-    e.preventDefault();
+  /* ====================== */
+  /* TOGGLE LIKE (ke API)   */
+  /* ====================== */
 
-    setZoom((p) =>
-      Math.min(
-        Math.max(
-          p -
-          e.deltaY *
-          0.0015,
-          0.5
-        ),
-        5
-      )
-    );
+  const toggleLike = async () => {
+    if (!info.id_karya) return;
+    const wasLiked = info.liked;
+    // Optimistic update
+    setInfo((prev) => ({
+      ...prev,
+      liked: !wasLiked,
+      likes: wasLiked ? prev.likes - 1 : prev.likes + 1,
+    }));
+    try {
+      await fetch(`/api/karya/${info.id_karya}/suka`, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+      });
+    } catch {
+      // Rollback kalau gagal
+      setInfo((prev) => ({
+        ...prev,
+        liked: wasLiked,
+        likes: wasLiked ? prev.likes + 1 : prev.likes - 1,
+      }));
+    }
   };
 
-  const toggleLike =
-    () => {
-      setLiked(
-        !liked
-      );
+  /* ====================== */
+  /* KIRIM KOMENTAR (ke API)*/
+  /* ====================== */
 
-      setInfo(
-        (prev) => ({
+  const sendComment = async () => {
+    if (!newComment.trim() || !info.id_karya || submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/karya/${info.id_karya}/komentar`, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ isi: newComment }),
+      });
+      if (res.ok) {
+        setInfo((prev) => ({
           ...prev,
-          likes:
-            liked
-              ? prev.likes -
-              1
-              : prev.likes +
-              1,
-        })
-      );
-    };
+          komentar: [...prev.komentar, { nama: "Kamu", isi: newComment }],
+        }));
+        setNewComment("");
+      }
+    } catch {
+      // silent fail
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-  const sendComment =
-    () => {
-      if (
-        !newComment.trim()
-      )
-        return;
-
-      setInfo(
-        (prev) => ({
-          ...prev,
-          komentar: [
-            ...prev.komentar,
-            {
-              nama:
-                "Guest",
-              isi:
-                newComment,
-            },
-          ],
-        })
-      );
-
-      setNewComment("");
-    };
+  const wheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    setZoom((p) => Math.min(Math.max(p - e.deltaY * 0.0015, 0.5), 5));
+  };
 
   return (
     <div className="fixed inset-0 z-[99997] bg-black/95 flex flex-row">
 
       {/* IMAGE */}
-      <div
-        onWheel={wheel}
-        className="w-[55%] h-full flex items-center justify-center p-3 border-r border-white/10"
-      >
-        <div
-          style={{
-            transform: `scale(${zoom})`,
-          }}
-          className="relative w-full h-full"
-        >
-          <Image
-            src={src}
-            alt="Poster"
-            fill
-            draggable={false}
-            className="object-contain"
-          />
+      <div onWheel={wheel} className="w-[55%] h-full flex items-center justify-center p-3 border-r border-white/10">
+        <div style={{ transform: `scale(${zoom})` }} className="relative w-full h-full">
+          <Image src={src} alt="Poster" fill draggable={false} className="object-contain" />
         </div>
       </div>
 
@@ -869,56 +515,23 @@ function PosterViewer({
 
         {/* HEADER */}
         <div className="h-14 px-4 border-b border-white/10 flex items-center justify-between shrink-0">
-          <h1 className="font-bold text-sm lg:text-base">
-            Detail Booth
-          </h1>
-
-          <button
-            onClick={
-              onClose
-            }
-            className="px-3 h-9 bg-none text-md font-bold"
-          >
-            ✕
-          </button>
+          <h1 className="font-bold text-sm lg:text-base">Detail Booth</h1>
+          <button onClick={onClose} className="px-3 h-9 text-md font-bold">✕</button>
         </div>
 
         {/* TAB */}
         <div className="grid grid-cols-2 border-b border-white/10">
           <button
-            onClick={() =>
-              setTab(
-                "detail"
-              )
-            }
-            className={`h-11 text-sm ${tab ===
-              "detail"
-              ? "bg-white text-black font-bold"
-              : "text-white/70"
-              }`}
+            onClick={() => setTab("detail")}
+            className={`h-11 text-sm ${tab === "detail" ? "bg-white text-black font-bold" : "text-white/70"}`}
           >
             Detail
           </button>
-
           <button
-            onClick={() =>
-              setTab(
-                "komentar"
-              )
-            }
-            className={`h-11 text-sm ${tab ===
-              "komentar"
-              ? "bg-white text-black font-bold"
-              : "text-white/70"
-              }`}
+            onClick={() => setTab("komentar")}
+            className={`h-11 text-sm ${tab === "komentar" ? "bg-white text-black font-bold" : "text-white/70"}`}
           >
-            Komentar (
-            {
-              info
-                .komentar
-                .length
-            }
-            )
+            Komentar ({info.komentar.length})
           </button>
         </div>
 
@@ -931,69 +544,31 @@ function PosterViewer({
 
               {/* TOP */}
               <div className="flex items-start justify-between gap-4">
-
-                {/* LEFT */}
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-xl font-bold leading-tight">
-                    {info.judul}
-                  </h1>
+                  <h1 className="text-xl font-bold leading-tight">{info.judul}</h1>
 
-                  <p className="text-sm text-white/60 mt-1">
-                    {info.tim}
-                  </p>
-
-                  {/* LIKE DI BAWAH TIM */}
-                  <button
-                    onClick={toggleLike}
-                    className="flex items-center gap-2 mt-3"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill={liked ? "white" : "none"}
-                      stroke="white"
-                      strokeWidth="2"
-                      className="w-5 h-5"
-                    >
+                  {/* LIKE */}
+                  <button onClick={toggleLike} className="flex items-center gap-2 mt-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                      fill={info.liked ? "white" : "none"} stroke="white" strokeWidth="2" className="w-5 h-5">
                       <path d="M12 21s-7-4.35-9.5-8C.5 9.5 2.5 5 7 5c2.54 0 4 1.5 5 3 1-1.5 2.46-3 5-3 4.5 0 6.5 4.5 4.5 8-2.5 3.65-9.5 8-9.5 8z" />
                     </svg>
-
-                    <span className="text-sm">
-                      {info.likes}
-                    </span>
+                    <span className="text-sm">{info.likes}</span>
                   </button>
                 </div>
 
-                {/* RIGHT BADGE */}
+                {/* BADGE */}
                 <div className="flex items-start gap-2 shrink-0">
-
-                  {/* BADGE TERBAIK */}
-                  {info.penilaian
-                    .toLowerCase()
-                    .includes("terbaik") && (
-                      <div className="relative w-12 h-12 lg:w-16 lg:h-16">
-                        <Image
-                          src="/icon/Medalion.svg"
-                          alt="Medalion"
-                          fill
-                          className="object-contain"
-                        />
-                      </div>
-                    )}
-
-                  {/* BADGE TERBANYAK LIKE */}
-                  {info.penilaian
-                    .toLowerCase()
-                    .includes("terbanyak") && (
-                      <div className="relative w-11 h-11 lg:w-[60px] lg:h-[60px]">
-                        <Image
-                          src="/icon/Favorite.svg"
-                          alt="Favorite"
-                          fill
-                          className="object-contain"
-                        />
-                      </div>
-                    )}
+                  {info.penilaian.toLowerCase().includes("terbaik") && (
+                    <div className="relative w-12 h-12 lg:w-16 lg:h-16">
+                      <Image src="/icon/Medalion.svg" alt="Medalion" fill className="object-contain" />
+                    </div>
+                  )}
+                  {info.penilaian.toLowerCase().includes("terbanyak") && (
+                    <div className="relative w-11 h-11 lg:w-[60px] lg:h-[60px]">
+                      <Image src="/icon/Favorite.svg" alt="Favorite" fill className="object-contain" />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1002,90 +577,60 @@ function PosterViewer({
                 {info.deskripsi}
               </p>
 
+              {/* TOMBOL TONTON VIDEO — muncul kalau ada tautan */}
+              {info.tautan && (
+                <button
+                  onClick={() => onOpenTautan(info.tautan!)}
+                  className="w-full h-11 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold flex items-center justify-center gap-2 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  Tonton Video
+                </button>
+              )}
+
             </div>
           )}
 
           {/* KOMENTAR */}
-          {tab ===
-            "komentar" && (
-              <div className="p-4 space-y-3">
-
-                {info
-                  .komentar
-                  .length ===
-                  0 && (
-                    <p className="text-sm text-white/50">
-                      Belum ada komentar
-                    </p>
-                  )}
-
-                {info.komentar.map(
-                  (
-                    item,
-                    i
-                  ) => (
-                    <div
-                      key={i}
-                      className="bg-white/5 rounded-[6px] p-3"
-                    >
-                      <p className="text-xs font-bold mb-1">
-                        {
-                          item.nama
-                        }
-                      </p>
-
-                      <p className="text-sm text-white/70">
-                        {
-                          item.isi
-                        }
-                      </p>
-                    </div>
-                  )
-                )}
-              </div>
-            )}
-        </div>
-
-        {/* INPUT */}
-        {tab ===
-          "komentar" && (
-            <div className="p-3 border-t border-white/10 flex gap-2">
-              <input
-                value={
-                  newComment
-                }
-                onChange={(
-                  e
-                ) =>
-                  setNewComment(
-                    e
-                      .target
-                      .value
-                  )
-                }
-                placeholder="Tulis komentar..."
-                className="flex-1 h-11 px-3 rounded-[6px] bg-white/10 text-sm outline-none"
-              />
-
-              <button
-                onClick={
-                  sendComment
-                }
-                className="w-11 h-11 rounded-[6px] bg-main-blue flex items-center justify-center"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="white"
-                  strokeWidth="2"
-                  className="w-5 h-5"
-                >
-                  <path d="M3 20l18-8L3 4v6l13 2-13 2v6z" />
-                </svg>
-              </button>
+          {tab === "komentar" && (
+            <div className="p-4 space-y-3">
+              {info.komentar.length === 0 && (
+                <p className="text-sm text-white/50">Belum ada komentar</p>
+              )}
+              {info.komentar.map((item, i) => (
+                <div key={i} className="bg-white/5 rounded-[6px] p-3">
+                  <p className="text-xs font-bold mb-1">{item.nama}</p>
+                  <p className="text-sm text-white/70">{item.isi}</p>
+                </div>
+              ))}
             </div>
           )}
+        </div>
+
+        {/* INPUT KOMENTAR */}
+        {tab === "komentar" && (
+          <div className="p-3 border-t border-white/10 flex gap-2">
+            <input
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendComment()}
+              placeholder="Tulis komentar..."
+              className="flex-1 h-11 px-3 rounded-[6px] bg-white/10 text-sm outline-none"
+            />
+            <button
+              onClick={sendComment}
+              disabled={submitting}
+              className="w-11 h-11 rounded-[6px] bg-main-blue flex items-center justify-center disabled:opacity-50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke="white" strokeWidth="2" className="w-5 h-5">
+                <path d="M3 20l18-8L3 4v6l13 2-13 2v6z" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

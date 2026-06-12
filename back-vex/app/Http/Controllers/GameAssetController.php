@@ -7,7 +7,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use App\Models\Karya;
 use App\Models\Pameran;
 
@@ -16,9 +16,9 @@ class GameAssetController extends Controller
     public function index()
     {
         return response()->json([
-            'bgm'       => asset('storage/audio/bgm.mp3'),
-            'footstep'  => asset('storage/audio/footstep.mp3'),
-            'jump'      => asset('storage/audio/jump.mp3'),
+            'bgm' => asset('storage/audio/bgm.mp3'),
+            'footstep' => asset('storage/audio/footstep.mp3'),
+            'jump' => asset('storage/audio/jump.mp3'),
         ]);
     }
 
@@ -31,56 +31,93 @@ class GameAssetController extends Controller
         }
 
         return response()->json([
-            'model_hall' => asset('storage/' . $pameran->model3d->{'3d_model'}),
+            'model_hall' => '/storage/' . $pameran->model3d->{'3d_model'},
         ]);
     }
 
-    /**
-     * Ambil semua karya untuk satu pameran, lengkap dengan:
-     * - model_path  booth 3-D model (dari relasi Stan)
-     * - poster      URL gambar poster
-     * - sampul      URL gambar sampul
-     * - tautan      embed link
-     * - komentar    (eager-loaded)
-     * - total_suka  (count)
-     * - is_terbaik
-     */
     public function karyaByPameran($id_pameran)
     {
-        $karyas = Karya::with(['komentar.pengguna', 'suka'])
-            ->where('id_pameran', $id_pameran)
-            ->get()
-            ->map(function ($karya) {
-                // Resolve booth 3-D model path via Stan relation
-                $modelPath = null;
-                if ($karya->model && $karya->model->{'3d_model'}) {
-                    $modelPath = asset('storage/' . $karya->model->{'3d_model'});
-                }
+        // karya.id_stan → stan.id_stan → stan.model_stan → model.id_model
+        $karyas = DB::table('karya')
+            ->leftJoin('stan', 'karya.id_stan', '=', 'stan.id_stan')
+            ->leftJoin('model', 'stan.model_stan', '=', 'model.id_model')
+            ->where('karya.id_pameran', $id_pameran)
+            ->select(
+                'karya.id_karya',
+                'karya.id_stan',
+                'karya.judul',
+                'karya.deskripsi',
+                'karya.tautan',
+                'karya.gambar_poster',
+                'karya.gambar_sampul',
+                'karya.lantai',
+                'karya.is_terbaik',
+                'model.nama_model as nama_stan',
+                'model.3d_model as booth_model'
+            )
+            ->get();
 
-                return [
-                    'id_karya'   => $karya->id_karya,
-                    'id_stan'    => $karya->id_stan,
-                    'booth_name' => $karya->judul,
-                    'judul'      => $karya->judul,
-                    'deskripsi'  => $karya->deskripsi,
-                    'tautan'     => $karya->tautan,
-                    'poster'     => $karya->gambar_poster
-                                        ? asset('storage/' . $karya->gambar_poster)
-                                        : null,
-                    'sampul'     => $karya->gambar_sampul
-                                        ? asset('storage/' . $karya->gambar_sampul)
-                                        : null,
-                    'model_path' => $modelPath,
-                    'lantai'     => $karya->lantai,
-                    'is_terbaik' => $karya->is_terbaik,
-                    'total_suka' => $karya->suka()->count(),
-                    'komentar'   => $karya->komentar->map(fn($k) => [
-                        'nama' => $k->pengguna->nama ?? 'Anonim',
-                        'isi'  => $k->isi,
-                    ]),
-                ];
-            });
+        $result = $karyas->map(function ($karya) {
+            $totalSuka = DB::table('suka')->where('id_karya', $karya->id_karya)->count();
 
-        return response()->json($karyas);
+            $komentar = DB::table('komentar')
+                ->leftJoin('pengguna', 'komentar.id_pengguna', '=', 'pengguna.id')
+                ->where('komentar.id_karya', $karya->id_karya)
+                ->select('pengguna.nama', 'komentar.isi_komentar')
+                ->get()
+                ->map(fn($k) => [
+                    'nama' => $k->nama ?? 'Anonim',
+                    'isi' => $k->isi,
+                ]);
+
+            return [
+                'id_karya' => $karya->id_karya,
+                'id_stan' => $karya->nama_stan ?? ('Stan ' . $karya->id_stan), // "Stan A", "Stan B" dst
+                'booth_name' => $karya->judul,
+                'judul' => $karya->judul,
+                'deskripsi' => $karya->deskripsi,
+                'tautan' => $karya->tautan,
+                'poster' => $karya->gambar_poster
+                    ? '/storage/' . $karya->gambar_poster
+                    : null,
+                'sampul' => $this->getYoutubeThumbnail($karya->tautan),
+                'model_path' => $karya->booth_model
+                    ? '/storage/' . $karya->booth_model
+                    : null,
+                'lantai' => $karya->lantai,
+                'is_terbaik' => (bool) $karya->is_terbaik,
+                'total_suka' => $totalSuka,
+                'komentar' => $komentar,
+            ];
+        });
+
+        return response()->json($result);
+    }
+
+    private function getYoutubeThumbnail($url)
+    {
+        if (!$url) {
+            return null;
+        }
+
+        $videoId = null;
+
+        // https://www.youtube.com/watch?v=xxxx
+        parse_str(parse_url($url, PHP_URL_QUERY), $query);
+
+        if (isset($query['v'])) {
+            $videoId = $query['v'];
+        }
+
+        // https://youtu.be/xxxx
+        if (!$videoId && preg_match('/youtu\.be\/([^\?&]+)/', $url, $matches)) {
+            $videoId = $matches[1];
+        }
+
+        if (!$videoId) {
+            return null;
+        }
+
+        return "https://img.youtube.com/vi/{$videoId}/maxresdefault.jpg";
     }
 }

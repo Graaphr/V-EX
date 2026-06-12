@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -27,8 +27,6 @@ export default function Booth({
   openPoster,
   openTautan,
 }: BoothProps) {
-  const [canRender, setCanRender] = useState(false);
-
   const gltf = useGLTF(modelPath);
   const scene = useMemo(() => gltf.scene.clone(), [gltf]);
 
@@ -36,28 +34,10 @@ export default function Booth({
   const sampulMesh = useRef<THREE.Mesh | null>(null);
 
   /* ===================== */
-  /* CHECK POSTER EXISTS   */
-  /* ===================== */
-
-  useEffect(() => {
-    const check = async () => {
-      try {
-        const res = await fetch(poster, { method: "HEAD" });
-        setCanRender(res.ok);
-      } catch {
-        setCanRender(false);
-      }
-    };
-    check();
-  }, [poster]);
-
-  /* ===================== */
   /* SETUP MESH            */
   /* ===================== */
 
   useEffect(() => {
-    if (!canRender) return;
-
     scene.traverse((obj: any) => {
       if (!obj.isMesh) return;
       const name = obj.name?.toLowerCase() || "";
@@ -69,19 +49,26 @@ export default function Booth({
 
     posterMesh.current = scene.getObjectByName("PanelPoster") as THREE.Mesh;
     sampulMesh.current = scene.getObjectByName("PanelVideo") as THREE.Mesh;
-  }, [scene, canRender]);
+  }, [scene]);
 
   /* ===================== */
   /* LOAD TEXTURE HELPER   */
+  /* (silent fail jika 404)*/
   /* ===================== */
 
   const loadTexture = (path: string, onLoad: (tex: THREE.Texture) => void) => {
+    if (!path) return;
     const loader = new THREE.TextureLoader();
-    loader.load(path, (tex) => {
-      tex.flipY = false;
-      tex.colorSpace = THREE.SRGBColorSpace;
-      onLoad(tex);
-    });
+    loader.load(
+      path,
+      (tex) => {
+        tex.flipY = false;
+        tex.colorSpace = THREE.SRGBColorSpace;
+        onLoad(tex);
+      },
+      undefined,
+      () => { /* 404 atau gagal → diam saja, booth tetap render */ }
+    );
   };
 
   /* ===================== */
@@ -89,7 +76,7 @@ export default function Booth({
   /* ===================== */
 
   useEffect(() => {
-    if (!canRender || !posterMesh.current) return;
+    if (!poster || !posterMesh.current) return;
     loadTexture(poster, (tex) => {
       if (!posterMesh.current) return;
       posterMesh.current.material = new THREE.MeshBasicMaterial({
@@ -97,7 +84,7 @@ export default function Booth({
         toneMapped: false,
       });
     });
-  }, [canRender, poster]);
+  }, [poster, scene]);
 
   /* ===================== */
   /* SAMPUL TEXTURE        */
@@ -105,7 +92,7 @@ export default function Booth({
   /* ===================== */
 
   useEffect(() => {
-    if (!canRender || !sampulMesh.current || !sampul) return;
+    if (!sampul || !sampulMesh.current) return;
     loadTexture(sampul, (tex) => {
       if (!sampulMesh.current) return;
       sampulMesh.current.material = new THREE.MeshBasicMaterial({
@@ -113,7 +100,7 @@ export default function Booth({
         toneMapped: false,
       });
     });
-  }, [canRender, sampul]);
+  }, [sampul, scene]);
 
   /* ===================== */
   /* CLICK                 */
@@ -122,18 +109,14 @@ export default function Booth({
   const handleClick = (e: any) => {
     const clicked = e?.object?.name;
 
-    // Klik poster → buka gambar poster
     if (clicked === "PanelPoster" && poster) {
       openPoster(poster, boothName);
     }
 
-    // Klik sampul (PanelVideo) → kirim tautan ke page.tsx untuk embed
     if (clicked === "PanelVideo" && tautan) {
       openTautan(tautan, boothName);
     }
   };
-
-  if (!canRender) return null;
 
   return (
     <group

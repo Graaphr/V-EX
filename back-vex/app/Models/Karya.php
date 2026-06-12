@@ -38,7 +38,7 @@ class Karya extends Model
     // Relasi ke stan
     public function model()
     {
-        return $this->belongsTo(Stan::class, 'id_stan', 'id_model');
+        return $this->belongsTo(Stan::class, 'id_stan', 'model_stan');
     }
 
     public function pameran(){
