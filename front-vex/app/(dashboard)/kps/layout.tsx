@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import "@/app/globals.css";
 import Navbar from "@/components/layout/Navbar";
-import NavKetuaPBL from "@/components/shared/ui/NavKetuaPBL";
 
 export const metadata: Metadata = {
-  title: "V-EX | Ketua PBL",
+  title: "V-EX | KPS",
   description: "Virtual Exhibition",
 };
 
