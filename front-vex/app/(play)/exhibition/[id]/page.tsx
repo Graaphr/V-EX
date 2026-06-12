@@ -723,100 +723,57 @@ function PosterViewer({
     });
 
   useEffect(() => {
-    const load =
-      async () => {
-        try {
-          const res =
-            await fetch(
-              `/uploads/${id}/${booth}-teks.txt`
-            );
+    const load = async () => {
+      try {
+        // Fetch all karya for this pameran, then match by booth name
+        const res = await fetch(`/api/experience/karya/pameran/${id}`);
+        const list: any[] = await res.json();
 
-          const txt =
-            await res.text();
+        const karya = list.find(
+          (k) =>
+            k.booth_name === booth ||
+            k.judul === booth ||
+            String(k.id_stan) === booth
+        );
 
-          const komentarRaw =
-            txt.split(
-              "Komentar:"
-            )[1] || "";
+        if (!karya) throw new Error("Karya tidak ditemukan");
 
-          const komentar =
-            komentarRaw
-              .trim()
-              .split("\n")
-              .filter(Boolean)
-              .map(
-                (
-                  line
-                ) => {
-                  const [
-                    nama,
-                    isi,
-                  ] =
-                    line.split(
-                      "|"
-                    );
+        // Fetch komentar
+        const komentarRes = await fetch(`/api/karya/${karya.id_karya}/komentar`);
+        const komentarData = komentarRes.ok ? await komentarRes.json() : [];
 
-                  return {
-                    nama:
-                      nama?.trim() ||
-                      "Anonim",
-                    isi:
-                      isi?.trim() ||
-                      "",
-                  };
-                }
-              );
+        const komentar = Array.isArray(komentarData)
+          ? komentarData.map((k: any) => ({
+            nama: k.nama ?? k.pengguna?.nama ?? "Anonim",
+            isi: k.isi ?? "",
+          }))
+          : [];
 
-          setInfo({
-            judul:
-              txt.match(
-                /Judul:\s*(.*)/i
-              )?.[1] ||
-              "-",
+        const penilaian = [
+          karya.is_terbaik ? "Karya Terbaik" : "",
+        ]
+          .filter(Boolean)
+          .join(", ") || "-";
 
-            tim:
-              txt.match(
-                /Tim:\s*(.*)/i
-              )?.[1] ||
-              "-",
-
-            deskripsi:
-              txt.match(
-                /Deskripsi:\s*([\s\S]*?)Likes:/i
-              )?.[1]
-                ?.trim() ||
-              "-",
-
-            likes: Number(
-              txt.match(
-                /Likes:\s*(\d+)/i
-              )?.[1] ||
-              0
-            ),
-
-            penilaian:
-              txt.match(
-                /Penilaian:\s*(.*)/i
-              )?.[1] ||
-              "-",
-
-            komentar,
-          });
-        } catch {
-          setInfo({
-            judul:
-              "Data Tidak Ditemukan",
-            tim: "-",
-            deskripsi:
-              "File teks belum tersedia.",
-            likes: 0,
-            penilaian:
-              "-",
-            komentar:
-              [],
-          });
-        }
-      };
+        setInfo({
+          judul: karya.judul ?? "-",
+          tim: karya.deskripsi ? "" : "-",   // tim field not in model; use deskripsi
+          deskripsi: karya.deskripsi ?? "-",
+          likes: karya.total_suka ?? 0,
+          penilaian,
+          komentar,
+        });
+      } catch {
+        setInfo({
+          judul: "Data Tidak Ditemukan",
+          tim: "-",
+          deskripsi: "Data karya belum tersedia.",
+          likes: 0,
+          penilaian: "-",
+          komentar: [],
+        });
+      }
+    };
 
     load();
   }, [id, booth]);

@@ -43,17 +43,22 @@ export default function Experience(props: Props) {
   const [karyaList, setKaryaList] = useState<any[]>([]);
   const [folder, setFolder] = useState("default");
 
-  url.get(`/api/experience/3d-models/${props.exhibitionId}`)
-    .then((res) => setHallModel(res.data.model_hall));
+  useEffect(() => {
+    url.get(`/api/experience/3d-models/${props.exhibitionId}`)
+      .then((res) => setHallModel(res.data.model_hall))
+      .catch((err) => console.error("Failed to load hall model", err));
 
-  url.get(`/api/experience/karya/pameran/${props.exhibitionId}`)
-    .then((res) => setKaryaList(res.data));
+    url.get(`/api/experience/karya/pameran/${props.exhibitionId}`)
+      .then((res) => setKaryaList(res.data))
+      .catch((err) => console.error("Failed to load karya list", err));
 
-  url.get(`/api/pameran/${props.exhibitionId}`)
-    .then((res) => {
-      const raw = res.data.pameran?.kategori ?? "default";
-      setFolder(raw.toLowerCase().replaceAll(" ", "-"));
-    });
+    url.get(`/api/pameran/${props.exhibitionId}`)
+      .then((res) => {
+        const raw = res.data.pameran?.kategori ?? res.data.kategori ?? "default";
+        setFolder(raw.toLowerCase().replaceAll(" ", "-"));
+      })
+      .catch((err) => console.error("Failed to load pameran", err));
+  }, [props.exhibitionId]);
 
   // Tunggu sampai URL model hall siap sebelum render inner
   if (!hallModel) return null;
