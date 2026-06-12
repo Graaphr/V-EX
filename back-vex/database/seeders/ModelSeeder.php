@@ -20,22 +20,22 @@ class ModelSeeder extends Seeder
             [
                 'jenis'       => 'Stan',
                 'nama_model'  => 'Stan A',
-                '3d_model'    => 'models/stan-a.glb',
+                '3d_model'    => 'models/stand1.glb',
             ],
             [
                 'jenis'       => 'Stan',
                 'nama_model'  => 'Stan B',
-                '3d_model'    => 'models/stan-b.glb',
+                '3d_model'    => 'models/stand2.glb',
             ],
             [
                 'jenis'       => 'Stan',
                 'nama_model'  => 'Stan C',
-                '3d_model'    => 'models/stan-c.glb',
+                '3d_model'    => 'models/stand3.glb',
             ],
             [
                 'jenis'       => 'Stan',
                 'nama_model'  => 'Stan D',
-                '3d_model'    => 'models/stan-d.glb',
+                '3d_model'    => 'models/stand4.glb',
             ],
         ]);
     }
