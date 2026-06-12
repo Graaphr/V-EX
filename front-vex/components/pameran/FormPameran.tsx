@@ -1,35 +1,30 @@
 import { FaCloudUploadAlt } from "react-icons/fa";
 import { PameranForm as PameranFormType, PRODI_OPTIONS } from "@/types/pameran";
 import { Button } from "@/components/shared/ui/Button";
+import {
+  InputField,
+  SelectField,
+  TextareaField,
+  Label,
+} from "@/components/shared/ui/InputFields";
 
 type Props = {
   form: PameranFormType;
   preview: string | null;
   loading: boolean;
+  errors?: Partial<Record<keyof PameranFormType | "image", string>>;
   onChangeImage: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onChange: (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
-  ) => void;
+onChange: (
+  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+) => void;
   onSubmit: () => void;
 };
-
-const inputClass =
-  "w-full p-2.5 px-3 rounded-lg border border-gray-300 mt-1.5 focus:outline-none focus:border-main-blue focus:ring-1 focus:ring-main-blue transition-all text-sm";
-
-function Label({ text, required }: { text: string; required?: boolean }) {
-  return (
-    <p className="text-sm font-semibold">
-      {text} {required && <span className="text-red-500">*</span>}
-    </p>
-  );
-}
 
 export default function FormPameran({
   form,
   preview,
   loading,
+  errors = {},
   onChangeImage,
   onChange,
   onSubmit,
@@ -44,7 +39,11 @@ export default function FormPameran({
 
         <label
           htmlFor="file"
-          className="cursor-pointer h-[220px] md:h-[320px] w-full flex items-center justify-center bg-gray-50 border-2 border-dashed border-gray-300 hover:border-main-blue hover:bg-blue-50 rounded-xl mt-2 overflow-hidden transition-all duration-200"
+          className={`cursor-pointer h-[220px] md:h-[320px] w-full flex items-center justify-center bg-gray-50 border-2 border-dashed rounded-xl mt-2 overflow-hidden transition-all duration-200
+            ${errors.image
+              ? "border-red-400 bg-red-50 hover:border-red-500"
+              : "border-gray-300 hover:border-main-blue hover:bg-blue-50"
+            }`}
         >
           {preview ? (
             <img src={preview} className="w-full h-full object-cover" />
@@ -67,42 +66,37 @@ export default function FormPameran({
         <p className="text-xs text-gray-400 mt-2">
           Format: PNG, JPG, JPEG. Ukuran maks 2MB.
         </p>
+        {errors.image && (
+          <p className="mt-1 text-xs text-red-500">{errors.image}</p>
+        )}
       </div>
 
       {/* RIGHT - FIELDS */}
       <div className="w-full lg:w-[60%] mt-10 flex flex-col gap-4">
+
         {/* PRODI */}
-        <div>
-          <Label text="Program Studi" required />
-          <select
-            name="prodi"
-            value={form.prodi}
-            onChange={onChange}
-            className={inputClass}
-          >
-            <option value="" disabled>
-              -- Pilih Prodi --
-            </option>
-            {PRODI_OPTIONS.map((prodi) => (
-              <option key={prodi.kode} value={prodi.kode}>
-                {prodi.nama}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          name="prodi"
+          label="Program Studi"
+          required
+          value={form.prodi}
+          options={PRODI_OPTIONS.map((p) => ({ value: p.kode, label: p.nama }))}
+          placeholder="-- Pilih Prodi --"
+          error={errors.prodi}
+          onChange={onChange}
+        />
 
         {/* TITLE */}
-        <div>
-          <Label text="Judul Pameran" required />
-          <input
-            type="text"
-            name="title"
-            value={form.title}
-            onChange={onChange}
-            placeholder="Masukkan judul pameran"
-            className={inputClass}
-          />
-        </div>
+        <InputField
+          type="text"
+          name="title"
+          label="Judul Pameran"
+          required
+          value={form.title}
+          placeholder="Masukkan judul pameran"
+          error={errors.title}
+          onChange={onChange}
+        />
 
         {/* CAPACITY */}
         <div>
@@ -122,7 +116,6 @@ export default function FormPameran({
             >
               −
             </button>
-
             <input
               type="number"
               name="capacity"
@@ -130,7 +123,6 @@ export default function FormPameran({
               readOnly
               className="w-full p-2.5 px-3 border-y border-gray-300 text-center text-sm focus:outline-none"
             />
-
             <button
               type="button"
               onClick={() => {
@@ -144,6 +136,9 @@ export default function FormPameran({
               +
             </button>
           </div>
+          {errors.capacity && (
+            <p className="mt-1 text-xs text-red-500">{errors.capacity}</p>
+          )}
         </div>
 
         {/* TANGGAL PAMERAN */}
@@ -152,22 +147,22 @@ export default function FormPameran({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1.5">
             <div>
               <p className="text-xs text-gray-400 mb-1">Mulai</p>
-              <input
+              <InputField
                 type="date"
                 name="publishDate"
                 value={form.publishDate}
+                error={errors.publishDate}
                 onChange={onChange}
-                className={inputClass}
               />
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Berakhir</p>
-              <input
+              <InputField
                 type="date"
                 name="endDate"
                 value={form.endDate}
+                error={errors.endDate}
                 onChange={onChange}
-                className={inputClass}
               />
             </div>
           </div>
@@ -179,38 +174,38 @@ export default function FormPameran({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1.5">
             <div>
               <p className="text-xs text-gray-400 mb-1">Mulai</p>
-              <input
+              <InputField
                 type="date"
                 name="prepareStart"
                 value={form.prepareStart}
+                error={errors.prepareStart}
                 onChange={onChange}
-                className={inputClass}
               />
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Berakhir</p>
-              <input
+              <InputField
                 type="date"
                 name="prepareEnd"
                 value={form.prepareEnd}
+                error={errors.prepareEnd}
                 onChange={onChange}
-                className={inputClass}
               />
             </div>
           </div>
         </div>
 
         {/* DESKRIPSI */}
-        <div>
-          <Label text="Deskripsi" required />
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={onChange}
-            placeholder="Masukkan deskripsi pameran..."
-            className={`${inputClass} h-[140px] resize-none`}
-          />
-        </div>
+        <TextareaField
+          name="description"
+          label="Deskripsi"
+          required
+          value={form.description}
+          placeholder="Masukkan deskripsi pameran..."
+          error={errors.description}
+          onChange={onChange}
+          className="h-[140px]"
+        />
 
         {/* BUTTON */}
         <div className="flex justify-end">
