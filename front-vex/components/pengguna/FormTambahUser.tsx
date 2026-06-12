@@ -1,37 +1,39 @@
-import { useState } from 'react';
-import { FaTimes, FaUser } from 'react-icons/fa';
-import { UserType } from '@/types/pengguna';
-import { Button, ButtonPutih } from '@/components/shared/ui/Button';
-import { PRODI_OPTIONS, KELAS_OPTIONS } from '@/types/pameran';
+import { useState } from "react";
+import { FaTimes, FaUser } from "react-icons/fa";
+import { UserType } from "@/types/pengguna";
+import { Button, ButtonPutih } from "@/components/shared/ui/Button";
+import { PRODI_OPTIONS, KELAS_OPTIONS } from "@/types/pameran";
 
 type Props = {
   onClose: () => void;
   // mengambil props tanpa id
-  onSave: (user: Omit<UserType, 'id'>) => void;
+  onSave: (user: Omit<UserType, "id">) => void;
 };
 
-type FormState = Omit<UserType, 'id'>;
+type FormState = Omit<UserType, "id">;
 
 // DATA
 const initialForm: FormState = {
-  nama: '',
-  email: '',
-  prodi: '',
-  kelas: '',
-  role: '',
-  status: 'Aktif',
+  nama: "",
+  email: "",
+  prodi: "",
+  kelas: "",
+  role: "",
+  status: "Aktif",
 };
 
 export default function FormTambahUser({ onClose, onSave }: Props) {
-  const [step, setStep] = useState<'pilih' | 'form'>('pilih');
+  const [step, setStep] = useState<"pilih" | "form">("pilih");
   const [form, setForm] = useState<FormState>(initialForm);
 
   const pilihRole = (role: string) => {
     setForm((prev) => ({ ...prev, role }));
-    setStep('form');
+    setStep("form");
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
@@ -56,19 +58,19 @@ export default function FormTambahUser({ onClose, onSave }: Props) {
       </div>
 
       {/* Step 1 – Pilih Role */}
-      {step === 'pilih' && (
+      {step === "pilih" && (
         <div className="mt-8 space-y-4">
           <p className="text-center font-semibold text-lg">Pilih Jenis Akun</p>
 
           <Button
-            onClick={() => pilihRole('KPS')}
+            onClick={() => pilihRole("KPS")}
             className="w-full bg-main-blue cursor-pointer text-white py-3 rounded-lg font-bold hover:bg-white border-2 border-main-blue hover:text-main-blue hover:opacity-90"
           >
             Kepala Program Studi
           </Button>
 
           <ButtonPutih
-            onClick={() => pilihRole('Ketua PBL')}
+            onClick={() => pilihRole("Ketua PBL")}
             className="w-full bg-white border-2 cursor-pointer border-main-blue font-bold text-main-blue py-3 rounded-lg hover:opacity-90"
           >
             Ketua PBL
@@ -77,17 +79,19 @@ export default function FormTambahUser({ onClose, onSave }: Props) {
       )}
 
       {/* Step 2 – Isi Form */}
-      {step === 'form' && (
+      {step === "form" && (
         <div className="space-y-4 mt-6">
           <div className="text-center font-semibold text-lg">{form.role}</div>
 
           {[
-            { label: 'Nama', name: 'nama', value: form.nama },
-            { label: 'Email', name: 'email', value: form.email },
+            { label: "Nama", name: "nama", value: form.nama },
+            { label: "Email", name: "email", value: form.email },
             // { label: 'Program Studi', name: 'prodi', value: form.prodi },
           ].map(({ label, name, value }) => (
             <div key={name}>
-              <p className="text-sm font-semibold mb-1 text-gray-600">{label}</p>
+              <p className="text-sm font-semibold mb-1 text-gray-600">
+                {label}
+              </p>
               <input
                 name={name}
                 value={value}
@@ -98,10 +102,16 @@ export default function FormTambahUser({ onClose, onSave }: Props) {
           ))}
           {/* Program Studi – select */}
           <div>
-            <p className="text-sm font-semibold mb-1 text-gray-600">Program Studi</p>
+            <p className="text-sm font-semibold mb-1 text-gray-600">
+              Program Studi
+            </p>
             <select
               name="prodi"
-              value={form.prodi}
+              value={
+                typeof form.prodi === "object"
+                  ? form.prodi.kode_prodi
+                  : form.prodi
+              }
               onChange={handleChange}
               className="w-full bg-gray-200 p-2 px-4 rounded-lg"
             >
@@ -119,12 +129,16 @@ export default function FormTambahUser({ onClose, onSave }: Props) {
             </select>
           </div>
           {/* Kelas — hanya untuk Ketua PBL */}
-          {form.role === 'Ketua PBL' && (
+          {form.role === "Ketua PBL" && (
             <div>
               <p className="text-sm font-semibold mb-1 text-gray-600">Kelas</p>
               <select
                 name="kelas"
-                value={form.kelas}
+                value={
+                  typeof form.kelas === "object"
+                    ? String(form.kelas.id_kelas)
+                    : form.kelas
+                }
                 onChange={handleChange}
                 className="w-full bg-gray-200 p-2 px-4 rounded-lg"
               >
@@ -132,10 +146,7 @@ export default function FormTambahUser({ onClose, onSave }: Props) {
                   -- Pilih Kelas --
                 </option>
                 {KELAS_OPTIONS.map((kelas) => (
-                  <option
-                    key={kelas.id_kelas}
-                    value={kelas.id_kelas}
-                  >
+                  <option key={kelas.id_kelas} value={kelas.id_kelas}>
                     {kelas.nama_kelas}
                   </option>
                 ))}
@@ -163,7 +174,7 @@ export default function FormTambahUser({ onClose, onSave }: Props) {
               <p className="text-sm font-semibold mb-1 text-gray-600">Aksi</p>
               <div className="flex flex-row gap-3">
                 <button
-                  onClick={() => setStep('pilih')}
+                  onClick={() => setStep("pilih")}
                   className="w-full hover:scale-105 duration-300 text-white font-bold cursor-pointer bg-main-blue py-2 rounded-lg"
                 >
                   Kembali

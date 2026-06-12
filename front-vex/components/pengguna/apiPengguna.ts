@@ -1,4 +1,5 @@
 import url from '@/lib/axios';
+import { UserType, KelasType, ProdiType } from '@/types/pengguna';
 
 export async function GetRole(role: string) {
   const res = await url.get(`/api/admin/pengguna/role/${role}`);
@@ -18,11 +19,10 @@ export async function UpdateUser(user: UserType) {
     role: user.role,
     status: user.status,
 
-    kelas: user.kelas?.id_kelas,
-    program_studi: user.program_studi === 'string' ? user.program_studi : user.prodi?.kode_prodi,
+    kelas: typeof user.kelas === 'object' ? user.kelas.id_kelas : user.kelas,
+    program_studi: typeof user.prodi === 'object' ? user.prodi.kode_prodi : user.prodi,
   };
 
-  const res = await url.put(`/api/admin/pengguna/${user.id}`, payload);
-
+  const res = await url.put(`/api/pengguna/${user.id}`, payload);
   return res.data;
 }

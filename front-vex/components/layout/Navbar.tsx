@@ -67,6 +67,12 @@ export default function Navbar({ menuItems }: NavbarProps) {
         { title: 'PAMERAN', subtitle: '3D BOOTH', link: '/pameran' },
         { title: 'DASHBOARD', subtitle: 'KETUA PBL', link: '/ketua-pbl/karya' },
       ]
+    : user?.role === 'KPS'
+    ? [
+        { title: 'BERANDA', subtitle: 'UTAMA', link: '/' },
+        { title: 'PAMERAN', subtitle: '3D BOOTH', link: '/pameran' },
+        { title: 'DASHBOARD', subtitle: 'KPS', link: '/kps/karya' },
+      ]
     : menuItems ?? [];
 
   // ===== AUTH DESKTOP =====

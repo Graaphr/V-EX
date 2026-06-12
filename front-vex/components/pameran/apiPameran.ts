@@ -1,5 +1,6 @@
 import url from '@/lib/axios';
 
+
 export async function GetPameran() {
     const res = await url.get("/api/pameran");
     return res.data
