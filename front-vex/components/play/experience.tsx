@@ -115,7 +115,7 @@ function ExperienceInner({
   useEffect(() => {
     const loadAudio = async () => {
       try {
-        const { data } = await url.get("/api/game-assets");
+        const { data } = await url.get("/api/experience/game-assets");
         setAudioUrls({ bgm: data.bgm, footstep: data.footstep, jump: data.jump });
       } catch (err) {
         console.error("Failed to load audio", err);
@@ -262,31 +262,6 @@ function ExperienceInner({
   }, [scene, folder]);
 
   /* ===================== */
-  /* POSTER */
-  /* ===================== */
-
-  useEffect(() => {
-    scene.traverse((obj: any) => {
-      if (!obj.isMesh) return;
-      const lower = obj.name?.toLowerCase() || "";
-      if (!lower.startsWith("panelposter")) return;
-
-      const code = lower.replace("panelposter", "");
-      const zone = code[0];
-      const num = parseInt(code.slice(1));
-      if (!zone || isNaN(num)) return;
-
-      const posterNum = ((num - 1) % 6) + 1;
-      loadTextureSafe(
-        `/uploads/${exhibitionId}/booth${zone}${posterNum}-poster.png`,
-        (tex) => {
-          obj.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
-        }
-      );
-    });
-  }, [scene, exhibitionId]);
-
-  /* ===================== */
   /* BOOTH POINT */
   /* ===================== */
 
@@ -308,6 +283,9 @@ function ExperienceInner({
           position: [pos.x, pos.y, pos.z],
           quaternion: [quat.x, quat.y, quat.z, quat.w],
         });
+
+        // Debug: lihat nama booth di GLTF vs id_stan dari API
+        console.log("[BoothPoint]", obj.name);
 
         obj.visible = false;
         obj.raycast = () => null;
@@ -334,11 +312,37 @@ function ExperienceInner({
       <primitive object={scene} />
 
       {boothPoints.map((item, i) => {
-        const karya = karyaList.find(
-          (k) => String(k.id_stan) === String(item.name)
-        );
+        // item.name contoh: "BoothA1", "BoothB3", "BoothD6"
+        const nameLower = item.name.toLowerCase(); // "bootha1"
+        const zone = nameLower.replace("booth", "")[0];        // "a"
+        const slot = parseInt(nameLower.replace("booth", "").slice(1)); // 1-6
 
-        if (!karya || !karya.model_path) return null;
+        // Cari karya yang cocok: zona sama + slot di lantai sama
+        // Urutan global: lantai 1 slot 1 = urutan 1, lantai 1 slot 6 = urutan 6
+        //                lantai 2 slot 1 = urutan 7, lantai 2 slot 6 = urutan 12, dst
+        // id_stan menentukan model booth (Stan A/B/C/D), zone menentukan zona
+        // Kita match berdasarkan: zone dari nama_stan + slot dari urutan dalam zona
+
+        const karya = karyaList.find((k) => {
+          const namaStan = String(k.id_stan).toLowerCase(); // "stan a", "stan b", dst
+          const kZone = namaStan.replace("stan ", "").trim(); // "a", "b", "c", "d"
+          if (kZone !== zone) return false;
+
+          // Hitung slot berdasarkan urutan karya di zona ini
+          const karyaZone = karyaList
+            .filter((x) => String(x.id_stan).toLowerCase().replace("stan ", "").trim() === zone)
+            .sort((a, b) => a.id_karya - b.id_karya);
+
+          const indexInZone = karyaZone.findIndex((x) => x.id_karya === k.id_karya);
+          const kSlot = (indexInZone % 6) + 1; // slot 1-6
+          const kFloor = Math.floor(indexInZone / 6) + 1;
+
+          // Cocokkan dengan lantai dari data karya dan slot di boothpoint
+          return kSlot === slot && k.lantai === kFloor;
+        });
+
+        if (!karya) return null;
+        if (!karya.model_path) return null;
 
         return (
           <Booth

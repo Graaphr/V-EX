@@ -22,6 +22,11 @@ export default function Admin() {
     selectedStatus,
     setSelectedStatus,
     filteredKps,
+    paginatedKps,
+    pageKps,
+    totalPagesKps,
+    nextPageKps,
+    prevPageKps,
     paginatedMhs,
     pageMhs,
     totalPages,
@@ -55,13 +60,13 @@ export default function Admin() {
       setFormData((prev) =>
         prev
           ? {
-              ...prev,
-              program_studi: value,
-              prodi: {
-                kode_prodi: value,
-                nama_prodi: selectedProdi?.nama || "",
-              },
-            }
+            ...prev,
+            program_studi: value,
+            prodi: {
+              kode_prodi: value,
+              nama_prodi: selectedProdi?.nama || "",
+            },
+          }
           : null,
       );
 
@@ -77,12 +82,12 @@ export default function Admin() {
       setFormData((prev) =>
         prev
           ? {
-              ...prev,
-              kelas: {
-                id_kelas: Number(value),
-                nama_kelas: selectedKelas?.nama_kelas || "",
-              },
-            }
+            ...prev,
+            kelas: {
+              id_kelas: Number(value),
+              nama_kelas: selectedKelas?.nama_kelas || "",
+            },
+          }
           : null,
       );
 
@@ -92,9 +97,9 @@ export default function Admin() {
     setFormData((prev) =>
       prev
         ? {
-            ...prev,
-            [name]: value,
-          }
+          ...prev,
+          [name]: value,
+        }
         : null,
     );
   };
@@ -196,11 +201,17 @@ export default function Admin() {
             ) : (
               <>
                 {/* KPS */}
-                <section>
-                  <SectionHeader title="Kepala Program Studi" />
+                <section  className="min-h-[280px]">
+                  <SectionHeader
+                    title="Kepala Program Studi"
+                    currentPage={pageKps}
+                    totalPages={totalPagesKps}
+                    onNext={nextPageKps}
+                    onPrev={prevPageKps}
+                  />
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                    {filteredKps.map((user) => (
+                    {paginatedKps.map((user) => (
                       <UserCard
                         key={user.id}
                         user={user}
@@ -213,7 +224,7 @@ export default function Admin() {
                 </section>
 
                 {/* Mahasiswa */}
-                <section>
+                <section  className="min-h-[280px]">
                   <SectionHeader
                     title="Mahasiswa"
                     currentPage={pageMhs}

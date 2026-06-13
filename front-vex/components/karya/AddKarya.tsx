@@ -138,6 +138,7 @@ export default function AddKaryaPage() {
       <div className="max-w-[1200px] mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
           {/* KIRI - Upload Thumbnail & Poster */}
+          {/* KIRI - Form */}
           <div className="space-y-3">
             <DetailThumbnail
               preview={thumbnailPreview}

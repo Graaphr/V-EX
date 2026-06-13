@@ -19,7 +19,7 @@ export default function DetailPoster({ preview, onUpload }: Props) {
 
       <label
         htmlFor="file-poster"
-        className="cursor-pointer h-full w-full flex items-center justify-center bg-gray-50 border-2 border-dashed border-gray-300 hover:border-main-blue hover:bg-blue-50 rounded-xl mt-2 overflow-hidden transition-all duration-200"
+        className="cursor-pointer h-[410px] md:h-[820px] h-full w-full flex items-center justify-center bg-gray-50 border-2 border-dashed border-gray-300 hover:border-main-blue hover:bg-blue-50 rounded-xl mt-2 overflow-hidden transition-all duration-200"
       >
         {preview ? (
           <img src={preview} className="w-full h-full object-cover" />
