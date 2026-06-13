@@ -1,113 +1,164 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
 // COMPONENTS
-import DetailThumbnail from '@/components/karya/DetailThumbnail';
-import DetailPoster from '@/components/karya/DetailPoster';
-import DetailPreview from '@/components/karya/DetailPreview';
-import DetailForm from '@/components/karya/DetailForm';
-import DetailAction from '@/components/karya/DetailAction';
+import DetailThumbnail from "@/components/karya/DetailThumbnail";
+import DetailPoster from "@/components/karya/DetailPoster";
+import DetailPreview from "@/components/karya/DetailPreview";
+import DetailForm from "@/components/karya/DetailForm";
+import DetailAction from "@/components/karya/DetailAction";
+
+// API
+import { PostKarya } from "@/components/karya/apiKarya";
+
 // TYPES
-import { KaryaItem } from '@/types/karya';
+import { KaryaItem } from "@/types/karya";
 
 const initialForm: KaryaItem = {
   id: 0,
-  title: '',
-  category: '',
-  // capacity: 0,
-  image: '',
-  thumbnail: '',
-  year: '',
-  semester: '',
-  description: '',
-  booth: 'img-stan1.svg',
-  link: '',
+  title: "",
+  category: "",
+  image: "",
+  thumbnail: "",
+  year: "",
+  semester: "",
+  description: "",
+  booth: "img-stan1.svg",
+  link: "",
   pameranId: 1,
-  // exhibitionId: 0,
 };
 
 export default function AddKaryaPage() {
   const router = useRouter();
-  const [form, setForm] = useState<KaryaItem>(initialForm);
-  const [thumbnailPreview, setThumbnailPreview] = useState('');
-  const [posterPreview, setPosterPreview] = useState('');
 
-  const handleChange = (field: keyof KaryaItem, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
+  const [form, setForm] = useState<KaryaItem>(initialForm);
+
+  const [thumbnailPreview, setThumbnailPreview] = useState("");
+  const [posterPreview, setPosterPreview] = useState("");
+
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [posterFile, setPosterFile] = useState<File | null>(null);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'thumbnail' | 'poster') => {
+  // =============================
+  // HANDLE CHANGE FORM
+  // =============================
+  const handleChange = (field: keyof KaryaItem, value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // =============================
+  // HANDLE IMAGE UPLOAD
+  // =============================
+  const handleImageUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "thumbnail" | "poster",
+  ) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    if (type === 'thumbnail') {
-      setThumbnailPreview(url);
+
+    const preview = URL.createObjectURL(file);
+
+    if (type === "thumbnail") {
+      setThumbnailPreview(preview);
       setThumbnailFile(file);
     }
-    if (type === 'poster') {
-      setPosterPreview(url);
+
+    if (type === "poster") {
+      setPosterPreview(preview);
       setPosterFile(file);
     }
   };
 
+  // =============================
+  // SAVE DATA
+  // =============================
   const handleSave = async () => {
     try {
       const formData = new FormData();
-      formData.append('title', form.title);
-      formData.append('category', form.category ?? '');
-      formData.append('year', form.year ?? '');
-      // formData.append('capacity', String(form.capacity));
-      formData.append('semester', form.semester ?? '');
-      formData.append('description', form.description ?? '');
-      formData.append('booth', form.booth ?? '');
-      formData.append('link', form.link ?? '');
-      formData.append('pameranId', String(form.pameranId));
 
-      // Ambil file dari input jika ada
-      if (thumbnailFile) formData.append('thumbnail', thumbnailFile);
-      if (posterFile) formData.append('image', posterFile);
+      formData.append("title", form.title);
 
-      const res = await fetch('/api/karya', {
-        method: 'POST',
-        body: formData,
-      });
+      formData.append("category", form.category ?? "");
 
-      const result = await res.json();
-      if (!result.success) throw new Error(result.message);
+      formData.append("year", form.year ?? "");
 
-      router.push('/ketua-pbl/karya');
+      formData.append("semester", form.semester ?? "");
+
+      formData.append("description", form.description ?? "");
+
+      formData.append("booth", form.booth ?? "");
+
+      formData.append("link", form.link ?? "");
+
+      formData.append("pameranId", String(form.pameranId));
+
+      if (thumbnailFile) {
+        formData.append("thumbnail", thumbnailFile);
+      }
+
+      if (posterFile) {
+        formData.append("image", posterFile);
+      }
+
+      const result = await PostKarya(formData);
+
+      if (!result.success) {
+        throw new Error(result.message || "Gagal menambahkan karya");
+      }
+
+      router.push("/ketua-pbl/karya");
     } catch (error) {
-      console.error('Gagal simpan:', error);
+      console.error("Gagal menyimpan karya:", error);
     }
   };
 
+  // =============================
+  // RESET FORM
+  // =============================
   const handleDelete = () => {
     setForm(initialForm);
-    setThumbnailPreview('');
-    setPosterPreview('');
+
+    setThumbnailPreview("");
+
+    setPosterPreview("");
+
+    setThumbnailFile(null);
+
+    setPosterFile(null);
   };
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-0 py-6">
       <div className="max-w-[1200px] mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
-          {/* KIRI - Form */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+          {/* KIRI - Upload Thumbnail & Poster */}
           <div className="space-y-3">
-            <DetailThumbnail preview={thumbnailPreview} onUpload={(e) => handleImageUpload(e, 'thumbnail')} />
-            <DetailPoster preview={posterPreview} onUpload={(e) => handleImageUpload(e, 'poster')} />
+            <DetailThumbnail
+              preview={thumbnailPreview}
+              onUpload={(e) => handleImageUpload(e, "thumbnail")}
+            />
+
+            <DetailPoster
+              preview={posterPreview}
+              onUpload={(e) => handleImageUpload(e, "poster")}
+            />
           </div>
 
-          {/* TENGAH - Upload */}
+          {/* KANAN - Preview, Form & Action */}
           <div>
+            <DetailPreview
+              booth={form.booth}
+              onChange={(value) => handleChange("booth", value)}
+            />
+
             <DetailForm form={form} onChange={handleChange} />
-          </div>
 
-          {/* KANAN - Preview & Action */}
-          <div>
-            <DetailPreview booth={form.booth} onChange={(value) => handleChange('booth', value)} />
             <DetailAction onDelete={handleDelete} onSave={handleSave} />
           </div>
         </div>
