@@ -10,6 +10,8 @@ export interface KaryaItem {
   thumbnail?: string;
   booth?: string;
   pameranId?: number;
+  pameranTitle?: string; // ✅ tambah
+  isTerbaik?: boolean;   // ✅ tambah untuk KPS
 }
 
 export interface PameranItem {

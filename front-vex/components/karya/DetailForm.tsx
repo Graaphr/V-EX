@@ -1,10 +1,19 @@
-'use client';
+"use client";
 
-import { KaryaItem } from '../../types/karya';
+import { useEffect, useState } from "react";
+import { KaryaItem } from "../../types/karya";
+import { GetPameranTersedia } from "@/components/karya/apiKarya";
 
 interface Props {
   form: KaryaItem;
   onChange: (field: keyof KaryaItem, value: string) => void;
+  // ✅ Untuk EditKarya: pameran yang sudah dipilih tetap tampil
+  currentPameran?: { id: number; title: string } | null;
+}
+
+interface PameranOption {
+  id: number;
+  title: string;
 }
 
 const inputClass =
@@ -18,23 +27,75 @@ function Label({ text, required }: { text: string; required?: boolean }) {
   );
 }
 
-export default function DetailForm({ form, onChange }: Props) {
+export default function DetailForm({ form, onChange, currentPameran }: Props) {
+  const [pameranList, setPameranList] = useState<PameranOption[]>([]);
+  const [loadingPameran, setLoadingPameran] = useState(true);
+
+  useEffect(() => {
+    const fetchPameran = async () => {
+      try {
+        const res = await GetPameranTersedia();
+        const list: PameranOption[] = res.pameran ?? [];
+
+        // ✅ Jika mode edit & pameran saat ini tidak ada di list persiapan,
+        //    tetap tampilkan sebagai opsi (tapi disabled agar tidak bisa dipilih ulang)
+        if (currentPameran) {
+          const sudahAda = list.some((p) => p.id === currentPameran.id);
+          if (!sudahAda) {
+            list.unshift(currentPameran); // taruh di depan
+          }
+        }
+
+        setPameranList(list);
+      } catch (err) {
+        console.error("Gagal memuat pameran:", err);
+      } finally {
+        setLoadingPameran(false);
+      }
+    };
+
+    fetchPameran();
+  }, [currentPameran]);
+
   return (
     <div className="flex flex-col gap-4 mt-4">
       {/* Pameran */}
       <div>
         <Label text="Pameran" required />
-        <p className="text-xs text-gray-400 mt-1">Pilih Pameran yang tersedia</p>
-        <select
-          value={form.pameranId}
-          onChange={(e) => onChange('pameranId', e.target.value)}
-          className={inputClass}
-        >
-          <option value="" disabled>-- Pilih Pameran --</option>
-          <option value="1">TRPL EXPO</option>
-          <option value="2">ANIMOTION FEST 2026</option>
-          <option value="3">MULTIMEDIA CREATIVE EXPO</option>
-        </select>
+        <p className="text-xs text-gray-400 mt-1">
+          Pilih Pameran yang tersedia
+        </p>
+
+        {loadingPameran ? (
+          <div className="mt-1.5 h-10 animate-pulse rounded-lg bg-gray-100" />
+        ) : (
+          <select
+            value={form.pameranId}
+            onChange={(e) => onChange("pameranId", e.target.value)}
+            className={inputClass}
+          >
+            <option value="" disabled>
+              -- Pilih Pameran --
+            </option>
+            {pameranList.map((p) => {
+              // Pameran yang sudah lewat tahap persiapan hanya muncul di edit (disabled)
+              const isCurrentButClosed =
+                currentPameran?.id === p.id &&
+                !pameranList.some((x) => x.id === p.id && x !== currentPameran);
+
+              return (
+                <option
+                  key={p.id}
+                  value={String(p.id)}
+                  disabled={isCurrentButClosed}
+                >
+                  {p.title}
+                  {isCurrentButClosed ? " (Sudah dibuka)" : ""}
+                </option>
+              );
+            })}
+          </select>
+        )}
       </div>
 
       {/* Judul */}
@@ -44,7 +105,7 @@ export default function DetailForm({ form, onChange }: Props) {
         <input
           type="text"
           value={form.title}
-          onChange={(e) => onChange('title', e.target.value)}
+          onChange={(e) => onChange("title", e.target.value)}
           placeholder="Masukkan judul karya"
           className={inputClass}
         />
@@ -57,7 +118,7 @@ export default function DetailForm({ form, onChange }: Props) {
         <input
           type="text"
           value={form.link}
-          onChange={(e) => onChange('link', e.target.value)}
+          onChange={(e) => onChange("link", e.target.value)}
           placeholder="Masukkan link Youtube"
           className={inputClass}
         />
@@ -71,7 +132,7 @@ export default function DetailForm({ form, onChange }: Props) {
         </p>
         <textarea
           value={form.description}
-          onChange={(e) => onChange('description', e.target.value)}
+          onChange={(e) => onChange("description", e.target.value)}
           placeholder="Masukkan deskripsi karya..."
           className={`${inputClass} h-[420px] resize-none`}
         />

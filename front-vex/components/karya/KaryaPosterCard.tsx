@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { KaryaItem, PameranItem } from '../../types/karya';
+import Image from "next/image";
+import { KaryaItem, PameranItem } from "../../types/karya";
 
 interface PosterCardProps {
   karya: KaryaItem;
@@ -19,6 +19,7 @@ export default function PosterCard({ karya, pameranList }: PosterCardProps) {
             src={karya.image}
             alt={karya.title}
             fill
+            sizes="(max-width: 768px) 50vw, 25vw"
             className="object-cover group-hover:scale-105 transition duration-300"
           />
         ) : (
@@ -26,16 +27,23 @@ export default function PosterCard({ karya, pameranList }: PosterCardProps) {
             <span className="text-gray-400 text-sm">No Image</span>
           </div>
         )}
+
+        {/* ✅ Badge terbaik — hanya muncul jika isTerbaik true */}
+        {(karya as any).isTerbaik && (
+          <div className="absolute top-2 left-2 bg-yellow-400 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full shadow">
+            ⭐ Terbaik
+          </div>
+        )}
       </div>
 
       <div className="p-3 h-[100px] flex flex-col justify-between">
         <h3 className="font-medium text-sm line-clamp-2">{karya.title}</h3>
-
         <p className="text-xs text-gray-500">{karya.category}</p>
-
         {pameran && (
           <span className="mt-1 inline-flex w-fit items-center rounded-full bg-blue-300/40 px-3 py-1">
-            <p className="font-poppins text-xs font-medium text-main-blue leading-none">{pameran.title}</p>
+            <p className="font-poppins text-xs font-medium text-main-blue leading-none">
+              {pameran.title}
+            </p>
           </span>
         )}
       </div>

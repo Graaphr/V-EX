@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import DetailThumbnail from "@/components/karya/DetailThumbnail";
 import DetailPoster from "@/components/karya/DetailPoster";
 import DetailPreview from "@/components/karya/DetailPreview";
 import DetailForm from "@/components/karya/DetailForm";
 import DetailAction from "@/components/karya/DetailAction";
+import { GetKarya, UpdateKarya } from "@/components/karya/apiKarya";
 import { KaryaItem } from "@/types/karya";
 
 interface Props {
@@ -13,42 +15,114 @@ interface Props {
 }
 
 export default function EditKarya({ id }: Props) {
+  const router = useRouter();
+
   const [form, setForm] = useState<KaryaItem | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState("");
   const [posterPreview, setPosterPreview] = useState("");
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [posterFile, setPosterFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
+  const [currentPameran, setCurrentPameran] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+
+  // =============================
+  // LOAD DATA KARYA
+  // =============================
   useEffect(() => {
     const load = async () => {
-      const res = await fetch("/data/Karya.json");
-      const json = await res.json();
-      const found = json.find((item: KaryaItem) => item.id === id);
+      try {
+        const res = await GetKarya();
+        const list: KaryaItem[] = res.karya ?? [];
+        const found = list.find((item) => item.id === id);
 
-      if (found) {
-        setForm(found);
-        setThumbnailPreview(found.thumbnail);
-        setPosterPreview(found.image);
+        if (found) {
+          setForm(found);
+          setThumbnailPreview(found.thumbnail ?? "");
+          setPosterPreview(found.image);
+
+          if (found.pameranId) {
+            setCurrentPameran({
+              id: found.pameranId,
+              title: `Pameran #${found.pameranId}`,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Gagal memuat karya:", err);
       }
     };
 
     load();
   }, [id]);
 
-  const handleChange = (field: keyof KaryaItem, value: string | number) => {
+  // =============================
+  // HANDLE CHANGE FORM
+  // =============================
+  const handleChange = (field: keyof KaryaItem, value: string) => {
     if (!form) return;
     setForm({ ...form, [field]: value });
   };
 
+  // =============================
+  // HANDLE IMAGE UPLOAD
+  // =============================
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
     type: "thumbnail" | "poster",
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    if (type === "thumbnail") setThumbnailPreview(url);
-    if (type === "poster") setPosterPreview(url);
+    const preview = URL.createObjectURL(file);
+    if (type === "thumbnail") {
+      setThumbnailPreview(preview);
+      setThumbnailFile(file);
+    }
+    if (type === "poster") {
+      setPosterPreview(preview);
+      setPosterFile(file);
+    }
   };
 
+  // =============================
+  // SAVE / UPDATE
+  // =============================
+  const handleSave = async () => {
+    if (!form) return;
+    setIsLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("id_pameran", String(form.pameranId ?? "")); // ✅ pameranId → id_pameran
+      formData.append("id_stan", form.booth ?? ""); // ✅ booth → id_stan
+      formData.append("judul", form.title); // ✅ title → judul
+      formData.append("deskripsi", form.description ?? ""); // ✅ description → deskripsi
+      formData.append("tautan", form.link ?? ""); // ✅ link → tautan
+      if (thumbnailFile) formData.append("gambar_sampul", thumbnailFile); // ✅ thumbnail → gambar_sampul
+      if (posterFile) formData.append("gambar_poster", posterFile); // ✅ image → gambar_poster
+
+      const result = await UpdateKarya(form.id, formData);
+
+      if (!result.success) {
+        throw new Error(result.message || "Gagal memperbarui karya");
+      }
+
+      router.push("/ketua-pbl/karya");
+    } catch (err: any) {
+      if (err.response?.status === 422) {
+        console.error("Validation errors:", err.response.data.errors);
+      }
+      console.error("Gagal menyimpan karya:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // =============================
+  // LOADING STATE
+  // =============================
   if (!form) {
     return (
       <div className="flex min-h-[500px] items-center justify-center">
@@ -64,8 +138,8 @@ export default function EditKarya({ id }: Props) {
     <div className="w-full px-4 sm:px-6 lg:px-0 py-6">
       <div className="max-w-[1200px] mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+          {/* KIRI - Upload Thumbnail & Poster */}
           <div className="space-y-3">
-            
             <DetailThumbnail
               preview={thumbnailPreview}
               onUpload={(e) => handleImageUpload(e, "thumbnail")}
@@ -75,16 +149,21 @@ export default function EditKarya({ id }: Props) {
               onUpload={(e) => handleImageUpload(e, "poster")}
             />
           </div>
+
+          {/* KANAN - Preview, Form & Action */}
           <div>
             <DetailPreview
               booth={form.booth}
+              pameranId={form.pameranId} // ✅ tambahkan ini
               onChange={(value) => handleChange("booth", value)}
             />
-            <DetailForm form={form} onChange={handleChange} />
-            <DetailAction
-              onDelete={() => console.log("hapus", form.id)}
-              onSave={() => console.log("simpan", form)}
+            <DetailForm
+              form={form}
+              onChange={handleChange}
+              currentPameran={currentPameran}
             />
+            {/* ✅ Tidak ada onDelete — edit karya tidak bisa hapus */}
+            <DetailAction onSave={handleSave} loading={isLoading} />
           </div>
         </div>
       </div>

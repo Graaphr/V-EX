@@ -14,7 +14,7 @@ class KaryaController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        
+
         $karya = Karya::where('id_pengguna', $user->id)
             ->with(['stan', 'pameran'])
             ->get();
@@ -136,6 +136,62 @@ class KaryaController extends Controller
             'status' => 'success',
             'message' => 'Karya PBL berhasil diperbarui.',
             'karya' => $karya,
+        ]);
+    }
+
+    // =============================
+    // PAMERAN TERSEDIA UNTUK KARYA
+    // =============================
+    public function pameranTersedia(Request $request)
+    {
+        $user = $request->user();
+
+        // Ambil prodi ketua PBL dari relasinya
+        $prodi = $user->prodi?->kode_prodi ?? null;
+
+        if (!$prodi) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Prodi ketua PBL tidak ditemukan.',
+            ], 404);
+        }
+
+        $today = now()->toDateString();
+
+        // Pameran sesuai prodi & sedang dalam tahap persiapan
+        // (tanggal_mulai_persiapan <= hari ini <= tanggal_akhir_persiapan)
+        $pameran = \App\Models\Pameran::with('prodi')
+            ->where('kategori', $prodi)
+            ->where('tanggal_mulai_persiapan', '<=', $today)
+            ->where('tanggal_akhir_persiapan', '>=', $today)
+            ->get()
+            ->map(fn($item) => [
+                'id' => $item->id_pameran,
+                'title' => $item->judul,
+            ]);
+
+        return response()->json([
+            'status' => 'success',
+            'pameran' => $pameran,
+        ]);
+    }
+
+    // =============================
+    // STAN TERSEDIA BERDASARKAN PAMERAN
+    // =============================
+    public function stanTersedia(Request $request, $id_pameran)
+    {
+        $stan = \App\Models\Stan::where('id_pameran', $id_pameran)
+            ->with('model3d')
+            ->get()
+            ->map(fn($item) => [
+                'id' => $item->id_stan,
+                'model_stan' => $item->model3d?->nama_model ?? $item->model_stan,
+            ]);
+
+        return response()->json([
+            'status' => 'success',
+            'stan' => $stan,
         ]);
     }
 

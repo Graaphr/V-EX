@@ -102,7 +102,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', function () {
             return response()->json(['status' => 'success', 'page' => 'Ketua PBL Dashboard']);
         });
-
+        // Pameran tersedia untuk karya (tahap persiapan, sesuai prodi)
+        Route::get('/pameran-tersedia', [KaryaController::class, 'pameranTersedia']);
+        Route::get('/stan/{id_pameran}', [KaryaController::class, 'stanTersedia']);
         // Manajemen Karya
         Route::get('/karya', [KaryaController::class, 'index']);
         Route::post('/karya', [KaryaController::class, 'store']);
