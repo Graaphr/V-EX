@@ -22,84 +22,84 @@ class AdminController extends Controller
             ->get();
 
         return response()->json([
-            'status'    => 'success',
-            'kps'       => $kps,
+            'status' => 'success',
+            'kps' => $kps,
             'ketua_pbl' => $ketuaPbl,
         ]);
     }
 
-    // =============================
+    // =================
     // DETAIL PENGGUNA
-    // =============================
+    // =================
     public function detailPengguna($id)
     {
         $user = Pengguna::find($id);
 
         if (!$user) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Pengguna tidak ditemukan.',
             ], 404);
         }
 
         return response()->json([
             'status' => 'success',
-            'user'   => $user,
+            'user' => $user,
         ]);
     }
 
-    // =============================
-    // TAMBAH KPS / KETUA PBL
-    // =============================
+    // ==================================
+    // TAMBAH KPS / KETUA PBL DARI ADMIN
+    // ==================================
     public function tambahPengguna(Request $request)
     {
         $request->validate([
-            'nama'          => 'required|string|max:255',
-            'email'         => 'required|email|unique:pengguna,email',
-            'password'      => 'required|min:8',
-            'role'          => 'required|in:KPS,Ketua PBL',
+            'nama' => 'required|string|max:255',
+            'email' => 'required|email|unique:pengguna,email',
+            'password' => 'required|min:8',
+            'role' => 'required|in:KPS,Ketua PBL',
             'program_studi' => 'required|exists:prodi,kode_prodi',
-            'kelas'         => 'required_if:role,Ketua PBL|nullable|exists:kelas,id_kelas',
+            'kelas' => 'required_if:role,Ketua PBL|nullable|exists:kelas,id_kelas',
         ]);
 
         $user = Pengguna::create([
-            'nama'          => $request->nama,
-            'email'         => $request->email,
-            'password'      => Hash::make($request->password),
-            'role'          => $request->role,
+            'nama' => $request->nama,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,
             'program_studi' => $request->program_studi,
-            'kelas'         => $request->role === Pengguna::ROLE_KETUA_PBL
-                                ? $request->kelas
-                                : null,
-            'status'        => Pengguna::STATUS_AKTIF,
+            'kelas' => $request->role === Pengguna::ROLE_KETUA_PBL
+                ? $request->kelas
+                : null,
+            'status' => Pengguna::STATUS_AKTIF,
         ]);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Pengguna berhasil ditambahkan.',
-            'user'    => $user,
+            'user' => $user,
         ], 201);
     }
 
-    // =============================
-    // EDIT DATA PENGGUNA
-    // =============================
+    // ==================================
+    // EDIT DATA PENGGUNA KPS & KETUA PBL
+    // ==================================
     public function editPengguna(Request $request, $id)
     {
         $user = Pengguna::find($id);
 
         if (!$user) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Pengguna tidak ditemukan.',
             ], 404);
         }
 
         $request->validate([
-            'nama'          => 'sometimes|string|max:255',
-            'email'         => 'sometimes|email|unique:pengguna,email,' . $id,
+            'nama' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|unique:pengguna,email,' . $id,
             'program_studi' => 'sometimes|exists:prodi,kode_prodi',
-            'kelas'         => 'sometimes|nullable|exists:kelas,id_kelas',
+            'kelas' => 'sometimes|nullable|exists:kelas,id_kelas',
         ]);
 
         // Update hanya field yang dikirim
@@ -111,14 +111,14 @@ class AdminController extends Controller
         ]));
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Data pengguna berhasil diubah.',
-            'user'    => $user,
+            'user' => $user,
         ]);
     }
 
     // =============================
-    // AKTIFKAN AKUN
+    // AKTIVASI AKUN KPS & KETUA PBL
     // =============================
     public function aktifkanAkun($id)
     {
@@ -126,14 +126,14 @@ class AdminController extends Controller
 
         if (!$user) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Pengguna tidak ditemukan.',
             ], 404);
         }
 
         if ($user->isAktif()) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Akun sudah aktif.',
             ], 422);
         }
@@ -141,29 +141,29 @@ class AdminController extends Controller
         $user->update(['status' => Pengguna::STATUS_AKTIF]);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Akun berhasil diaktifkan.',
-            'user'    => $user,
+            'user' => $user,
         ]);
     }
 
-    // =============================
-    // NONAKTIFKAN AKUN
-    // =============================
+    // ================================
+    // NONAKTIFKAN AKUN KPS & KETUA PBL
+    // ================================
     public function nonaktifkanAkun($id)
     {
         $user = Pengguna::find($id);
 
         if (!$user) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Pengguna tidak ditemukan.',
             ], 404);
         }
 
         if (!$user->isAktif()) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Akun sudah tidak aktif.',
             ], 422);
         }
@@ -174,9 +174,9 @@ class AdminController extends Controller
         $user->update(['status' => Pengguna::STATUS_TIDAK_AKTIF]);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Akun berhasil dinonaktifkan.',
-            'user'    => $user,
+            'user' => $user,
         ]);
     }
 }

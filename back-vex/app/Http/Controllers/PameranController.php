@@ -87,7 +87,7 @@ class PameranController extends Controller
             'stats' => [
                 'likes' => 0,
                 'karya' => 0,
-                'kapasitas' => $pameran->kapasitas, 
+                'kapasitas' => $pameran->kapasitas,
                 'prepareStartDate' => $pameran->tanggal_mulai_persiapan,
                 'prepareEndDate' => $pameran->tanggal_akhir_persiapan,
                 'startDate' => $pameran->tanggal_mulai,

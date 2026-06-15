@@ -67,57 +67,153 @@
 ================================================================================
 ================================================================================
 
-{Backend Implementasi}
+{Backend Implementasi (Class & Function)}
 
 [
-    (PenggunaControler)
+    (PenggunaController)
     {
-        register(data): (RegisterPage): OK, # register pengguna
-        registerThroughAdmin(data): (FormTambahUser): OK, # register akun Ketua PBL & KPS
-        getByRole(role): , # Validasi untuk role yang dapat add, put
-        updateThroughAdmin(data): (UserDetail): OK, # update akun Ketua PBL & KPS
-        verifyOtp(otp): (VerifikasiPage): OK, # verifikasi OTP dengan send email
-        resendOtp(email): , # resend OTP register
-        login(data): (LoginPage): OK, # login ke akun pengguna dengan token
-        logout(): # keluar dan hapus token
+        register(data:[nama,email,psssword]) --> (RegisterPage): OK, 
+        registerThroughAdmin(data:[nama,email,role,prodi]) --> (FormTambahUser): OK, 
+        getByRole(role): OK,
+        updateThroughAdmin(data:[nama,email,role,satus]) --> (UserDetail): OK, 
+        verifyOtp(data:[token,otp]) --> (VerifikasiPage): OK,
+        resendOtp(token['email']): OK, 
+        login(data:[email,password]) --> (LoginPage): OK, 
+        logout(data:User): OK
     },
 
     (ChangeEmailController)
     {
-        sendVerification(data): (GantiEmailPage): OK, # Kirim otp verivikasi ganti email
-        verify(otp): , # Memverifikasi otp dengan email -> ganti email
+        sendVerification(data:[new_email,password]) --> (GantiEmailPage): OK, 
+        verify(otp): OK, 
     },
 
     (ChangePasswordController)
     {
-        changePassword(data): (GantiPasswordPage): OK, # mengganti password direct
+        changePassword(data:[old_password,new_password,new_password_confirmation]) --> (GantiPasswordPage): OK,
     },
 
     (ResetPasswordController)
     {
-        forgotPassword(data): (LupaPasswordPage): OK, # kirim link dan token
-        resendEmail(email): , # kirim ulang email
-        verifyResetToken(token): , # verifikai token yang di kirim
-        resetPassword(data): # ganti password force
+        forgotPassword(email) --> (LupaPasswordPage): OK,
+        resendEmail(email) --> (LupaPasswordPage): OK, 
+        verifyResetToken(token): OK,
+        resetPassword(data:[token,email,password]) --> (UbahPasswordForm): OK
     },
 
-    (GetPameranAll)
+    (AdminController)
     {
-        sudah terhubung dengan controller namun belum dioptimalisasi
+        {ga kepake}
+
+        daftarPengguna() : NO,
+        detailPengguna(id) : NO,
+
+        tambahPengguna(data:[
+            nama,
+            email,
+            password,
+            role,
+            program_studi,
+            kelas
+        ]): NO,
+
+        editPengguna(id,data:[
+            nama,
+            email,
+            program_studi,
+            kelas
+        ]) : NO,
+
+        aktifkanAkun(id) : NO,
+        nonaktifkanAkun(id) NO,
     },
 
-    (GetDetailPameran)
+    (KaryaController)
     {
-        sudah terhubung dengan controller
+        index(User) : ,
+
+        store(data:[
+            id_pameran,
+            id_stan,
+            judul,
+            deskripsi,
+            tautan,
+            gambar_poster,
+            gambar_sampul
+        ]) : ,
+
+        update(id,data:[
+            id_pameran,
+            id_stan,
+            judul,
+            deskripsi,
+            tautan,
+            gambar_poster,
+            gambar_sampul
+        ]) : ,
+
+         destroy(id,User) : ,
     },
 
-    (PostPameran)
+    (GameAssetController)
     {
-        sudah terhubung dengan controller.
+        index() --> (ExhibitionPage) : OK,
+        get3DModel(modelId) --> (ExhibitionPage) : OK,
+        karyaByPameran(id) --> (ExhibitionPage): OK,
+        getYoutubeThumbnail(url) : OK
+    },
 
-        *note: tampilan admin masih di dalam
-        pameran/detail/[id]/page.tsx belum digabung
+    (KomentarController)
+    {
+        index(id_karya) --> (ExhibitionPage) : OK,
+        store(id_karya, isi_komentar) --> (ExhibitionPage) : OK,
+    },
+
+    (KpsController)
+    {
+        {BELUM}
+        daftarKarya(User): ,
+        pilihTerbaik(User, id_karya) : ,
+        batalkanTerbaik(User, id_karya) : ,
+        karyaTerbaik() : 
+    },
+
+    (PameranController)
+    {
+        index() --> (PagePameran) :OK ,
+        show(id) --> (DetailPameran) :OK ,
+
+        store(data:[
+            category,
+            banner,
+            title,
+            description,
+            capacity,
+            start_date,
+            end_date,
+            prepare_start,
+            prepare_end
+        ]) --> (AddPameran) :OK,
+
+        update(data:[
+            kategori,
+            banner,
+            judul,
+            deskripsi,
+            kapasitas,
+            tanggal_mulai,
+            tanggal_akhir,
+            tanggal_akhir_persiapan,
+            tanggal_mulai_persiapan
+        ]) --> (EditPameran): OK,
+    },
+
+    (SukaController)
+    {
+        toggle(User,id_karya) --> (ExhibitionPage): OK,
+        status(User,id_karya) --> (ExhibitionPage): OK,
     }
+
 ]
 
 NOTE:

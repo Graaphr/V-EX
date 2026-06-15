@@ -13,6 +13,9 @@ use App\Models\Pameran;
 
 class GameAssetController extends Controller
 {
+    // ==============
+    // GET AUDIO PATH
+    // ==============
     public function index()
     {
         return response()->json([
@@ -22,6 +25,9 @@ class GameAssetController extends Controller
         ]);
     }
 
+    // ==============
+    // AMBIL 3D MODEL 
+    // ==============
     public function get3DModel($modelId)
     {
         $pameran = Pameran::with('model3d')->findOrFail($modelId);
@@ -35,6 +41,9 @@ class GameAssetController extends Controller
         ]);
     }
 
+    // ==========================
+    // AMBIL KARYA DI TABEL KARYA
+    // ==========================
     public function karyaByPameran($id_pameran)
     {
         // karya.id_stan → stan.id_stan → stan.model_stan → model.id_model
@@ -94,6 +103,9 @@ class GameAssetController extends Controller
         return response()->json($result);
     }
 
+    // ========================
+    // THUMNAIL YT DARI LINK YT
+    // ========================
     private function getYoutubeThumbnail($url)
     {
         if (!$url) {
@@ -102,14 +114,12 @@ class GameAssetController extends Controller
 
         $videoId = null;
 
-        // https://www.youtube.com/watch?v=xxxx
         parse_str(parse_url($url, PHP_URL_QUERY), $query);
 
         if (isset($query['v'])) {
             $videoId = $query['v'];
         }
 
-        // https://youtu.be/xxxx
         if (!$videoId && preg_match('/youtu\.be\/([^\?&]+)/', $url, $matches)) {
             $videoId = $matches[1];
         }

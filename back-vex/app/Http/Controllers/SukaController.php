@@ -17,7 +17,7 @@ class SukaController extends Controller
 
         if (!$karya) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Karya tidak ditemukan.',
             ], 404);
         }
@@ -34,9 +34,9 @@ class SukaController extends Controller
             $suka->delete();
 
             return response()->json([
-                'status'     => 'success',
-                'message'    => 'Like berhasil dihapus.',
-                'liked'      => false,
+                'status' => 'success',
+                'message' => 'Like berhasil dihapus.',
+                'liked' => false,
                 'total_suka' => Suka::where('id_karya', $id_karya)->count(),
             ]);
         }
@@ -44,13 +44,13 @@ class SukaController extends Controller
         // Belum like → like
         Suka::create([
             'id_pengguna' => $user->id,
-            'id_karya'    => $id_karya,
+            'id_karya' => $id_karya,
         ]);
 
         return response()->json([
-            'status'     => 'success',
-            'message'    => 'Like berhasil ditambahkan.',
-            'liked'      => true,
+            'status' => 'success',
+            'message' => 'Like berhasil ditambahkan.',
+            'liked' => true,
             'total_suka' => Suka::where('id_karya', $id_karya)->count(),
         ]);
     }
@@ -69,8 +69,8 @@ class SukaController extends Controller
         $totalSuka = Suka::where('id_karya', $id_karya)->count();
 
         return response()->json([
-            'status'     => 'success',
-            'liked'      => $liked,
+            'status' => 'success',
+            'liked' => $liked,
             'total_suka' => $totalSuka,
         ]);
     }

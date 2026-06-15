@@ -19,17 +19,18 @@ class PenggunaController extends Controller
         $this->otpService = $otpService;
     }
 
+    // ======================
+    // REGISTER PENGGUNA BARU
+    // ======================
     public function register(Request $request)
     {
 
-        // validasi inputan user
         $request->validate([
             'nama' => 'required|string|max:255',
             'email' => 'required|email',
             'password' => 'required|min:8|confirmed',
         ]);
 
-        // cek email 
         if (Pengguna::where('email', $request->email)->exists()) {
             return response()->json([
                 'message' => 'Email sudah terdaftar',
@@ -70,8 +71,9 @@ class PenggunaController extends Controller
         }
     }
 
-    //Tambah pengguna melalui Admin
-
+    // =========================== 
+    // TAMBAH PENGGUNA UNTUK ADMIN
+    // ===========================
     public function registerThroughAdmin(Request $request)
     {
         $request->validate([
@@ -95,7 +97,6 @@ class PenggunaController extends Controller
                 'password' => Hash::make($request->email),
                 'role' => $request->role,
                 'status' => 'aktif',
-
                 'program_studi' => $request->prodi,
                 'kelas' => $request->kelas
             ]);
@@ -114,6 +115,9 @@ class PenggunaController extends Controller
         }
     }
 
+    // ================ 
+    // AMBIL ROLE USER
+    // ================
     public function getByRole($role)
     {
         $pengguna = Pengguna::with([
@@ -129,6 +133,9 @@ class PenggunaController extends Controller
         ]);
     }
 
+    // =========================== 
+    // UPDATE PENGGUNA UNTUK ADMIN
+    // ===========================
     public function updateThroughAdmin(Request $request, $id)
     {
         $request->validate([
@@ -163,6 +170,9 @@ class PenggunaController extends Controller
         ]);
     }
 
+    // ==============================
+    // VRIFIKASI OTP UNTUK REGISTER()
+    // ==============================
     public function verifyOtp(Request $request)
     {
         if (!$request->token) {
@@ -202,6 +212,9 @@ class PenggunaController extends Controller
         ]);
     }
 
+    // ================
+    // KIRIM ULANG OTP 
+    // ================
     public function resendOtp(Request $request)
     {
         // ambil token
@@ -225,6 +238,9 @@ class PenggunaController extends Controller
         ]);
     }
 
+    // ==========
+    // USER LOGIN
+    // ==========
     public function login(Request $request)
     {
         try {
@@ -254,6 +270,7 @@ class PenggunaController extends Controller
 
             $user->tokens()->delete();
 
+            // set role User
             $abilities = match ($user->role) {
                 Pengguna::ROLE_ADMIN => ['admin'],
                 Pengguna::ROLE_KPS => ['kps'],
@@ -263,6 +280,7 @@ class PenggunaController extends Controller
 
             $token = $user->createToken('token', $abilities)->plainTextToken;
 
+            // path User saat login
             $redirectTo = match ($user->role) {
                 Pengguna::ROLE_ADMIN => '/admin/pengguna',
                 Pengguna::ROLE_KPS => '/kps/karya',
@@ -292,6 +310,9 @@ class PenggunaController extends Controller
         }
     }
 
+    // ===========
+    // LOGOUT AKUN
+    // ===========
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
