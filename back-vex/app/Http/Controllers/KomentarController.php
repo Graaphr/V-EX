@@ -17,7 +17,7 @@ class KomentarController extends Controller
 
         if (!$karya) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Karya tidak ditemukan.',
             ], 404);
         }
@@ -27,8 +27,8 @@ class KomentarController extends Controller
             ->get();
 
         return response()->json([
-            'status'   => 'success',
-            'total'    => $komentar->count(),
+            'status' => 'success',
+            'total' => $komentar->count(),
             'komentar' => $komentar,
         ]);
     }
@@ -42,7 +42,7 @@ class KomentarController extends Controller
 
         if (!$karya) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Karya tidak ditemukan.',
             ], 404);
         }
@@ -52,16 +52,16 @@ class KomentarController extends Controller
         ]);
 
         $komentar = Komentar::create([
-            'id_pengguna'  => $request->user()->id,
-            'id_karya'     => $id_karya,
+            'id_pengguna' => $request->user()->id,
+            'id_karya' => $id_karya,
             'isi_komentar' => $request->isi_komentar,
         ]);
 
         return response()->json([
-            'status'   => 'success',
-            'message'  => 'Komentar berhasil ditambahkan.',
+            'status' => 'success',
+            'message' => 'Komentar berhasil ditambahkan.',
             'komentar' => $komentar->load('pengguna:id,nama'),
         ], 201);
     }
 
- }
+}

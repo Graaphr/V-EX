@@ -12,12 +12,12 @@ class ChangeEmailController extends Controller
 {
     public function __construct(
         private OtpService $otpService
-    ) {}
+    ) {
+    }
 
-    /**
-     * STEP 1
-     * Kirim OTP ke email baru
-     */
+    // =======================
+    // KIRIM OTP KE EMAIL BARU
+    // ======================= 
     public function sendVerification(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -79,10 +79,9 @@ class ChangeEmailController extends Controller
         ], 200);
     }
 
-    /**
-     * STEP 2
-     * Verifikasi OTP dan ubah email
-     */
+    // =======================================
+    // VERIFIKASI OTP DAN GANTI EMAIL KE MODEL
+    // =======================================
     public function verify(Request $request)
     {
         $validator = Validator::make($request->all(), [

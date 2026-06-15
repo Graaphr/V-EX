@@ -38,7 +38,7 @@ type InfoData = {
   }[];
 };
 
-export default function Page() {
+export default function ExhibitionPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;

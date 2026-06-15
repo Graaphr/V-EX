@@ -17,7 +17,9 @@ class ResetPasswordController extends Controller
         $this->resetPasswordService = $resetPasswordService;
     }
 
-    // Lupa Password langsung
+    // =======================================
+    // SEND LINK CHANGE PASSWORD TO USER MAIL 
+    // =======================================
     public function forgotPassword(Request $request)
     {
         try {
@@ -63,7 +65,9 @@ class ResetPasswordController extends Controller
         }
     }
 
-    // Resend Email
+    // ====================
+    // RE-SEND TO USER MAIL 
+    // ====================
     public function resendEmail(Request $request)
     {
         try {
@@ -108,7 +112,9 @@ class ResetPasswordController extends Controller
         }
     }
 
-    // Verifikasi token dari email
+    // ==========================
+    // VERIFIKASI TOKEN YANG ADA 
+    // ==========================
     public function verifyResetToken(Request $request)
     {
         try {
@@ -145,7 +151,9 @@ class ResetPasswordController extends Controller
         }
     }
 
-    // Simpan password baru
+    // ================================
+    // RESET PASSWORD LANGSUNG KE MODEL
+    // ================================
     public function resetPassword(Request $request)
     {
         try {

@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Validator;
 class ChangePasswordController extends Controller
 {
 
-    // Ganti password dan simpan
+    // ===================================
+    // GANTI PASSWORD LANGSUNG TANPA LOGIN
+    // ===================================
     public function changePassword(Request $request)
     {
         // Validasi input 
@@ -42,9 +44,6 @@ class ChangePasswordController extends Controller
         // Update password
         $user->password = Hash::make($request->new_password);
         $user->save();
-
-        // Opsional: Hapus semua token user (logout dari perangkat lain)
-        // $user->tokens()->delete();
 
         return response()->json([
             'status' => 'success',

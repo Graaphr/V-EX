@@ -14,7 +14,7 @@ class KaryaController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        
+
         $karya = Karya::where('id_pengguna', $user->id)
             ->with(['stan', 'pameran'])
             ->get();
@@ -25,9 +25,9 @@ class KaryaController extends Controller
         ]);
     }
 
-    // =============================
-    // TAMBAH KARYA
-    // =============================
+    // =============
+    // TAMBAH KARYA 
+    // =============
     public function store(Request $request)
     {
         $user = $request->user();
@@ -65,7 +65,7 @@ class KaryaController extends Controller
     }
 
     // =============================
-    // EDIT KARYA
+    // EDIT KARYA PBL
     // =============================
     public function update(Request $request, $id)
     {
