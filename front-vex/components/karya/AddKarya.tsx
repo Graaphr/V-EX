@@ -3,17 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-// COMPONENTS
 import DetailThumbnail from "@/components/karya/DetailThumbnail";
 import DetailPoster from "@/components/karya/DetailPoster";
 import DetailPreview from "@/components/karya/DetailPreview";
 import DetailForm from "@/components/karya/DetailForm";
 import DetailAction from "@/components/karya/DetailAction";
 
-// API
 import { PostKarya } from "@/components/karya/apiKarya";
-
-// TYPES
 import { KaryaItem } from "@/types/karya";
 
 const initialForm: KaryaItem = {
@@ -25,9 +21,9 @@ const initialForm: KaryaItem = {
   year: "",
   semester: "",
   description: "",
-  booth: "img-stan1.svg",
+  booth: "", // ✅ fix: jangan hardcode nama file SVG (booth = id_stan)
   link: "",
-  pameranId: 1,
+  pameranId: undefined, // ✅ fix: jangan hardcode 1, user wajib pilih
 };
 
 export default function AddKaryaPage() {
@@ -38,18 +34,12 @@ export default function AddKaryaPage() {
   const [posterPreview, setPosterPreview] = useState("");
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [posterFile, setPosterFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // ✅ Ditambahkan
+  const [isLoading, setIsLoading] = useState(false);
 
-  // =============================
-  // HANDLE CHANGE FORM
-  // =============================
   const handleChange = (field: keyof KaryaItem, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  // =============================
-  // HANDLE IMAGE UPLOAD
-  // =============================
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
     type: "thumbnail" | "poster",
@@ -68,24 +58,21 @@ export default function AddKaryaPage() {
     }
   };
 
-  // =============================
-  // SAVE DATA
-  // =============================
   const handleSave = async () => {
-    setIsLoading(true); // ✅
+    setIsLoading(true);
     try {
       const formData = new FormData();
-      formData.append("id_pameran", String(form.pameranId ?? "")); // ✅ sesuai Laravel
-      formData.append("id_stan", form.booth ?? ""); // ✅ sesuai Laravel
-      formData.append("judul", form.title); // ✅ sesuai Laravel
-      formData.append("deskripsi", form.description ?? ""); // ✅ sesuai Laravel
-      formData.append("tautan", form.link ?? ""); // ✅ sesuai Laravel
-      if (thumbnailFile) formData.append("gambar_sampul", thumbnailFile); // ✅ sesuai Laravel
-      if (posterFile) formData.append("gambar_poster", posterFile); // ✅ sesuai Laravel
+      formData.append("id_pameran", String(form.pameranId ?? ""));
+      formData.append("id_stan", form.booth ?? "");
+      formData.append("judul", form.title);
+      formData.append("deskripsi", form.description ?? "");
+      formData.append("tautan", form.link ?? "");
+      if (thumbnailFile) formData.append("gambar_sampul", thumbnailFile);
+      if (posterFile) formData.append("gambar_poster", posterFile);
 
       const result = await PostKarya(formData);
 
-      if (!result.success) {
+      if (!result.success && result.status !== "success") {
         throw new Error(result.message || "Gagal menambahkan karya");
       }
 
@@ -96,13 +83,10 @@ export default function AddKaryaPage() {
       }
       console.error("Gagal menyimpan karya:", error);
     } finally {
-      setIsLoading(false); // ✅
+      setIsLoading(false);
     }
   };
 
-  // =============================
-  // RESET FORM
-  // =============================
   const handleDelete = () => {
     setForm(initialForm);
     setThumbnailPreview("");
@@ -111,23 +95,10 @@ export default function AddKaryaPage() {
     setPosterFile(null);
   };
 
-  const token = localStorage.getItem("token");
-
-fetch("http://localhost:8000/api/ketua-pbl/stan/1", {
-  headers: {
-    "Authorization": `Bearer ${token}`,
-    "Accept": "application/json"
-  }
-})
-.then(res => res.json())
-.then(data => console.log("Stan response:", data))
-.catch(err => console.error("Error:", err));
-
   return (
     <div className="w-full px-4 sm:px-6 lg:px-0 py-6">
       <div className="max-w-[1200px] mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-          {/* KIRI - Upload Thumbnail & Poster */}
           <div className="space-y-3">
             <DetailThumbnail
               preview={thumbnailPreview}
@@ -139,18 +110,17 @@ fetch("http://localhost:8000/api/ketua-pbl/stan/1", {
             />
           </div>
 
-          {/* KANAN - Preview, Form & Action */}
           <div>
             <DetailPreview
               booth={form.booth}
-              pameranId={form.pameranId} // ✅ tambahkan ini
+              pameranId={form.pameranId}
               onChange={(value) => handleChange("booth", value)}
             />
             <DetailForm form={form} onChange={handleChange} />
             <DetailAction
               onDelete={handleDelete}
               onSave={handleSave}
-              loading={isLoading} // ✅
+              loading={isLoading}
             />
           </div>
         </div>

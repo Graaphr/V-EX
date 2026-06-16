@@ -29,9 +29,6 @@ export default function EditKarya({ id }: Props) {
     title: string;
   } | null>(null);
 
-  // =============================
-  // LOAD DATA KARYA
-  // =============================
   useEffect(() => {
     const load = async () => {
       try {
@@ -47,7 +44,10 @@ export default function EditKarya({ id }: Props) {
           if (found.pameranId) {
             setCurrentPameran({
               id: found.pameranId,
-              title: `Pameran #${found.pameranId}`,
+              // ✅ fix: pakai pameranTitle asli dari API jika ada, fallback ke generik
+              title:
+                (found as any).pameranTitle?.trim() ||
+                `Pameran #${found.pameranId}`,
             });
           }
         }
@@ -59,17 +59,11 @@ export default function EditKarya({ id }: Props) {
     load();
   }, [id]);
 
-  // =============================
-  // HANDLE CHANGE FORM
-  // =============================
   const handleChange = (field: keyof KaryaItem, value: string) => {
     if (!form) return;
     setForm({ ...form, [field]: value });
   };
 
-  // =============================
-  // HANDLE IMAGE UPLOAD
-  // =============================
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
     type: "thumbnail" | "poster",
@@ -87,25 +81,22 @@ export default function EditKarya({ id }: Props) {
     }
   };
 
-  // =============================
-  // SAVE / UPDATE
-  // =============================
   const handleSave = async () => {
     if (!form) return;
     setIsLoading(true);
     try {
       const formData = new FormData();
-      formData.append("id_pameran", String(form.pameranId ?? "")); // ✅ pameranId → id_pameran
-      formData.append("id_stan", form.booth ?? ""); // ✅ booth → id_stan
-      formData.append("judul", form.title); // ✅ title → judul
-      formData.append("deskripsi", form.description ?? ""); // ✅ description → deskripsi
-      formData.append("tautan", form.link ?? ""); // ✅ link → tautan
-      if (thumbnailFile) formData.append("gambar_sampul", thumbnailFile); // ✅ thumbnail → gambar_sampul
-      if (posterFile) formData.append("gambar_poster", posterFile); // ✅ image → gambar_poster
+      formData.append("id_pameran", String(form.pameranId ?? ""));
+      formData.append("id_stan", form.booth ?? "");
+      formData.append("judul", form.title);
+      formData.append("deskripsi", form.description ?? "");
+      formData.append("tautan", form.link ?? "");
+      if (thumbnailFile) formData.append("gambar_sampul", thumbnailFile);
+      if (posterFile) formData.append("gambar_poster", posterFile);
 
       const result = await UpdateKarya(form.id, formData);
 
-      if (!result.success) {
+      if (result.status !== "success") {
         throw new Error(result.message || "Gagal memperbarui karya");
       }
 
@@ -120,9 +111,6 @@ export default function EditKarya({ id }: Props) {
     }
   };
 
-  // =============================
-  // LOADING STATE
-  // =============================
   if (!form) {
     return (
       <div className="flex min-h-[500px] items-center justify-center">
@@ -138,7 +126,6 @@ export default function EditKarya({ id }: Props) {
     <div className="w-full px-4 sm:px-6 lg:px-0 py-6">
       <div className="max-w-[1200px] mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-          {/* KIRI - Upload Thumbnail & Poster */}
           <div className="space-y-3">
             <DetailThumbnail
               preview={thumbnailPreview}
@@ -150,11 +137,10 @@ export default function EditKarya({ id }: Props) {
             />
           </div>
 
-          {/* KANAN - Preview, Form & Action */}
           <div>
             <DetailPreview
               booth={form.booth}
-              pameranId={form.pameranId} // ✅ tambahkan ini
+              pameranId={form.pameranId}
               onChange={(value) => handleChange("booth", value)}
             />
             <DetailForm
@@ -162,7 +148,6 @@ export default function EditKarya({ id }: Props) {
               onChange={handleChange}
               currentPameran={currentPameran}
             />
-            {/* ✅ Tidak ada onDelete — edit karya tidak bisa hapus */}
             <DetailAction onSave={handleSave} loading={isLoading} />
           </div>
         </div>

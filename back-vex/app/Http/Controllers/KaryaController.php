@@ -17,7 +17,27 @@ class KaryaController extends Controller
 
         $karya = Karya::where('id_pengguna', $user->id)
             ->with(['stan', 'pameran'])
-            ->get();
+            ->get()
+            ->map(fn($item) => [
+                'id' => $item->id_karya,
+                'title' => $item->judul,
+                'category' => $item->pameran?->kategori ?? '',
+                'image' => $item->gambar_poster
+                    ? asset("storage/{$item->gambar_poster}")
+                    : '',
+                'thumbnail' => $item->gambar_sampul
+                    ? asset("storage/{$item->gambar_sampul}")
+                    : '',
+                'link' => $item->tautan,
+                'description' => $item->deskripsi,
+                'booth' => $item->id_stan ? (string) $item->id_stan : '',
+                'pameranId' => $item->id_pameran,
+                'pameranTitle' => $item->pameran?->judul ?? '', // ✅ untuk EditKarya
+                'year' => $item->pameran?->tanggal_mulai
+                    ? date('Y', strtotime($item->pameran->tanggal_mulai))
+                    : '',
+                'semester' => '',
+            ]);
 
         return response()->json([
             'status' => 'success',

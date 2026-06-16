@@ -9,8 +9,8 @@ interface StanOption {
 }
 
 interface Props {
-  booth?: string; // menyimpan id_stan sebagai string
-  pameranId?: number; // ✅ dibutuhkan untuk fetch stan
+  booth?: string;
+  pameranId?: number;
   onChange: (value: string) => void;
 }
 
@@ -29,9 +29,10 @@ export default function DetailPreview({ booth, pameranId, onChange }: Props) {
   const [stanList, setStanList] = useState<StanOption[]>([]);
   const [loadingStan, setLoadingStan] = useState(false);
 
-  // ✅ Fetch stan setiap kali pameranId berubah
+  const isValidPameranId = !!pameranId && pameranId > 0; // ✅ fix: guard lebih ketat
+
   useEffect(() => {
-    if (!pameranId) {
+    if (!isValidPameranId) {
       setStanList([]);
       return;
     }
@@ -39,7 +40,7 @@ export default function DetailPreview({ booth, pameranId, onChange }: Props) {
     const fetchStan = async () => {
       setLoadingStan(true);
       try {
-        const res = await GetStanTersedia(pameranId);
+        const res = await GetStanTersedia(pameranId as number);
         setStanList(res.stan ?? []);
       } catch (err) {
         console.error("Gagal memuat stan:", err);
@@ -49,9 +50,8 @@ export default function DetailPreview({ booth, pameranId, onChange }: Props) {
     };
 
     fetchStan();
-  }, [pameranId]);
+  }, [pameranId, isValidPameranId]);
 
-  // Cari nama model untuk preview gambar
   const selectedStan = stanList.find((s) => String(s.id) === String(booth));
 
   return (
@@ -60,7 +60,6 @@ export default function DetailPreview({ booth, pameranId, onChange }: Props) {
         Detail<span className="text-red-500">*</span>
       </p>
 
-      {/* Preview gambar stan */}
       <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl w-full h-[300px] flex items-center justify-center overflow-hidden">
         <img
           src={
@@ -76,14 +75,13 @@ export default function DetailPreview({ booth, pameranId, onChange }: Props) {
         />
       </div>
 
-      {/* Dropdown pilih stan */}
       <div>
         <Label text="Pilih Stan" required />
         <p className="text-xs text-gray-400 mt-1">
           Pilih tampilan stan untuk karya kamu
         </p>
 
-        {!pameranId ? (
+        {!isValidPameranId ? (
           <p className="mt-1.5 text-xs text-gray-400 italic">
             Pilih pameran terlebih dahulu
           </p>

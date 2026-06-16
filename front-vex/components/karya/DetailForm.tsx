@@ -7,13 +7,13 @@ import { GetPameranTersedia } from "@/components/karya/apiKarya";
 interface Props {
   form: KaryaItem;
   onChange: (field: keyof KaryaItem, value: string) => void;
-  // ✅ Untuk EditKarya: pameran yang sudah dipilih tetap tampil
   currentPameran?: { id: number; title: string } | null;
 }
 
 interface PameranOption {
   id: number;
   title: string;
+  isClosedCurrent?: boolean; // ✅ flag eksplisit, bukan dihitung ulang saat render
 }
 
 const inputClass =
@@ -37,12 +37,11 @@ export default function DetailForm({ form, onChange, currentPameran }: Props) {
         const res = await GetPameranTersedia();
         const list: PameranOption[] = res.pameran ?? [];
 
-        // ✅ Jika mode edit & pameran saat ini tidak ada di list persiapan,
-        //    tetap tampilkan sebagai opsi (tapi disabled agar tidak bisa dipilih ulang)
         if (currentPameran) {
           const sudahAda = list.some((p) => p.id === currentPameran.id);
+          // ✅ fix: hanya tandai "closed" jika memang TIDAK ada di list persiapan
           if (!sudahAda) {
-            list.unshift(currentPameran); // taruh di depan
+            list.unshift({ ...currentPameran, isClosedCurrent: true });
           }
         }
 
@@ -59,7 +58,6 @@ export default function DetailForm({ form, onChange, currentPameran }: Props) {
 
   return (
     <div className="flex flex-col gap-4 mt-4">
-      {/* Pameran */}
       <div>
         <Label text="Pameran" required />
         <p className="text-xs text-gray-400 mt-1">
@@ -70,35 +68,27 @@ export default function DetailForm({ form, onChange, currentPameran }: Props) {
           <div className="mt-1.5 h-10 animate-pulse rounded-lg bg-gray-100" />
         ) : (
           <select
-            value={form.pameranId}
+            value={form.pameranId ?? ""}
             onChange={(e) => onChange("pameranId", e.target.value)}
             className={inputClass}
           >
             <option value="" disabled>
               -- Pilih Pameran --
             </option>
-            {pameranList.map((p) => {
-              // Pameran yang sudah lewat tahap persiapan hanya muncul di edit (disabled)
-              const isCurrentButClosed =
-                currentPameran?.id === p.id &&
-                !pameranList.some((x) => x.id === p.id && x !== currentPameran);
-
-              return (
-                <option
-                  key={p.id}
-                  value={String(p.id)}
-                  disabled={isCurrentButClosed}
-                >
-                  {p.title}
-                  {isCurrentButClosed ? " (Sudah dibuka)" : ""}
-                </option>
-              );
-            })}
+            {pameranList.map((p) => (
+              <option
+                key={p.id}
+                value={String(p.id)}
+                disabled={p.isClosedCurrent} // ✅ langsung pakai flag, tidak dihitung ulang
+              >
+                {p.title}
+                {p.isClosedCurrent ? " (Sudah dibuka)" : ""}
+              </option>
+            ))}
           </select>
         )}
       </div>
 
-      {/* Judul */}
       <div>
         <Label text="Judul" required />
         <p className="text-xs text-gray-400 mt-1">Masukkan judul PBL</p>
@@ -111,7 +101,6 @@ export default function DetailForm({ form, onChange, currentPameran }: Props) {
         />
       </div>
 
-      {/* Youtube */}
       <div>
         <Label text="Link Youtube" required />
         <p className="text-xs text-gray-400 mt-1">Masukkan link video demo</p>
@@ -124,7 +113,6 @@ export default function DetailForm({ form, onChange, currentPameran }: Props) {
         />
       </div>
 
-      {/* Deskripsi */}
       <div>
         <Label text="Deskripsi Karya" required />
         <p className="text-xs text-gray-400 mt-1">
