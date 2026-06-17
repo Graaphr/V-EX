@@ -101,36 +101,9 @@
         resetPassword(data:[token,email,password]) --> (UbahPasswordForm): OK
     },
 
-    (AdminController)
-    {
-        {ga kepake}
-
-        daftarPengguna() : NO,
-        detailPengguna(id) : NO,
-
-        tambahPengguna(data:[
-            nama,
-            email,
-            password,
-            role,
-            program_studi,
-            kelas
-        ]): NO,
-
-        editPengguna(id,data:[
-            nama,
-            email,
-            program_studi,
-            kelas
-        ]) : NO,
-
-        aktifkanAkun(id) : NO,
-        nonaktifkanAkun(id) NO,
-    },
-
     (KaryaController)
     {
-        index(User) : ,
+        index(User) --> (PageKarya) : OK,
 
         store(data:[
             id_pameran,
@@ -140,7 +113,7 @@
             tautan,
             gambar_poster,
             gambar_sampul
-        ]) : ,
+        ]) --> (AddKarya) : OK,
 
         update(id,data:[
             id_pameran,
@@ -150,9 +123,12 @@
             tautan,
             gambar_poster,
             gambar_sampul
-        ]) : ,
+        ]) --> (EditKarya): OK,
 
-         destroy(id,User) : ,
+        pameranTersedia(): OK,
+        stanTersedia(id_pameran): OK,
+
+        destroy(id,User) : ,
     },
 
     (GameAssetController)
@@ -165,13 +141,12 @@
 
     (KomentarController)
     {
-        index(id_karya) --> (ExhibitionPage) : OK,
-        store(id_karya, isi_komentar) --> (ExhibitionPage) : OK,
+        index(id_karya) --> (ExhibitionPage) : ,
+        store(id_karya, isi_komentar) --> (ExhibitionPage) : ,
     },
 
     (KpsController)
     {
-        {BELUM}
         daftarKarya(User): ,
         pilihTerbaik(User, id_karya) : ,
         batalkanTerbaik(User, id_karya) : ,
@@ -210,8 +185,8 @@
 
     (SukaController)
     {
-        toggle(User,id_karya) --> (ExhibitionPage): OK,
-        status(User,id_karya) --> (ExhibitionPage): OK,
+        toggle(User,id_karya) --> (ExhibitionPage): ,
+        status(User,id_karya) --> (ExhibitionPage): ,
     }
 
 ]
