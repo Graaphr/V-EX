@@ -23,20 +23,21 @@ class KaryaController extends Controller
                 'title' => $item->judul,
                 'category' => $item->pameran?->kategori ?? '',
                 'image' => $item->gambar_poster
-                    ? asset("storage/{$item->gambar_poster}")
+                    ? asset("http://localhost:8000/storage/{$item->gambar_poster}")
                     : '',
                 'thumbnail' => $item->gambar_sampul
-                    ? asset("storage/{$item->gambar_sampul}")
+                    ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
                     : '',
                 'link' => $item->tautan,
                 'description' => $item->deskripsi,
                 'booth' => $item->id_stan ? (string) $item->id_stan : '',
                 'pameranId' => $item->id_pameran,
-                'pameranTitle' => $item->pameran?->judul ?? '', // ✅ untuk EditKarya
+                'pameranTitle' => $item->pameran?->judul ?? '',
                 'year' => $item->pameran?->tanggal_mulai
                     ? date('Y', strtotime($item->pameran->tanggal_mulai))
                     : '',
                 'semester' => '',
+                'isTerbaik' => $item->is_terbaik,   // expose ke frontend
             ]);
 
         return response()->json([
@@ -45,9 +46,10 @@ class KaryaController extends Controller
         ]);
     }
 
-    // =============
-    // TAMBAH KARYA 
-    // =============
+
+    // =============================
+    // TAMBAH KARYA
+    // =============================
     public function store(Request $request)
     {
         $user = $request->user();
@@ -62,20 +64,63 @@ class KaryaController extends Controller
             'gambar_sampul' => 'required|image|mimes:png,jpg,jpeg|max:2048',
         ]);
 
-        // Upload berkas gambar
-        $posterPath = $request->file('gambar_poster')->store('karya/poster', 'public');
-        $sampulPath = $request->file('gambar_sampul')->store('karya/sampul', 'public');
+        $idPameran = $request->id_pameran;
+
+        // =============================
+        // CEK APAKAH USER SUDAH PUNYA KARYA
+        // DI PAMERAN INI
+        // =============================
+        $existingKarya = Karya::where('id_pengguna', $user->id)
+            ->where('id_pameran', $idPameran)
+            ->first();
+
+        if ($existingKarya) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Anda sudah mengunggah karya pada pameran ini.',
+                'karya_id' => $existingKarya->id_karya,
+            ], 409);
+        }
 
         $karya = Karya::create([
             'id_pengguna' => $user->id,
-            'id_pameran' => $request->id_pameran,
+            'id_pameran' => $idPameran,
             'id_stan' => $request->id_stan,
             'judul' => $request->judul,
             'deskripsi' => $request->deskripsi,
             'tautan' => $request->tautan,
+            'gambar_poster' => '/',
+            'gambar_sampul' => '/',
+        ]);
+
+        // =============================
+        // BUAT FOLDER
+        // =============================
+        $idKarya = $karya->id_karya;
+
+        Storage::disk('public')
+            ->makeDirectory("pameran/{$idPameran}/{$idKarya}/poster");
+
+        Storage::disk('public')
+            ->makeDirectory("pameran/{$idPameran}/{$idKarya}/sampul");
+
+        // =============================
+        // UPLOAD FILE
+        // =============================
+        $posterPath = $request->file('gambar_poster')
+            ->store("pameran/{$idPameran}/{$idKarya}/poster", 'public');
+
+        $sampulPath = $request->file('gambar_sampul')
+            ->store("pameran/{$idPameran}/{$idKarya}/sampul", 'public');
+
+        // =============================
+        // UPDATE KARYA
+        // =============================
+        $karya->update([
             'gambar_poster' => $posterPath,
             'gambar_sampul' => $sampulPath,
         ]);
+
 
         return response()->json([
             'status' => 'success',
@@ -99,7 +144,6 @@ class KaryaController extends Controller
             ], 404);
         }
 
-        // Pastikan hanya Ketua PBL pemilik karya yang bisa mengedit
         if ($karya->id_pengguna !== $user->id) {
             return response()->json([
                 'status' => 'error',
@@ -117,38 +161,42 @@ class KaryaController extends Controller
             'gambar_sampul' => 'sometimes|image|mimes:png,jpg,jpeg|max:2048',
         ]);
 
-        // Update gambar poster jika diunggah baru
+        // Gunakan id_pameran baru jika ada, fallback ke yang lama
+        // agar path penyimpanan gambar tetap konsisten dengan store()
+        $idPameran = $request->filled('id_pameran')
+            ? $request->id_pameran
+            : $karya->id_pameran;
+
         if ($request->hasFile('gambar_poster')) {
+            // Hapus file lama
             if ($karya->gambar_poster) {
                 Storage::disk('public')->delete($karya->gambar_poster);
             }
-            $karya->gambar_poster = $request->file('gambar_poster')->store('karya/poster', 'public');
+            // Simpan ke path yang sama dengan store()
+            Storage::disk('public')->makeDirectory("karya/{$idPameran}/poster");
+            $karya->gambar_poster = $request->file('gambar_poster')
+                ->store("karya/{$idPameran}/poster", 'public');
         }
 
-        // Update gambar sampul jika diunggah baru
         if ($request->hasFile('gambar_sampul')) {
             if ($karya->gambar_sampul) {
                 Storage::disk('public')->delete($karya->gambar_sampul);
             }
-            $karya->gambar_sampul = $request->file('gambar_sampul')->store('karya/sampul', 'public');
+            Storage::disk('public')->makeDirectory("karya/{$idPameran}/sampul");
+            $karya->gambar_sampul = $request->file('gambar_sampul')
+                ->store("karya/{$idPameran}/sampul", 'public');
         }
 
-        // Update field lainnya
-        if ($request->filled('id_pameran')) {
+        if ($request->filled('id_pameran'))
             $karya->id_pameran = $request->id_pameran;
-        }
-        if ($request->filled('id_stan')) {
+        if ($request->filled('id_stan'))
             $karya->id_stan = $request->id_stan;
-        }
-        if ($request->filled('judul')) {
+        if ($request->filled('judul'))
             $karya->judul = $request->judul;
-        }
-        if ($request->filled('deskripsi')) {
+        if ($request->filled('deskripsi'))
             $karya->deskripsi = $request->deskripsi;
-        }
-        if ($request->filled('tautan')) {
+        if ($request->filled('tautan'))
             $karya->tautan = $request->tautan;
-        }
 
         $karya->save();
 
@@ -165,8 +213,6 @@ class KaryaController extends Controller
     public function pameranTersedia(Request $request)
     {
         $user = $request->user();
-
-        // Ambil prodi ketua PBL dari relasinya
         $prodi = $user->prodi?->kode_prodi ?? null;
 
         if (!$prodi) {
@@ -178,8 +224,6 @@ class KaryaController extends Controller
 
         $today = now()->toDateString();
 
-        // Pameran sesuai prodi & sedang dalam tahap persiapan
-        // (tanggal_mulai_persiapan <= hari ini <= tanggal_akhir_persiapan)
         $pameran = \App\Models\Pameran::with('prodi')
             ->where('kategori', $prodi)
             ->where('tanggal_mulai_persiapan', '<=', $today)
@@ -230,7 +274,6 @@ class KaryaController extends Controller
             ], 404);
         }
 
-        // Admin dapat menghapus apa saja. Ketua PBL hanya dapat menghapus miliknya sendiri.
         if ($user->role !== 'Admin' && $karya->id_pengguna !== $user->id) {
             return response()->json([
                 'status' => 'error',
@@ -238,7 +281,6 @@ class KaryaController extends Controller
             ], 403);
         }
 
-        // Hapus file dari storage
         if ($karya->gambar_poster) {
             Storage::disk('public')->delete($karya->gambar_poster);
         }

@@ -1,7 +1,8 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { KaryaItem, PameranItem } from "../../types/karya";
+import Image from 'next/image';
+import { KaryaItem, PameranItem } from '../../types/karya';
+import { PRODI_OPTIONS } from '@/types/pameran';
 
 interface PosterCardProps {
   karya: KaryaItem;
@@ -11,6 +12,8 @@ interface PosterCardProps {
 export default function PosterCard({ karya, pameranList }: PosterCardProps) {
   const pameran = pameranList.find((item) => item.id === karya.pameranId);
 
+  const prodi = PRODI_OPTIONS.find((p) => p.kode === karya.category);
+  const categoryName = prodi?.nama || karya.category;
   return (
     <div className="mt-1 bg-white rounded-xl overflow-hidden hover:scale-102 shadow-md hover:shadow-xl/40 transition duration-300 group">
       <div className="relative aspect-[3/4] w-full">
@@ -38,12 +41,11 @@ export default function PosterCard({ karya, pameranList }: PosterCardProps) {
 
       <div className="p-3 h-[100px] flex flex-col justify-between">
         <h3 className="font-medium text-sm line-clamp-2">{karya.title}</h3>
-        <p className="text-xs text-gray-500">{karya.category}</p>
+        <p className="text-xs text-gray-500">{categoryName}</p>
+
         {pameran && (
           <span className="mt-1 inline-flex w-fit items-center rounded-full bg-blue-300/40 px-3 py-1">
-            <p className="font-poppins text-xs font-medium text-main-blue leading-none">
-              {pameran.title}
-            </p>
+            <p className="font-poppins text-xs font-medium text-main-blue leading-none">{pameran.title}</p>
           </span>
         )}
       </div>

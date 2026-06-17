@@ -1,18 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
-import { StatusType } from "@/components/shared/filter/SelectStatus";
-import { UserType, KelasType, ProdiType } from "@/types/pengguna";
-import {
-  GetRole,
-  CreateUser,
-  UpdateUser,
-} from "@/components/pengguna/apiPengguna";
+import { useEffect, useMemo, useState } from 'react';
+import { StatusType } from '@/components/shared/filter/SelectStatus';
+import { UserType, KelasType, ProdiType } from '@/types/pengguna';
+import { GetRole, CreateUser, UpdateUser } from '@/components/pengguna/apiPengguna';
 
 const ITEMS_PER_PAGE = 9;
 const itemsPerPageKps = 9;
 
 export function useUsers() {
   const [users, setUsers] = useState<UserType[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<StatusType | null>(null);
   const [pageMhs, setPageMhs] = useState(1);
   const [pageKps, setPageKps] = useState(1);
@@ -23,10 +19,7 @@ export function useUsers() {
     try {
       setIsLoading(true);
 
-      const [kpsRes, mhsRes] = await Promise.all([
-        GetRole("KPS"),
-        GetRole("Ketua PBL"),
-      ]);
+      const [kpsRes, mhsRes] = await Promise.all([GetRole('KPS'), GetRole('Ketua PBL')]);
 
       setUsers([...kpsRes.data, ...mhsRes.data]);
     } catch (error) {
@@ -44,22 +37,18 @@ export function useUsers() {
   /* ---------- Filter ---------- */
   const filterData = (data: UserType[]) =>
     data.filter((item) => {
-      const matchName = item.nama
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const matchStatus = selectedStatus
-        ? item.status === selectedStatus.value
-        : true;
+      const matchName = item.nama.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchStatus = selectedStatus ? item.status === selectedStatus.value : true;
       return matchName && matchStatus;
     });
 
   const filteredKps = useMemo(
-    () => filterData(users.filter((u) => u.role === "KPS")),
+    () => filterData(users.filter((u) => u.role === 'KPS')),
     [users, searchTerm, selectedStatus],
   );
 
   const filteredMhs = useMemo(
-    () => filterData(users.filter((u) => u.role !== "KPS")),
+    () => filterData(users.filter((u) => u.role !== 'KPS')),
     [users, searchTerm, selectedStatus],
   );
 
@@ -68,24 +57,13 @@ export function useUsers() {
     setPageMhs(1);
   }, [searchTerm, selectedStatus]);
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredMhs.length / ITEMS_PER_PAGE),
-  );
+  const totalPages = Math.max(1, Math.ceil(filteredMhs.length / ITEMS_PER_PAGE));
 
-  const totalPagesKps = Math.ceil(
-    filteredKps.length / itemsPerPageKps
-  );
+  const totalPagesKps = Math.ceil(filteredKps.length / itemsPerPageKps);
 
-  const paginatedMhs = filteredMhs.slice(
-    (pageMhs - 1) * ITEMS_PER_PAGE,
-    pageMhs * ITEMS_PER_PAGE,
-  );
+  const paginatedMhs = filteredMhs.slice((pageMhs - 1) * ITEMS_PER_PAGE, pageMhs * ITEMS_PER_PAGE);
 
-  const paginatedKps = filteredKps.slice(
-    (pageKps - 1) * itemsPerPageKps,
-    pageKps * itemsPerPageKps
-  );
+  const paginatedKps = filteredKps.slice((pageKps - 1) * itemsPerPageKps, pageKps * itemsPerPageKps);
 
   const nextPage = () => setPageMhs((p) => Math.min(p + 1, totalPages));
   const prevPage = () => setPageMhs((p) => Math.max(p - 1, 1));
@@ -103,22 +81,16 @@ export function useUsers() {
   };
 
   /* ---------- CRUD ---------- */
-  const addUser = async (newUser: Omit<UserType, "id">) => {
+  const addUser = async (newUser: Omit<UserType, 'id'>) => {
     try {
       await CreateUser({
         nama: newUser.nama,
         email: newUser.email,
         role: newUser.role,
 
-        prodi:
-          typeof newUser.prodi === "object"
-            ? newUser.prodi.kode_prodi
-            : newUser.prodi,
+        prodi: typeof newUser.prodi === 'object' ? newUser.prodi.kode_prodi : newUser.prodi,
 
-        kelas:
-          typeof newUser.kelas === "object"
-            ? String(newUser.kelas.id_kelas)
-            : newUser.kelas,
+        kelas: typeof newUser.kelas === 'object' ? String(newUser.kelas.id_kelas) : newUser.kelas,
       });
 
       await loadUsers();
@@ -143,7 +115,7 @@ export function useUsers() {
   const toggleStatus = async (user: UserType) => {
     const updated = {
       ...user,
-      status: user.status === "Aktif" ? "Tidak Aktif" : "Aktif",
+      status: user.status === 'Aktif' ? 'Tidak Aktif' : 'Aktif',
     };
     const success = await updateUser(updated);
     return { updated, success }; // ← return keduanya

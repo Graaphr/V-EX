@@ -15,7 +15,7 @@ export default function KaryaPage() {
     <div className="w-full">
       <NavKetuaPBL isFormOpen={isFormOpen} onAddClick={handleAddClick} />
 
-      {isFormOpen ? <AddKarya /> : <PageKarya href="/ketua-pbl/karya/" apiUrl="/api/ketua-pbl/karya" />}
+      {isFormOpen ? <AddKarya /> : <PageKarya href="/ketua-pbl/karya/"  />}
     </div>
   );
 }

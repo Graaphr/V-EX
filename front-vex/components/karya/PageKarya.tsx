@@ -1,31 +1,32 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import FilterSection from "@/components/pameran/FilterSection";
-import KaryaGrid from "@/components/karya/KaryaGrid";
-import { KaryaItem, PameranItem } from "@/types/karya";
-import { ProdiType } from "@/components/shared/filter/SelectProdi";
-import { TahunType } from "@/components/shared/filter/SelectTahun";
-import { SemesterType } from "@/components/shared/filter/SelectSemester";
-import url from "@/lib/axios";
+import { useEffect, useMemo, useState } from 'react';
+import FilterSection from '@/components/pameran/FilterSection';
+import KaryaGrid from '@/components/karya/KaryaGrid';
+import { KaryaItem, PameranItem } from '@/types/karya';
+import { PRODI_OPTIONS } from '@/types/pameran';
+import { ProdiType } from '@/components/shared/filter/SelectProdi';
+import { TahunType } from '@/components/shared/filter/SelectTahun';
+import { SemesterType } from '@/components/shared/filter/SelectSemester';
+
+import { GetKarya } from './apiKarya';
 
 interface Props {
   href: string;
-  apiUrl: string; // ✅ berbeda per role
 }
 
-export default function PageKarya({ href, apiUrl }: Props) {
+export default function PageKarya({ href }: Props) {
   const [karyaList, setKaryaList] = useState<KaryaItem[]>([]);
   const [pameranList, setPameranList] = useState<PameranItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedProdi, setSelectedProdi] = useState<ProdiType | null>(null);
   const [selectedTahun, setSelectedTahun] = useState<TahunType | null>(null);
-  const [selectedSemester, setSelectedSemester] = useState<SemesterType | null>(
-    null,
-  );
-  const [search, setSearch] = useState("");
+  const [selectedSemester, setSelectedSemester] = useState<SemesterType | null>(null);
+
+  const [search, setSearch] = useState('');
   const [pages, setPages] = useState<Record<string, number>>({});
+
   const PER_PAGE = 4;
 
   // =============================
@@ -34,12 +35,11 @@ export default function PageKarya({ href, apiUrl }: Props) {
   useEffect(() => {
     const fetchKarya = async () => {
       try {
-        const res = await url.get(apiUrl);
-        const data: KaryaItem[] = res.data.karya ?? [];
+        const res = await GetKarya();
+        const data: KaryaItem[] = res.karya ?? [];
         setKaryaList(data);
-
-        // Ekstrak pameran unik dari karya
         const pameranMap = new Map<number, PameranItem>();
+
         data.forEach((item) => {
           if (item.pameranId && !pameranMap.has(item.pameranId)) {
             pameranMap.set(item.pameranId, {
@@ -48,51 +48,49 @@ export default function PageKarya({ href, apiUrl }: Props) {
             });
           }
         });
+
         setPameranList(Array.from(pameranMap.values()));
       } catch (err) {
-        console.error("Gagal memuat karya:", err);
+        console.error('Gagal memuat karya:', err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchKarya();
-  }, [apiUrl]);
+  }, []);
 
   // =============================
   // FILTER
   // =============================
   const filteredData = useMemo(() => {
     return karyaList.filter((item) => {
-      const matchSearch =
-        item.title.toLowerCase().includes(search.toLowerCase()) ||
-        item.category?.toLowerCase().includes(search.toLowerCase());
-      const matchProdi = !selectedProdi || item.category === selectedProdi.name;
+      const prodi = PRODI_OPTIONS.find((p) => p.kode === item.category);
+      const categoryName = prodi?.nama || item.category;
+      const keyword = search.toLowerCase();
+      const matchSearch = item.title.toLowerCase().includes(keyword) || categoryName.toLowerCase().includes(keyword);
+      const matchProdi = !selectedProdi || categoryName === selectedProdi.name;
       const matchTahun = !selectedTahun || item.year === selectedTahun.name;
-      const matchSemester =
-        !selectedSemester || item.semester === selectedSemester.name;
+      const matchSemester = !selectedSemester || item.semester === selectedSemester.name;
       return matchSearch && matchProdi && matchTahun && matchSemester;
     });
   }, [karyaList, search, selectedProdi, selectedTahun, selectedSemester]);
 
-  const categories = [
-    ...new Set(
-      filteredData.map((i) => i.category).filter((c): c is string => !!c),
-    ),
-  ];
+  // =============================
+  // GROUP CATEGORY
+  // =============================
+  const categories = [...new Set(filteredData.map((i) => i.category).filter((c): c is string => !!c))];
 
-  const changePage = (
-    category: string,
-    type: "next" | "prev",
-    totalPages: number,
-  ) => {
+  const changePage = (category: string, type: 'next' | 'prev', totalPages: number) => {
     setPages((prev) => {
       const current = prev[category] || 1;
-      const nextPage =
-        type === "next"
-          ? Math.min(current + 1, totalPages)
-          : Math.max(current - 1, 1);
-      return { ...prev, [category]: nextPage };
+
+      const nextPage = type === 'next' ? Math.min(current + 1, totalPages) : Math.max(current - 1, 1);
+
+      return {
+        ...prev,
+        [category]: nextPage,
+      };
     });
   };
 
@@ -109,7 +107,7 @@ export default function PageKarya({ href, apiUrl }: Props) {
 
   return (
     <div className="min-h-screen bg-secondary-color font-poppins">
-      <section className="bg-main-blue rounded-b-[25px] md:rounded-b-[40px] py-6">
+      <section className="bg-main-blue rounded-b-[25px] py-6 md:rounded-b-[40px]">
         <div className="autoMid">
           <FilterSection
             search={search}
@@ -124,11 +122,9 @@ export default function PageKarya({ href, apiUrl }: Props) {
         </div>
       </section>
 
-      <main className="autoMid py-10 space-y-10">
+      <main className="autoMid space-y-10 py-10">
         {categories.length === 0 ? (
-          <p className="text-center text-gray-400 text-sm py-20">
-            Belum ada karya yang tersedia.
-          </p>
+          <p className="py-20 text-center text-sm text-gray-400">Belum ada karya yang tersedia.</p>
         ) : (
           categories.map((cat) => {
             const data = filteredData.filter((item) => item.category === cat);
@@ -136,18 +132,20 @@ export default function PageKarya({ href, apiUrl }: Props) {
             const currentPage = pages[cat] || 1;
             const start = (currentPage - 1) * PER_PAGE;
             const currentData = data.slice(start, start + PER_PAGE);
+            const prodi = PRODI_OPTIONS.find((p) => p.kode === cat);
+            const categoryName = prodi?.nama || cat;
 
             return (
               <KaryaGrid
                 key={cat}
-                category={cat}
+                category={categoryName}
                 data={currentData}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 href={href}
                 pameranList={pameranList}
-                onPrev={() => changePage(cat, "prev", totalPages)}
-                onNext={() => changePage(cat, "next", totalPages)}
+                onPrev={() => changePage(cat, 'prev', totalPages)}
+                onNext={() => changePage(cat, 'next', totalPages)}
               />
             );
           })

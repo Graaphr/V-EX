@@ -6,8 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Karya extends Model
 {
-    public $timestamps    = false;
-    protected $table      = 'karya';
+    public $timestamps = false;
+    protected $table = 'karya';
     protected $primaryKey = 'id_karya';
 
     protected $fillable = [
@@ -19,13 +19,12 @@ class Karya extends Model
         'tautan',
         'gambar_poster',
         'gambar_sampul',
-        'id_pameran',
         'lantai',
         'is_terbaik',
     ];
 
     protected $casts = [
-        'is_terbaik' => 'boolean', // ✅ cast ke boolean
+        'is_terbaik' => 'boolean',
         'lantai' => 'integer',
     ];
 
@@ -35,29 +34,37 @@ class Karya extends Model
         return $this->belongsTo(Pengguna::class, 'id_pengguna', 'id');
     }
 
-    // Relasi ke stan
-    public function model()
+    /**
+     * Relasi ke stan.
+     * Nama relasi diubah dari 'model' → 'stan' agar konsisten
+     * dengan Controller yang memanggil ->with(['stan', 'pameran'])
+     * dan $item->stan->...
+     *
+     * FK: id_stan → stan.id_stan (bukan model_stan)
+     */
+    public function stan()
     {
-        return $this->belongsTo(Stan::class, 'id_stan', 'model_stan');
+        return $this->belongsTo(Stan::class, 'id_stan', 'id_stan');
     }
 
-    public function pameran(){
+    public function pameran()
+    {
         return $this->belongsTo(Pameran::class, 'id_pameran', 'id_pameran');
     }
 
-    // ✅ Relasi ke komentar
+    // Relasi ke komentar
     public function komentar()
     {
         return $this->hasMany(Komentar::class, 'id_karya', 'id_karya');
     }
 
-    // ✅ Relasi ke suka
+    // Relasi ke suka
     public function suka()
     {
         return $this->hasMany(Suka::class, 'id_karya', 'id_karya');
     }
 
-    // ✅ Hitung total suka
+    // Hitung total suka
     public function totalSuka()
     {
         return $this->suka()->count();
