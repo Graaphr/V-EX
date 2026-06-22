@@ -76,7 +76,7 @@ class GameAssetController extends Controller
                 ->get()
                 ->map(fn($k) => [
                     'nama' => $k->nama ?? 'Anonim',
-                    'isi' => $k->isi,
+                    'isi' => $k->isi_komentar,
                 ]);
 
             return [
