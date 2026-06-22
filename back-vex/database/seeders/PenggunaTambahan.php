@@ -12,10 +12,6 @@ class PenggunaTambahan extends Seeder
 {
     public function run(): void
     {
-        // ✅ Hapus data lama dulu
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        DB::table('pengguna')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         // Ketua PBL
         $mhsData = [
