@@ -91,6 +91,7 @@ class KaryaController extends Controller
             'tautan' => $request->tautan,
             'gambar_poster' => '/',
             'gambar_sampul' => '/',
+            'lantai' => 1,
         ]);
 
         // =============================
