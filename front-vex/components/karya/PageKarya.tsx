@@ -8,14 +8,19 @@ import { PRODI_OPTIONS } from '@/types/pameran';
 import { ProdiType } from '@/components/shared/filter/SelectProdi';
 import { TahunType } from '@/components/shared/filter/SelectTahun';
 import { SemesterType } from '@/components/shared/filter/SelectSemester';
+import { useAuth } from '@/context/AuthContext';
 
-import { GetKarya } from './apiKarya';
+import { GetKarya, GetKaryaAdmin } from './apiKarya';
 
 interface Props {
   href: string;
 }
 
 export default function PageKarya({ href }: Props) {
+  const { user, loading: authLoading } = useAuth();
+
+  const isAdmin = user?.role === 'Admin';
+
   const [karyaList, setKaryaList] = useState<KaryaItem[]>([]);
   const [pameranList, setPameranList] = useState<PameranItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,13 +38,17 @@ export default function PageKarya({ href }: Props) {
   // FETCH KARYA
   // =============================
   useEffect(() => {
+    // Tunggu auth selesai loading dulu
+    if (authLoading) return;
+
     const fetchKarya = async () => {
       try {
-        const res = await GetKarya();
+        // Panggil endpoint sesuai role
+        const res = isAdmin ? await GetKaryaAdmin() : await GetKarya();
         const data: KaryaItem[] = res.karya ?? [];
         setKaryaList(data);
-        const pameranMap = new Map<number, PameranItem>();
 
+        const pameranMap = new Map<number, PameranItem>();
         data.forEach((item) => {
           if (item.pameranId && !pameranMap.has(item.pameranId)) {
             pameranMap.set(item.pameranId, {
@@ -58,7 +67,7 @@ export default function PageKarya({ href }: Props) {
     };
 
     fetchKarya();
-  }, []);
+  }, [authLoading, isAdmin]);
 
   // =============================
   // FILTER
@@ -84,17 +93,13 @@ export default function PageKarya({ href }: Props) {
   const changePage = (category: string, type: 'next' | 'prev', totalPages: number) => {
     setPages((prev) => {
       const current = prev[category] || 1;
-
       const nextPage = type === 'next' ? Math.min(current + 1, totalPages) : Math.max(current - 1, 1);
-
-      return {
-        ...prev,
-        [category]: nextPage,
-      };
+      return { ...prev, [category]: nextPage };
     });
   };
 
-  if (loading) {
+  // Tampilkan loading selama auth atau data belum siap
+  if (authLoading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-secondary-color">
         <div className="flex flex-col items-center gap-3">
