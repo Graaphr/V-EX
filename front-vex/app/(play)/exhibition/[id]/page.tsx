@@ -17,6 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 import Experience from "@/components/play/experience";
 import Crosshair from "@/components/play/crosshair";
 import Image from "next/image";
+import { showToast } from "@/components/shared/ui/ToastNotification"; //
 
 
 type PosterData = {
@@ -30,12 +31,10 @@ type InfoData = {
   deskripsi: string;
   likes: number;
   liked: boolean;
-  penilaian: string;
+  is_terbaik: boolean;      // ← tambah
+  is_terbanyak: boolean;    // ← tambah
   tautan: string | null;
-  komentar: {
-    nama: string;
-    isi: string;
-  }[];
+  komentar: { nama: string; isi: string; }[];
 };
 
 /* ======================= */
@@ -68,6 +67,23 @@ export default function ExhibitionPage() {
   const [posterData, setPosterData] = useState<PosterData>({ src: "", booth: "" });
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState("");
+
+  // Floor switcher
+  const [currentFloor, setCurrentFloor] = useState(1);
+  const [maxFloor, setMaxFloor] = useState<Record<string, number>>({});
+  const [karyaList, setKaryaList] = useState<any[]>([]);
+  const [mapOpen, setMapOpen] = useState(false);
+
+  // Load karya + max_floor once
+  useEffect(() => {
+    fetch(`/api/experience/karya/pameran/${id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setKaryaList(data.karya ?? data);
+        setMaxFloor(data.max_floor ?? {});
+      })
+      .catch(() => { });
+  }, [id]);
 
   /* ====================== */
   /* PLAYER MULTIPLAYER     */
@@ -177,7 +193,7 @@ export default function ExhibitionPage() {
     setEmbedOpen(true);
   };
 
-  const controlsLocked = !posterOpen && !menuOpen && !embedOpen && introStep === null;
+  const controlsLocked = !posterOpen && !menuOpen && !embedOpen && !mapOpen && introStep === null;
 
   return (
     <div className="w-screen h-screen bg-black overflow-hidden relative touch-none select-none">
@@ -206,6 +222,7 @@ export default function ExhibitionPage() {
                 lookDelta={lookDelta}
                 playerId={playerId}
                 playerName={playerName}
+                currentFloor={currentFloor}
               />
             </Canvas>
           )}
@@ -214,6 +231,38 @@ export default function ExhibitionPage() {
 
           {isMobile && controlsLocked && (
             <MobileHUD setMobileMove={setMobileMove} lookDelta={lookDelta} />
+          )}
+
+          {/* FLOOR SWITCHER — bottom center */}
+          {controlsLocked && Object.values(maxFloor).some(v => v > 1) && (
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 bg-black/70 backdrop-blur rounded-full px-4 py-2 border border-white/15">
+              <button
+                onClick={() => setCurrentFloor(f => Math.max(1, f - 1))}
+                disabled={currentFloor <= 1}
+                className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center disabled:opacity-30 text-white text-sm"
+              >
+                ▼
+              </button>
+              <span className="text-white text-sm font-bold px-2">Lantai {currentFloor}</span>
+              <button
+                onClick={() => setCurrentFloor(f => Math.min(Math.max(...Object.values(maxFloor)), f + 1))}
+                disabled={currentFloor >= Math.max(...Object.values(maxFloor), 1)}
+                className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center disabled:opacity-30 text-white text-sm"
+              >
+                ▲
+              </button>
+            </div>
+          )}
+
+          {/* MAP BUTTON */}
+          {controlsLocked && (
+            <button
+              onClick={() => { setMapOpen(true); document.exitPointerLock?.(); }}
+              className="fixed top-4 right-4 z-[9999] w-10 h-10 rounded-xl bg-black/60 border border-white/15 text-white flex items-center justify-center text-lg"
+              title="Lihat semua karya"
+            >
+              🗺
+            </button>
           )}
         </>
       )}
@@ -279,6 +328,21 @@ export default function ExhibitionPage() {
             />
           </div>
         </div>
+      )}
+
+      {/* KARYA MAP PANEL */}
+      {mapOpen && (
+        <KaryaMapPanel
+          karyaList={karyaList}
+          currentFloor={currentFloor}
+          maxFloor={maxFloor}
+          onFloorChange={setCurrentFloor}
+          onSelectPoster={(src, booth) => {
+            setMapOpen(false);
+            openPoster(src, booth);
+          }}
+          onClose={() => setMapOpen(false)}
+        />
       )}
 
       {/* INTRO — STEP 1: KONTROL */}
@@ -458,8 +522,141 @@ function MobileHUD({ setMobileMove, lookDelta }: any) {
 }
 
 /* ======================= */
-/* POSTER VIEWER           */
+/* KARYA MAP PANEL         */
 /* ======================= */
+
+const ZONES = ["a", "b", "c", "d"];
+const ZONE_LABELS: Record<string, string> = { a: "Kelas A", b: "Kelas B", c: "Kelas C", d: "Kelas D" };
+
+function KaryaMapPanel({
+  karyaList,
+  currentFloor,
+  maxFloor,
+  onFloorChange,
+  onSelectPoster,
+  onClose,
+}: {
+  karyaList: any[];
+  currentFloor: number;
+  maxFloor: Record<string, number>;
+  onFloorChange: (f: number) => void;
+  onSelectPoster: (src: string, booth: string) => void;
+  onClose: () => void;
+}) {
+  const [activeZone, setActiveZone] = useState(ZONES[0]);
+
+  const globalMax = Math.max(...Object.values(maxFloor), 1);
+
+  const karyaInView = karyaList
+    .filter((k) => (k.kelas ?? "") === activeZone)
+    .sort((a, b) => a.id_karya - b.id_karya)
+    .slice((currentFloor - 1) * 6, currentFloor * 6);
+
+  // Fill empty slots to always show 6
+  const slots = Array.from({ length: 6 }, (_, i) => karyaInView[i] ?? null);
+
+  return (
+    <div className="fixed inset-0 z-[99998] bg-black/90 flex flex-col">
+      {/* HEADER */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+        <h1 className="text-white font-bold text-lg">Peta Pameran</h1>
+        <button onClick={onClose} className="text-white/70 hover:text-white text-xl font-bold">✕</button>
+      </div>
+
+      {/* ZONE TABS */}
+      <div className="flex gap-2 px-5 pt-4 shrink-0">
+        {ZONES.map((z) => (
+          <button
+            key={z}
+            onClick={() => setActiveZone(z)}
+            className={`px-4 h-9 rounded-full text-sm font-bold transition-colors ${activeZone === z
+              ? "bg-white text-black"
+              : "bg-white/10 text-white/60 hover:bg-white/20"
+              }`}
+          >
+            {ZONE_LABELS[z]}
+          </button>
+        ))}
+      </div>
+
+      {/* FLOOR SWITCHER */}
+      {globalMax > 1 && (
+        <div className="flex items-center gap-3 px-5 pt-3 shrink-0">
+          <span className="text-white/50 text-xs">Lantai:</span>
+          {Array.from({ length: globalMax }, (_, i) => i + 1).map((f) => (
+            <button
+              key={f}
+              onClick={() => onFloorChange(f)}
+              className={`w-8 h-8 rounded-lg text-sm font-bold transition-colors ${currentFloor === f ? "bg-blue-500 text-white" : "bg-white/10 text-white/60 hover:bg-white/20"
+                }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* GRID — 6 slots */}
+      <div className="flex-1 overflow-y-auto p-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {slots.map((karya, i) => (
+            <div key={i} className="aspect-[3/4] rounded-xl overflow-hidden bg-white/5 border border-white/10 relative">
+              {karya ? (
+                <>
+                  {karya.poster ? (
+                    <Image
+                      src={karya.poster}
+                      alt={karya.judul}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white/20 text-sm">
+                      No Poster
+                    </div>
+                  )}
+                  {/* OVERLAY */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-3">
+                    <p className="text-white text-xs font-bold leading-tight line-clamp-2">{karya.judul}</p>
+                    <p className="text-white/50 text-xs mt-0.5">
+                      {ZONE_LABELS[activeZone]} · Slot {i + 1}
+                    </p>
+                  </div>
+
+                  {/* TERBAIK BADGE */}
+                  {karya.is_terbaik && (
+                    <div className="absolute top-2 right-2 w-18 h-18">
+                      <Image src="/icon/Medalion.svg" alt="Karya Terbaik" fill className="object-contain" />
+                    </div>
+                  )}
+
+                  {/* TERBANYAK LIKES BADGE */}
+                  {karya.is_terbanyak && (
+                    <div className="absolute top-2 left-2 w-18 h-18">
+                      <Image src="/icon/Favorite.svg" alt="Likes Terbanyak" fill className="object-contain" />
+                    </div>
+                  )}
+
+                  {/* CLICK OVERLAY */}
+                  {karya.poster && (
+                    <button
+                      onClick={() => onSelectPoster(karya.poster, karya.booth_name)}
+                      className="absolute inset-0"
+                    />
+                  )}
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white/20 text-sm">
+                  Kosong
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function PosterViewer({
   id,
@@ -485,10 +682,15 @@ function PosterViewer({
     deskripsi: "Loading...",
     likes: 0,
     liked: false,
-    penilaian: "-",
+    is_terbaik: false,   // ← tambah
+    is_terbanyak: false, // ← tambah
     tautan: null,
     komentar: [],
   });
+
+  const isLoggedIn = () => {
+    return typeof window !== "undefined" && !!localStorage.getItem("token");
+  };
 
   /* ====================== */
   /* LOAD DATA KARYA        */
@@ -537,15 +739,14 @@ function PosterViewer({
           }));
         }
 
-        const penilaian = karya.is_terbaik ? "Karya Terbaik" : "-";
-
         setInfo({
           id_karya: karya.id_karya,
           judul: karya.judul ?? "-",
           deskripsi: karya.deskripsi ?? "-",
           likes: totalSuka,
           liked,
-          penilaian,
+          is_terbaik: karya.is_terbaik ?? false,       // ← tambah
+          is_terbanyak: karya.is_terbanyak ?? false,   // ← tambah (kalau ada di API)
           tautan: karya.tautan ?? null,
           komentar,
         });
@@ -556,7 +757,8 @@ function PosterViewer({
           deskripsi: "Data karya belum tersedia.",
           likes: 0,
           liked: false,
-          penilaian: "-",
+          is_terbaik: false,    // ← ganti penilaian
+          is_terbanyak: false,  // ← tambah
           tautan: null,
           komentar: [],
         });
@@ -572,6 +774,10 @@ function PosterViewer({
 
   const toggleLike = async () => {
     if (!info.id_karya) return;
+    if (!isLoggedIn()) {
+      showToast("Kamu harus login untuk menyukai karya.", "warning");
+      return;
+    }
     const wasLiked = info.liked;
     setInfo((prev) => ({
       ...prev,
@@ -610,6 +816,10 @@ function PosterViewer({
 
   const sendComment = async () => {
     if (!newComment.trim() || !info.id_karya || submitting) return;
+    if (!isLoggedIn()) {
+      showToast("Kamu harus login untuk berkomentar.", "warning");
+      return;
+    }
     setSubmitting(true);
     setCommentError(null);
     try {
@@ -701,14 +911,14 @@ function PosterViewer({
 
                 {/* BADGE */}
                 <div className="flex items-start gap-2 shrink-0">
-                  {info.penilaian.toLowerCase().includes("terbaik") && (
+                  {info.is_terbaik && (
                     <div className="relative w-12 h-12 lg:w-16 lg:h-16">
-                      <Image src="/icon/Medalion.svg" alt="Medalion" fill className="object-contain" />
+                      <Image src="/icon/Medalion.svg" alt="Karya Terbaik" fill className="object-contain" />
                     </div>
                   )}
-                  {info.penilaian.toLowerCase().includes("terbanyak") && (
+                  {info.is_terbanyak && (
                     <div className="relative w-11 h-11 lg:w-[60px] lg:h-[60px]">
-                      <Image src="/icon/Favorite.svg" alt="Favorite" fill className="object-contain" />
+                      <Image src="/icon/Favorite.svg" alt="Terbanyak Likes" fill className="object-contain" />
                     </div>
                   )}
                 </div>
@@ -754,6 +964,9 @@ function PosterViewer({
         {/* INPUT KOMENTAR */}
         {tab === "komentar" && (
           <div className="border-t border-white/10">
+            {!isLoggedIn() && (
+              <p className="px-3 pt-2 text-xs text-yellow-400">Login untuk berkomentar.</p>
+            )}
             {commentError && (
               <p className="px-3 pt-2 text-xs text-red-400">{commentError}</p>
             )}

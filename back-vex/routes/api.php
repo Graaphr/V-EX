@@ -38,6 +38,8 @@ Route::get('/karya-terbaik', [KpsController::class, 'karyaTerbaik']); // ✅ pub
 Route::prefix('experience')->group(function () {
     Route::get('/game-assets', [GameAssetController::class, 'index']);
     Route::get('/3d-models/{id}', [GameAssetController::class, 'get3DModel']);
+    Route::get('/hall-model/{modelId}', [GameAssetController::class, 'serveHallModel']);     // ← tambah
+    Route::get('/booth-model/{filename}', [GameAssetController::class, 'serveBoothModel']); // ← tambah
     Route::get('/karya/pameran/{id_pameran}', [GameAssetController::class, 'karyaByPameran']);
 });
 

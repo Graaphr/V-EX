@@ -110,7 +110,7 @@ class PameranController extends Controller
     {
         $request->validate([
             'category' => 'required|exists:prodi,kode_prodi',
-            'banner' => 'required|image|mimes:png,jpg,jpeg|max:2048',
+            'banner' => 'required|image|mimes:png,jpg,jpeg|max:5000',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'capacity' => 'nullable|integer',
@@ -171,7 +171,7 @@ class PameranController extends Controller
 
         $request->validate([
             'kategori' => 'sometimes|exists:prodi,kode_prodi',
-            'banner' => 'sometimes|image|mimes:png,jpg,jpeg|max:2048',
+            'banner' => 'sometimes|image|mimes:png,jpg,jpeg|max:5000',
             'judul' => 'sometimes|string|max:255',
             'deskripsi' => 'sometimes|string',
             'kapasitas' => 'sometimes|integer',
