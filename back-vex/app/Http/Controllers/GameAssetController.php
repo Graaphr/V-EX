@@ -1,9 +1,5 @@
 <?php
 
-//-----------------------
-// !! JANGAN DISENTUH !!
-//-----------------------
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -25,8 +21,51 @@ class GameAssetController extends Controller
         ]);
     }
 
+    // ====================
+    // SERVE BOOTH GLB FILE
+    // ====================
+    public function serveBoothModel($filename)
+    {
+        $path = storage_path('app/public/models/' . $filename);
+
+        if (!file_exists($path)) {
+            return response()->json(['error' => 'File tidak ditemukan'], 404);
+        }
+
+        return response()->file($path, [
+            'Content-Type' => 'model/gltf-binary',
+            'Access-Control-Allow-Origin' => 'http://localhost:3000',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
+    }
+
+    // ===================
+    // SERVE HALL GLB FILE
+    // ===================
+    public function serveHallModel($modelId)
+    {
+        $pameran = Pameran::with('model3d')->findOrFail($modelId);
+
+        if (!$pameran->model3d) {
+            return response()->json(['error' => 'Model tidak ditemukan'], 404);
+        }
+
+        // 3d_model sudah include subfolder, misal "models/hall-utama.glb"
+        $path = storage_path('app/public/' . $pameran->model3d->{'3d_model'});
+
+        if (!file_exists($path)) {
+            return response()->json(['error' => 'File tidak ditemukan'], 404);
+        }
+
+        return response()->file($path, [
+            'Content-Type' => 'model/gltf-binary',
+            'Access-Control-Allow-Origin' => 'http://localhost:3000',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
+    }
+
     // ==============
-    // AMBIL 3D MODEL 
+    // AMBIL 3D MODEL
     // ==============
     public function get3DModel($modelId)
     {
@@ -37,7 +76,7 @@ class GameAssetController extends Controller
         }
 
         return response()->json([
-            'model_hall' => '/storage/' . $pameran->model3d->{'3d_model'},
+            'model_hall' => "http://localhost:8000/api/experience/hall-model/{$modelId}",
         ]);
     }
 
@@ -46,14 +85,16 @@ class GameAssetController extends Controller
     // ==========================
     public function karyaByPameran($id_pameran)
     {
-        // karya.id_stan → stan.id_stan → stan.model_stan → model.id_model
         $karyas = DB::table('karya')
             ->leftJoin('stan', 'karya.id_stan', '=', 'stan.id_stan')
             ->leftJoin('model', 'stan.model_stan', '=', 'model.id_model')
+            ->leftJoin('pengguna', 'karya.id_pengguna', '=', 'pengguna.id')
+            ->leftJoin('kelas', 'pengguna.kelas', '=', 'kelas.id_kelas')
             ->where('karya.id_pameran', $id_pameran)
             ->select(
                 'karya.id_karya',
                 'karya.id_stan',
+                'karya.id_pengguna',
                 'karya.judul',
                 'karya.deskripsi',
                 'karya.tautan',
@@ -62,12 +103,26 @@ class GameAssetController extends Controller
                 'karya.lantai',
                 'karya.is_terbaik',
                 'model.nama_model as nama_stan',
-                'model.3d_model as booth_model'
+                'model.3d_model as booth_model',
+                'kelas.nama_kelas as zona'
             )
+            ->orderBy('karya.id_karya')
             ->get();
 
-        $result = $karyas->map(function ($karya) {
-            $totalSuka = DB::table('suka')->where('id_karya', $karya->id_karya)->count();
+        // Setelah get semua karya, hitung total suka per karya
+        $sukaCount = $karyas->mapWithKeys(function ($k) {
+            return [$k->id_karya => DB::table('suka')->where('id_karya', $k->id_karya)->count()];
+        });
+
+        $maxSuka = $sukaCount->max();
+        $idTerbanyak = $maxSuka > 0 ? $sukaCount->search($maxSuka) : null;
+
+        $result = $karyas->map(function ($karya) use ($idTerbanyak) {
+            $totalSuka = DB::table('suka')
+                ->where('id_karya', $karya->id_karya)
+                ->count();
+
+
 
             $komentar = DB::table('komentar')
                 ->leftJoin('pengguna', 'komentar.id_pengguna', '=', 'pengguna.id')
@@ -79,9 +134,12 @@ class GameAssetController extends Controller
                     'isi' => $k->isi_komentar,
                 ]);
 
+            $boothModel = $karya->booth_model;
+
             return [
                 'id_karya' => $karya->id_karya,
-                'id_stan' => $karya->nama_stan ?? ('Stan ' . $karya->id_stan), // "Stan A", "Stan B" dst
+                'id_stan' => $karya->nama_stan ?? ('Stan ' . $karya->id_stan),
+                'kelas' => strtolower(substr($karya->zona ?? '', 0, 1)),
                 'booth_name' => $karya->judul,
                 'judul' => $karya->judul,
                 'deskripsi' => $karya->deskripsi,
@@ -90,11 +148,12 @@ class GameAssetController extends Controller
                     ? '/storage/' . $karya->gambar_poster
                     : null,
                 'sampul' => $this->getYoutubeThumbnail($karya->tautan),
-                'model_path' => $karya->booth_model
-                    ? '/storage/' . $karya->booth_model
+                'model_path' => $boothModel
+                    ? "http://localhost:8000/api/experience/booth-model/" . basename($boothModel)
                     : null,
                 'lantai' => $karya->lantai,
                 'is_terbaik' => (bool) $karya->is_terbaik,
+                'is_terbanyak' => $idTerbanyak !== null && $karya->id_karya === $idTerbanyak,
                 'total_suka' => $totalSuka,
                 'komentar' => $komentar,
             ];
@@ -104,13 +163,12 @@ class GameAssetController extends Controller
     }
 
     // ========================
-    // THUMNAIL YT DARI LINK YT
+    // THUMBNAIL YT DARI LINK
     // ========================
     private function getYoutubeThumbnail($url)
     {
-        if (!$url) {
+        if (!$url)
             return null;
-        }
 
         $videoId = null;
 
@@ -124,9 +182,8 @@ class GameAssetController extends Controller
             $videoId = $matches[1];
         }
 
-        if (!$videoId) {
+        if (!$videoId)
             return null;
-        }
 
         return "https://img.youtube.com/vi/{$videoId}/maxresdefault.jpg";
     }
