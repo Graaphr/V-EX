@@ -192,7 +192,7 @@ class PenggunaController extends Controller
         if (!$tempUser) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'OTP expired atau tidak ditemukan'
+                'message' => 'Otp tidak ditemukan'
             ], 408);
         }
 
@@ -252,6 +252,13 @@ class PenggunaController extends Controller
 
             $user = Pengguna::where('email', $request->email)->first();
 
+            if(!$user){
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Akun tidak terdaftar'
+                ], 401);
+            }
+
             if (!$user || !Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'status' => 'error',
@@ -302,6 +309,7 @@ class PenggunaController extends Controller
                     'program_studi' => $user->program_studi,
                 ],
             ]);
+            
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => 'error',
