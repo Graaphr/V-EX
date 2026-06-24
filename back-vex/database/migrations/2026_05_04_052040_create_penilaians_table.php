@@ -19,7 +19,6 @@ return new class extends Migration
 
             $table->foreign('id_pengguna')->references('id')->on('pengguna')->cascadeOnDelete();
             $table->foreign('id_karya')->references('id_karya')->on('karya')->cascadeOnDelete();
-            $table->enum('kategori', ['Karya', 'Terbaik']);
             $table->timestamp('waktu_penilaian')->useCurrent();
         });
     }
