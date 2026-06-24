@@ -56,18 +56,22 @@ export default function Booth({
   /* (silent fail jika 404)*/
   /* ===================== */
 
-  const loadTexture = (path: string, onLoad: (tex: THREE.Texture) => void) => {
+  const loadTexture = (
+    path: string,
+    onLoad: (tex: THREE.Texture) => void,
+    flipY = false   // ← add this param
+  ) => {
     if (!path) return;
     const loader = new THREE.TextureLoader();
     loader.load(
       path,
       (tex) => {
-        tex.flipY = false;
+        tex.flipY = flipY;  // ← use it here
         tex.colorSpace = THREE.SRGBColorSpace;
         onLoad(tex);
       },
       undefined,
-      () => { /* 404 atau gagal → diam saja, booth tetap render */ }
+      () => { }
     );
   };
 
@@ -93,13 +97,13 @@ export default function Booth({
 
   useEffect(() => {
     if (!sampul || !sampulMesh.current) return;
-    loadTexture(sampul, (tex) => {
+    loadTexture(sampul, (tex) => {          // ← no change here
       if (!sampulMesh.current) return;
       sampulMesh.current.material = new THREE.MeshBasicMaterial({
         map: tex,
         toneMapped: false,
       });
-    });
+    }, true);  // ← flipY: true for external images
   }, [sampul, scene]);
 
   /* ===================== */

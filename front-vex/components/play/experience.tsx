@@ -203,8 +203,28 @@ function ExperienceInner({
           obj.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
         });
       }
+      if (name.startsWith("panelposter")) {
+        const rest = name.replace("panelposter", "");
+        const zone = rest[0];
+        const slot = parseInt(rest.slice(1));
+        const slotIndex = (slot - 1) % 6;
+
+        const karyaInZone = karyaList
+          .filter((k) => (k.kelas ?? "").toLowerCase() === zone)
+          .sort((a, b) => a.id_karya - b.id_karya);
+
+        const floorOffset = (currentFloor - 1) * 6;
+        const karya = karyaInZone[floorOffset + slotIndex] ?? null;
+
+        if (karya?.poster) {
+          loadTextureSafe(karya.poster, (tex) => {
+            obj.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
+          }, true);
+        }
+      }
+
     });
-  }, [scene, folder, loadTextureSafe]);
+  }, [scene, folder, loadTextureSafe, karyaList, currentFloor]);
 
   /* ===================== */
   /* BOOTH POINTS          */
