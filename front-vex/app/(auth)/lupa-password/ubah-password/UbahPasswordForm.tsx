@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/shared/ui/Button';
 import { PasswordField } from '@/components/shared/ui/InputFields';
-import { resetPassword } from '../apiLupaPassword';
+import { ResetPassword } from '../apiLupaPassword';
 
 export default function UbahPasswordForm() {
   const router = useRouter();
@@ -52,7 +52,7 @@ export default function UbahPasswordForm() {
 
     try {
       setIsLoading(true);
-      const res = await resetPassword({
+      const res = await ResetPassword({
         email,
         token,
         password,

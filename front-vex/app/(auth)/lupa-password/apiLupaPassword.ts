@@ -16,13 +16,13 @@ interface ResetPasswordPayload {
 }
 
 // Kirim email reset password
-export async function forgotPassword(payload: EmailPayload) {
+export async function ForgotPassword(payload: EmailPayload) {
   const res = await url.post('/api/auth/forgot-password', payload);
   return res.data;
 }
 
 // Kirim ulang email reset password
-export async function resendEmail(payload: EmailPayload) {
+export async function ResendEmail(payload: EmailPayload) {
   const res = await url.post('/api/auth/resend-email', payload);
   return res.data;
 }
@@ -34,7 +34,7 @@ export async function verifyResetToken(payload: VerifyTokenPayload) {
 }
 
 // Simpan password baru
-export async function resetPassword(payload: ResetPasswordPayload) {
+export async function ResetPassword(payload: ResetPasswordPayload) {
   const res = await url.post('/api/auth/reset-password', payload);
   return res.data;
 }
