@@ -3,11 +3,10 @@
 import { useGLTF, Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 
 import Booth from "./booth";
 import Player from "./player";
-import CameraSwitcher from "./cameraSwitcher";
 
 import url from "@/lib/axios";
 
@@ -30,6 +29,7 @@ type Props = {
   openTautan: (url: string, booth: string) => void;
   controlsLocked: boolean;
   soundOn: boolean;
+  currentFloor: number;
   mobileMove?: { w: boolean; a: boolean; s: boolean; d: boolean };
   lookDelta?: React.MutableRefObject<{ x: number; y: number }>;
 };
@@ -41,7 +41,7 @@ type Props = {
 export default function Experience(props: Props) {
   const [hallModel, setHallModel] = useState<string | null>(null);
   const [karyaList, setKaryaList] = useState<any[]>([]);
-  const [folder, setFolder] = useState("default");
+  const [folder, setFolder] = useState<string | null>(null); // ← null dulu
 
   useEffect(() => {
     url.get(`/api/experience/3d-models/${props.exhibitionId}`)
@@ -49,19 +49,19 @@ export default function Experience(props: Props) {
       .catch((err) => console.error("Failed to load hall model", err));
 
     url.get(`/api/experience/karya/pameran/${props.exhibitionId}`)
-      .then((res) => setKaryaList(res.data))
+      .then((res) => setKaryaList(res.data.karya ?? res.data))
       .catch((err) => console.error("Failed to load karya list", err));
 
     url.get(`/api/pameran/${props.exhibitionId}`)
       .then((res) => {
-        const raw = res.data.pameran?.kategori ?? res.data.kategori ?? "default";
-        setFolder(raw.toLowerCase().replaceAll(" ", "-"));
+        const kategori = res.data.pameran?.kode_prodi ?? "default"; // ← kode_prodi bukan kategori
+        setFolder(kategori.toLowerCase().replaceAll(" ", "-"));
       })
-      .catch((err) => console.error("Failed to load pameran", err));
+      .catch(() => setFolder("default")); // fallback kalau gagal
   }, [props.exhibitionId]);
 
-  // Tunggu sampai URL model hall siap sebelum render inner
-  if (!hallModel) return null;
+  // ← tunggu keduanya sebelum render
+  if (!hallModel || !folder) return null;
 
   return (
     <ExperienceInner
@@ -74,7 +74,7 @@ export default function Experience(props: Props) {
 }
 
 /* ===================== */
-/* INNER — useGLTF aman  */
+/* INNER                 */
 /* ===================== */
 
 function ExperienceInner({
@@ -85,18 +85,17 @@ function ExperienceInner({
   openTautan,
   controlsLocked,
   soundOn,
+  currentFloor,
   mobileMove,
   lookDelta,
   hallModel,
   karyaList,
   folder,
 }: Props & { hallModel: string; karyaList: any[]; folder: string }) {
-  const [mode, setMode] = useState<"first" | "third">("first");
   const [audioUrls, setAudioUrls] = useState({ bgm: "", footstep: "", jump: "" });
   const [walking, setWalking] = useState(false);
   const [jumping, setJumping] = useState(false);
   const [remotePlayers, setRemotePlayers] = useState<RemotePlayer[]>([]);
-  const [myPosition, setMyPosition] = useState({ x: 0, y: 20, z: -8 });
 
   const isViewingMedia = !controlsLocked;
 
@@ -105,49 +104,25 @@ function ExperienceInner({
   const jumpRef = useRef<HTMLAudioElement | null>(null);
   const loader = useRef(new THREE.TextureLoader());
 
-  // ✅ Sekarang aman — hallModel sudah pasti ada (bukan null)
   const { scene } = useGLTF(hallModel);
 
   /* ===================== */
-  /* INIT AUDIO */
+  /* AUDIO                 */
   /* ===================== */
 
   useEffect(() => {
-    const loadAudio = async () => {
-      try {
-        const { data } = await url.get("/api/experience/game-assets");
-        setAudioUrls({ bgm: data.bgm, footstep: data.footstep, jump: data.jump });
-      } catch (err) {
-        console.error("Failed to load audio", err);
-      }
-    };
-    loadAudio();
+    url.get("/api/experience/game-assets")
+      .then(({ data }) => setAudioUrls({ bgm: data.bgm, footstep: data.footstep, jump: data.jump }))
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
     if (!audioUrls.bgm || !audioUrls.footstep || !audioUrls.jump) return;
-
-    bgmRef.current = new Audio(audioUrls.bgm);
-    bgmRef.current.loop = true;
-    bgmRef.current.volume = 0.35;
-
-    footRef.current = new Audio(audioUrls.footstep);
-    footRef.current.loop = true;
-    footRef.current.volume = 0.55;
-
-    jumpRef.current = new Audio(audioUrls.jump);
-    jumpRef.current.volume = 0.75;
-
-    return () => {
-      bgmRef.current?.pause();
-      footRef.current?.pause();
-      jumpRef.current?.pause();
-    };
+    bgmRef.current = Object.assign(new Audio(audioUrls.bgm), { loop: true, volume: 0.35 });
+    footRef.current = Object.assign(new Audio(audioUrls.footstep), { loop: true, volume: 0.55 });
+    jumpRef.current = Object.assign(new Audio(audioUrls.jump), { volume: 0.75 });
+    return () => { bgmRef.current?.pause(); footRef.current?.pause(); jumpRef.current?.pause(); };
   }, [audioUrls]);
-
-  /* ===================== */
-  /* BGM */
-  /* ===================== */
 
   useEffect(() => {
     if (!bgmRef.current) return;
@@ -157,18 +132,12 @@ function ExperienceInner({
     } else {
       bgmRef.current.pause();
       footRef.current?.pause();
-      jumpRef.current?.pause();
     }
   }, [soundOn, isViewingMedia]);
 
-  /* ===================== */
-  /* FOOTSTEP */
-  /* ===================== */
-
   useEffect(() => {
     if (!footRef.current) return;
-    const shouldWalk = soundOn && walking && controlsLocked && !jumping;
-    if (shouldWalk) {
+    if (soundOn && walking && controlsLocked && !jumping) {
       footRef.current.play().catch(() => { });
     } else {
       footRef.current.pause();
@@ -176,132 +145,138 @@ function ExperienceInner({
     }
   }, [soundOn, walking, controlsLocked, jumping]);
 
-  /* ===================== */
-  /* JUMP SOUND */
-  /* ===================== */
-
   useEffect(() => {
-    if (!jumpRef.current || !soundOn) return;
-    if (jumping) {
-      footRef.current?.pause();
-      if (footRef.current) footRef.current.currentTime = 0;
-      jumpRef.current.pause();
-      jumpRef.current.currentTime = 0;
-      jumpRef.current.play().catch(() => { });
-    }
+    if (!jumpRef.current || !soundOn || !jumping) return;
+    footRef.current?.pause();
+    if (footRef.current) footRef.current.currentTime = 0;
+    jumpRef.current.currentTime = 0;
+    jumpRef.current.play().catch(() => { });
   }, [jumping, soundOn]);
 
   /* ===================== */
-  /* MULTIPLAYER READ */
+  /* MULTIPLAYER           */
   /* ===================== */
 
   useEffect(() => {
-    const loadPlayers = async () => {
+    const load = async () => {
       try {
         const res = await fetch("/api/player");
         const data = await res.json();
         const now = Date.now();
-        const filtered = data.filter(
-          (p: any) => p.id !== playerId && now - p.updatedAt < 999999
-        );
-        setRemotePlayers((prev) => {
-          const same = JSON.stringify(prev) === JSON.stringify(filtered);
-          return same ? prev : filtered;
-        });
-      } catch (err) {
-        console.error("Error loading players:", err);
-      }
+        const filtered = data.filter((p: any) => p.id !== playerId && now - p.updatedAt < 999999);
+        setRemotePlayers((prev) => JSON.stringify(prev) === JSON.stringify(filtered) ? prev : filtered);
+      } catch { }
     };
-
-    loadPlayers();
-    const interval = setInterval(loadPlayers, 200);
-    return () => clearInterval(interval);
+    load();
+    const iv = setInterval(load, 200);
+    return () => clearInterval(iv);
   }, [playerId]);
 
   /* ===================== */
-  /* SAFE TEXTURE */
+  /* TEXTURE HELPER        */
   /* ===================== */
 
-  const loadTextureSafe = (path: string, onLoad: (tex: THREE.Texture) => void) => {
-    loader.current.load(
-      path,
-      (tex) => {
-        tex.flipY = false;
-        tex.colorSpace = THREE.SRGBColorSpace;
-        onLoad(tex);
-      },
-      undefined,
-      () => { }
-    );
-  };
+  const loadTextureSafe = useCallback((path: string, onLoad: (tex: THREE.Texture) => void) => {
+    loader.current.load(path, (tex) => {
+      tex.flipY = false;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      onLoad(tex);
+    }, undefined, () => { });
+  }, []);
 
   /* ===================== */
-  /* DISPLAY TEXTURE */
+  /* DISPLAY TEXTURES      */
   /* ===================== */
 
   useEffect(() => {
     scene.traverse((obj: any) => {
       if (!obj.isMesh) return;
       const name = obj.name?.toLowerCase() || "";
-
       if (name.startsWith("paneldisplay")) {
-        const code = name.replace("paneldisplay", "");
-        const num = parseInt(code[1]);
-        if (isNaN(num)) return;
-        loadTextureSafe(`/prodi/${folder}/${num}.png`, (tex) => {
+        const num = parseInt(name.replace("paneldisplay", "")[1]);
+        if (!isNaN(num)) loadTextureSafe(`/prodi/${folder}/${num}.png`, (tex) => {
           obj.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
         });
       }
-
       if (name === "panel") {
         loadTextureSafe(`/prodi/${folder}/${folder}.png`, (tex) => {
           obj.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
         });
       }
+      if (name.startsWith("panelposter")) {
+        const rest = name.replace("panelposter", "");
+        const zone = rest[0];
+        const slot = parseInt(rest.slice(1));
+        const slotIndex = (slot - 1) % 6;
+
+        const karyaInZone = karyaList
+          .filter((k) => (k.kelas ?? "").toLowerCase() === zone)
+          .sort((a, b) => a.id_karya - b.id_karya);
+
+        const floorOffset = (currentFloor - 1) * 6;
+        const karya = karyaInZone[floorOffset + slotIndex] ?? null;
+
+        if (karya?.poster) {
+          loadTextureSafe(karya.poster, (tex) => {
+            obj.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
+          }, true);
+        }
+      }
+
     });
-  }, [scene, folder]);
+  }, [scene, folder, loadTextureSafe, karyaList, currentFloor]);
 
   /* ===================== */
-  /* BOOTH POINT */
+  /* BOOTH POINTS          */
   /* ===================== */
 
   const boothPoints = useMemo(() => {
     const result: any[] = [];
     scene.updateMatrixWorld(true);
-
     scene.traverse((obj: any) => {
       const lower = obj.name?.toLowerCase() || "";
-
       if (lower.startsWith("booth")) {
         const pos = new THREE.Vector3();
         const quat = new THREE.Quaternion();
         obj.getWorldPosition(pos);
         obj.getWorldQuaternion(quat);
-
-        result.push({
-          name: obj.name,
-          position: [pos.x, pos.y, pos.z],
-          quaternion: [quat.x, quat.y, quat.z, quat.w],
-        });
-
-        // Debug: lihat nama booth di GLTF vs id_stan dari API
-        console.log("[BoothPoint]", obj.name);
-
+        result.push({ name: obj.name, position: [pos.x, pos.y, pos.z], quaternion: [quat.x, quat.y, quat.z, quat.w] });
         obj.visible = false;
         obj.raycast = () => null;
       }
-
       if (lower.includes("collider")) {
         obj.visible = false;
-        obj.traverse((child: any) => {
-          child.visible = false;
-          if (child.isMesh) child.userData.collider = true;
-        });
+        obj.traverse((child: any) => { child.visible = false; if (child.isMesh) child.userData.collider = true; });
       }
     });
-
     return result;
   }, [scene]);
+
+  /* ===================== */
+  /* BOOTH MATCHING        */
+  /* Zone: kelas A=zone a, B=zone b, etc.
+     Slot: ordered by id_karya within zone, 6 per floor
+  /* ===================== */
+
+  const visibleBooths = useMemo(() => {
+    return boothPoints.map((item) => {
+      const nameLower = item.name.toLowerCase(); // "bootha1"
+      const zone = nameLower.replace("booth", "")[0];     // "a"
+      const slot = parseInt(nameLower.replace("booth", "").slice(1)); // 1-6
+
+      // Filter karya by zone (kelas field from pengguna)
+      const karyaInZone = karyaList
+        .filter((k) => (k.kelas ?? "").toLowerCase() === zone)
+        .sort((a, b) => a.id_karya - b.id_karya);
+
+      // Slot index within this floor
+      const floorOffset = (currentFloor - 1) * 6;
+      const targetIndex = floorOffset + (slot - 1);
+      const karya = karyaInZone[targetIndex] ?? null;
+
+      return { item, karya };
+    }).filter(({ karya }) => karya && karya.model_path);
+  }, [boothPoints, karyaList, currentFloor]);
 
   return (
     <>
@@ -311,61 +286,27 @@ function ExperienceInner({
 
       <primitive object={scene} />
 
-      {boothPoints.map((item, i) => {
-        // item.name contoh: "BoothA1", "BoothB3", "BoothD6"
-        const nameLower = item.name.toLowerCase(); // "bootha1"
-        const zone = nameLower.replace("booth", "")[0];        // "a"
-        const slot = parseInt(nameLower.replace("booth", "").slice(1)); // 1-6
-
-        // Cari karya yang cocok: zona sama + slot di lantai sama
-        // Urutan global: lantai 1 slot 1 = urutan 1, lantai 1 slot 6 = urutan 6
-        //                lantai 2 slot 1 = urutan 7, lantai 2 slot 6 = urutan 12, dst
-        // id_stan menentukan model booth (Stan A/B/C/D), zone menentukan zona
-        // Kita match berdasarkan: zone dari nama_stan + slot dari urutan dalam zona
-
-        const karya = karyaList.find((k) => {
-          const namaStan = String(k.id_stan).toLowerCase(); // "stan a", "stan b", dst
-          const kZone = namaStan.replace("stan ", "").trim(); // "a", "b", "c", "d"
-          if (kZone !== zone) return false;
-
-          // Hitung slot berdasarkan urutan karya di zona ini
-          const karyaZone = karyaList
-            .filter((x) => String(x.id_stan).toLowerCase().replace("stan ", "").trim() === zone)
-            .sort((a, b) => a.id_karya - b.id_karya);
-
-          const indexInZone = karyaZone.findIndex((x) => x.id_karya === k.id_karya);
-          const kSlot = (indexInZone % 6) + 1; // slot 1-6
-          const kFloor = Math.floor(indexInZone / 6) + 1;
-
-          // Cocokkan dengan lantai dari data karya dan slot di boothpoint
-          return kSlot === slot && k.lantai === kFloor;
-        });
-
-        if (!karya) return null;
-        if (!karya.model_path) return null;
-
-        return (
-          <Booth
-            key={i}
-            boothName={karya.booth_name}
-            position={item.position}
-            quaternion={item.quaternion}
-            poster={karya.poster}
-            sampul={karya.sampul}       // ← tambah
-            tautan={karya.tautan}       // ← ganti dari video
-            modelPath={karya.model_path}
-            openPoster={openPoster}
-            openTautan={openTautan}     // ← tambah, dari props
-          />
-        );
-      })}
+      {visibleBooths.map(({ item, karya }, i) => (
+        <Booth
+          key={`${item.name}-${currentFloor}`}
+          boothName={karya.booth_name}
+          position={item.position}
+          quaternion={item.quaternion}
+          poster={karya.poster}
+          sampul={karya.sampul}
+          tautan={karya.tautan}
+          modelPath={karya.model_path}
+          openPoster={openPoster}
+          openTautan={openTautan}
+        />
+      ))}
 
       {remotePlayers.map((player) => (
         <RemotePlayerMesh key={player.id} player={player} />
       ))}
 
       <Player
-        mode={mode}
+        mode="first"
         controlsLocked={controlsLocked}
         setWalking={setWalking}
         setJumping={setJumping}
@@ -373,10 +314,7 @@ function ExperienceInner({
         lookDelta={lookDelta}
         playerId={playerId}
         playerName={playerName}
-        setPosition={setMyPosition}
       />
-
-      <CameraSwitcher setMode={setMode} disabled={!controlsLocked} />
     </>
   );
 }
@@ -397,11 +335,7 @@ function RemotePlayerMesh({ player }: { player: RemotePlayer }) {
     if (!groupRef.current) return;
     currentPos.current.lerp(targetPos.current, 1 - Math.exp(-10 * delta));
     groupRef.current.position.copy(currentPos.current);
-    currentRot.current = THREE.MathUtils.lerp(
-      currentRot.current,
-      targetRot.current,
-      1 - Math.exp(-10 * delta)
-    );
+    currentRot.current = THREE.MathUtils.lerp(currentRot.current, targetRot.current, 1 - Math.exp(-10 * delta));
     groupRef.current.rotation.y = currentRot.current;
   });
 

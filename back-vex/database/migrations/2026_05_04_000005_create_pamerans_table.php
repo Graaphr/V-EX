@@ -21,7 +21,7 @@ return new class extends Migration
             $table->foreign('kategori')->references('kode_prodi')->on('prodi')->cascadeOnDelete();
             $table->string('banner');
             $table->string('judul');
-            $table->string('deskripsi');
+            $table->text('deskripsi');
             $table->integer('kapasitas')->default(24);;
             $table->date('tanggal_mulai')->useCurrent();
             $table->date('tanggal_akhir')->useCurrent();

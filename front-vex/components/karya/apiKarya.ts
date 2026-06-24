@@ -8,6 +8,14 @@ export async function GetKarya() {
   return res.data;
 }
 
+// =============================
+// DAFTAR KARYA MILIK KETUA PBL DARI SISI ADMIN
+// =============================
+export async function GetKaryaAdmin() {
+  const res = await url.get('/api/admin/karya');
+  return res.data;
+}
+
 // // =============================
 // // DETAIL SATU KARYA BY ID       ← baru, dipakai di EditKarya
 // // =============================

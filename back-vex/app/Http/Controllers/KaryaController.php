@@ -47,6 +47,40 @@ class KaryaController extends Controller
     }
 
 
+     public function indexAdmin(Request $request)
+    {
+        $user = $request->user();
+
+        $karya = Karya::with(['stan', 'pameran'])
+            ->get()
+            ->map(fn($item) => [
+                'id' => $item->id_karya,
+                'title' => $item->judul,
+                'category' => $item->pameran?->kategori ?? '',
+                'image' => $item->gambar_poster
+                    ? asset("http://localhost:8000/storage/{$item->gambar_poster}")
+                    : '',
+                'thumbnail' => $item->gambar_sampul
+                    ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
+                    : '',
+                'link' => $item->tautan,
+                'description' => $item->deskripsi,
+                'booth' => $item->id_stan ? (string) $item->id_stan : '',
+                'pameranId' => $item->id_pameran,
+                'pameranTitle' => $item->pameran?->judul ?? '',
+                'year' => $item->pameran?->tanggal_mulai
+                    ? date('Y', strtotime($item->pameran->tanggal_mulai))
+                    : '',
+                'semester' => '',
+                'isTerbaik' => $item->is_terbaik,   // expose ke frontend
+            ]);
+
+        return response()->json([
+            'status' => 'success',
+            'karya' => $karya,
+        ]);
+    }
+
     // =============================
     // TAMBAH KARYA
     // =============================
@@ -60,8 +94,8 @@ class KaryaController extends Controller
             'judul' => 'required|string|max:255',
             'deskripsi' => 'required|string',
             'tautan' => 'required|url',
-            'gambar_poster' => 'required|image|mimes:png,jpg,jpeg|max:2048',
-            'gambar_sampul' => 'required|image|mimes:png,jpg,jpeg|max:2048',
+            'gambar_poster' => 'required|image|mimes:png,jpg,jpeg|max:5000',
+            'gambar_sampul' => 'required|image|mimes:png,jpg,jpeg|max:5000',
         ]);
 
         $idPameran = $request->id_pameran;
@@ -91,6 +125,7 @@ class KaryaController extends Controller
             'tautan' => $request->tautan,
             'gambar_poster' => '/',
             'gambar_sampul' => '/',
+            'lantai' => 1,
         ]);
 
         // =============================
@@ -157,8 +192,8 @@ class KaryaController extends Controller
             'judul' => 'sometimes|string|max:255',
             'deskripsi' => 'sometimes|string',
             'tautan' => 'sometimes|url',
-            'gambar_poster' => 'sometimes|image|mimes:png,jpg,jpeg|max:2048',
-            'gambar_sampul' => 'sometimes|image|mimes:png,jpg,jpeg|max:2048',
+            'gambar_poster' => 'sometimes|image|mimes:png,jpg,jpeg|max:5000',
+            'gambar_sampul' => 'sometimes|image|mimes:png,jpg,jpeg|max:5000',
         ]);
 
         // Gunakan id_pameran baru jika ada, fallback ke yang lama
