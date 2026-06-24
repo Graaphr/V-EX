@@ -9,6 +9,7 @@ import DetailForm from "@/components/karya/DetailForm";
 import DetailAction from "@/components/karya/DetailAction";
 import {
   GetKarya,
+  GetKaryaAdmin,
   GetKaryaKps,
   UpdateKarya,
   DeleteKarya,
@@ -60,7 +61,6 @@ function validate(
   }
 
   // Mode edit: gambar hanya wajib jika user memilih file baru
-  // (backend update controller biasanya pakai 'sometimes|image')
   if (!isEdit) {
     if (!thumbnailFile) errors.thumbnail = "Gambar sampul wajib diunggah.";
     if (!posterFile) errors.poster = "Gambar poster wajib diunggah.";
@@ -117,8 +117,13 @@ export default function EditKarya({ id }: Props) {
 
     const load = async () => {
       try {
-        // KPS pakai endpoint sendiri agar filter prodi berlaku
-        const res = isKps ? await GetKaryaKps() : await GetKarya();
+        // Pilih endpoint sesuai role
+        const res = isKps
+          ? await GetKaryaKps()
+          : isAdmin
+            ? await GetKaryaAdmin()
+            : await GetKarya();
+
         const list: KaryaItem[] = res.karya ?? [];
         const found = list.find((item) => item.id === id);
 
@@ -141,7 +146,7 @@ export default function EditKarya({ id }: Props) {
     };
 
     load();
-  }, [id, authLoading, isKps]);
+  }, [id, authLoading, isKps, isAdmin]);
 
   // ── Handlers ──
 

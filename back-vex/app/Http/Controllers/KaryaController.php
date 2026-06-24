@@ -47,6 +47,40 @@ class KaryaController extends Controller
     }
 
 
+     public function indexAdmin(Request $request)
+    {
+        $user = $request->user();
+
+        $karya = Karya::with(['stan', 'pameran'])
+            ->get()
+            ->map(fn($item) => [
+                'id' => $item->id_karya,
+                'title' => $item->judul,
+                'category' => $item->pameran?->kategori ?? '',
+                'image' => $item->gambar_poster
+                    ? asset("http://localhost:8000/storage/{$item->gambar_poster}")
+                    : '',
+                'thumbnail' => $item->gambar_sampul
+                    ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
+                    : '',
+                'link' => $item->tautan,
+                'description' => $item->deskripsi,
+                'booth' => $item->id_stan ? (string) $item->id_stan : '',
+                'pameranId' => $item->id_pameran,
+                'pameranTitle' => $item->pameran?->judul ?? '',
+                'year' => $item->pameran?->tanggal_mulai
+                    ? date('Y', strtotime($item->pameran->tanggal_mulai))
+                    : '',
+                'semester' => '',
+                'isTerbaik' => $item->is_terbaik,   // expose ke frontend
+            ]);
+
+        return response()->json([
+            'status' => 'success',
+            'karya' => $karya,
+        ]);
+    }
+
     // =============================
     // TAMBAH KARYA
     // =============================
