@@ -19,6 +19,12 @@ import Crosshair from "@/components/play/crosshair";
 import Image from "next/image";
 import { showToast } from "@/components/shared/ui/ToastNotification"; //
 
+import {
+  getKaryaList, getPlayerName, deletePlayer,
+  getKaryaDetail, getKaryaLikeStatus, toggleKaryaLike,
+  getKomentar, postKomentar
+} from "@/components/play/apiPlay";
+
 
 type PosterData = {
   src: string;
@@ -40,15 +46,6 @@ type InfoData = {
 /* ======================= */
 /* AUTH HEADERS HELPER     */
 /* ======================= */
-
-function authHeaders(): HeadersInit {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  return {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
 
 export default function ExhibitionPage() {
   const router = useRouter();
@@ -76,11 +73,10 @@ export default function ExhibitionPage() {
 
   // Load karya + max_floor once
   useEffect(() => {
-    fetch(`/api/experience/karya/pameran/${id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setKaryaList(data.karya ?? data);
-        setMaxFloor(data.max_floor ?? {});
+    getKaryaList(id)
+      .then(({ karya, max_floor }) => {
+        setKaryaList(karya);
+        setMaxFloor(max_floor);
       })
       .catch(() => { });
   }, [id]);
@@ -112,9 +108,8 @@ export default function ExhibitionPage() {
   useEffect(() => {
     const initPlayerName = async () => {
       try {
-        const res = await fetch("/api/player-name");
-        const data = await res.json();
-        setPlayerName(data.name);
+        const name = await getPlayerName();
+        setPlayerName(name);
       } catch {
         setPlayerName(generateGuestName());
       }
@@ -149,7 +144,7 @@ export default function ExhibitionPage() {
 
   useEffect(() => {
     const removePlayer = () => {
-      fetch(`/api/player?id=${playerId}`, { method: "DELETE", keepalive: true });
+      deletePlayer(playerId);
     };
     window.addEventListener("beforeunload", removePlayer);
     return () => {
@@ -453,7 +448,7 @@ export default function ExhibitionPage() {
 
 function toEmbedUrl(url: string): string {
   if (!url) return "";
-  // Sudah embed → langsung pakai
+  // Ini URL bukan axios tapi url youtube
   if (url.includes("youtube.com/embed/")) return url;
   // youtu.be/VIDEO_ID
   const short = url.match(/youtu\.be\/([^?&]+)/);
@@ -699,45 +694,21 @@ function PosterViewer({
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`/api/experience/karya/pameran/${id}`);
-        const list: any[] = await res.json();
-
-        const karya = list.find(
-          (k) =>
-            k.booth_name === booth ||
-            k.judul === booth ||
-            String(k.id_stan).toLowerCase() === booth.toLowerCase()
+        const res = await getKaryaDetail(id);
+        const karya = res.find((k: any) =>
+          k.booth_name === booth || k.judul === booth ||
+          String(k.id_stan).toLowerCase() === booth.toLowerCase()
         );
 
         if (!karya) throw new Error("Karya tidak ditemukan");
 
         // Ambil status like user saat ini (butuh auth)
-        let liked = false;
-        let totalSuka = karya.total_suka ?? 0;
-        const sukaRes = await fetch(`/api/karya/${karya.id_karya}/suka`, {
-          headers: authHeaders(),
-        });
-        if (sukaRes.ok) {
-          const sukaData = await sukaRes.json();
-          liked = sukaData.liked ?? false;
-          totalSuka = sukaData.total_suka ?? totalSuka;
-        }
+        const token = localStorage.getItem("token") ?? undefined;
+        const sukaData = await getKaryaLikeStatus(karya.id_karya, token);
+        const liked = sukaData.liked ?? false;
+        const totalSuka = sukaData.total_suka ?? karya.total_suka ?? 0;
 
-        // Ambil komentar terbaru
-        const komentarRes = await fetch(`/api/karya/${karya.id_karya}/komentar`, {
-          headers: { Accept: "application/json" },
-        });
-        let komentar: { nama: string; isi: string }[] = [];
-        if (komentarRes.ok) {
-          const komentarData = await komentarRes.json();
-          const rawList = Array.isArray(komentarData)
-            ? komentarData
-            : (komentarData.komentar ?? []);
-          komentar = rawList.map((k: any) => ({
-            nama: k.pengguna?.nama ?? k.nama ?? "Anonim",
-            isi: k.isi_komentar ?? k.isi ?? "",
-          }));
-        }
+        const komentar = await getKomentar(karya.id_karya);
 
         setInfo({
           id_karya: karya.id_karya,
@@ -745,8 +716,8 @@ function PosterViewer({
           deskripsi: karya.deskripsi ?? "-",
           likes: totalSuka,
           liked,
-          is_terbaik: karya.is_terbaik ?? false,       // ← tambah
-          is_terbanyak: karya.is_terbanyak ?? false,   // ← tambah (kalau ada di API)
+          is_terbaik: karya.is_terbaik ?? false,
+          is_terbanyak: karya.is_terbanyak ?? false,
           tautan: karya.tautan ?? null,
           komentar,
         });
@@ -785,20 +756,9 @@ function PosterViewer({
       likes: wasLiked ? prev.likes - 1 : prev.likes + 1,
     }));
     try {
-      const res = await fetch(`/api/karya/${info.id_karya}/suka`, {
-        method: "POST",
-        headers: authHeaders(),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setInfo((prev) => ({
-          ...prev,
-          liked: data.liked,
-          likes: data.total_suka,
-        }));
-      } else {
-        throw new Error("Gagal");
-      }
+      const token = localStorage.getItem("token")!;
+      const data = await toggleKaryaLike(info.id_karya!, token);
+      setInfo((prev) => ({ ...prev, liked: data.liked, likes: data.total_suka }));
     } catch {
       setInfo((prev) => ({
         ...prev,
@@ -823,23 +783,17 @@ function PosterViewer({
     setSubmitting(true);
     setCommentError(null);
     try {
-      const res = await fetch(`/api/karya/${info.id_karya}/komentar`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ isi_komentar: newComment }),
-      });
-      const data = await res.json();
-      if (res.status === 429) {
+      const token = localStorage.getItem("token")!;
+      const data = await postKomentar(info.id_karya!, newComment, token);
+      if (data.status === 429) {
         setCommentError(data.message ?? "Tunggu beberapa menit sebelum komentar lagi.");
-      } else if (res.ok) {
+      } else {
         const nama = data.komentar?.pengguna?.nama ?? "Kamu";
         const isi = data.komentar?.isi_komentar ?? newComment;
-        setInfo((prev) => ({
-          ...prev,
-          komentar: [...prev.komentar, { nama, isi }],
-        }));
+        setInfo((prev) => ({ ...prev, komentar: [...prev.komentar, { nama, isi }] }));
         setNewComment("");
       }
+      // ← HAPUS semua kode res.json() / res.status / res.ok di bawah ini
     } catch {
       setCommentError("Gagal mengirim komentar. Coba lagi.");
     } finally {
