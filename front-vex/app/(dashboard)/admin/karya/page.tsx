@@ -1,5 +1,5 @@
 import PageKarya from '@/components/karya/PageKarya';
 
-export default function KaryaPage() {
+export default function AdminKaryaPage() {
   return <PageKarya href="/admin/karya/" />;
 }

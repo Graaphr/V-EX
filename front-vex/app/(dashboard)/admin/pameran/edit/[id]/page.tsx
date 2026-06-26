@@ -6,7 +6,7 @@ import NavAdmin from "@/components/shared/ui/NavAdmin";
 import EditPameran from "@/components/pameran/EditPameran";
 import AddPameran from "@/components/pameran/AddPameran";
 
-export default function AdminEditPameran() {
+export default function EditPameranPage() {
   const [isFormOpen, setisFormOpen] = useState(false);
 
   const handleEditClick = () => {

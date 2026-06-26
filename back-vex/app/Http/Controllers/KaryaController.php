@@ -47,9 +47,8 @@ class KaryaController extends Controller
     }
 
 
-     public function indexAdmin(Request $request)
+     public function indexAdmin()
     {
-        $user = $request->user();
 
         $karya = Karya::with(['stan', 'pameran'])
             ->get()

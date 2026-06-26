@@ -2,14 +2,14 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import EditKarya from '@/components/karya/EditKarya';
+import DetailKarya from '@/components/karya/DetailKarya';
 
-export default function DetailKarya() {
+export default function DetailKaryaPage() {
   const { id } = useParams();
   return (
     <div className="w-full">
 
-      <EditKarya id={Number(id)} />
+      <DetailKarya id={Number(id)} />
     </div>
   );
 }

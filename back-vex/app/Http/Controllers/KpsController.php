@@ -65,7 +65,7 @@ class KpsController extends Controller
         if ($karya_terbaik) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Sudah ada karya terbaik untuk prodi ini. Batalkan dulu sebelum memilih yang baru.',
+                'message' => 'Sudah ada karya terbaik untuk prodi ini.',
                 'karya_terbaik' => $karya_terbaik,
             ], 422);
         }

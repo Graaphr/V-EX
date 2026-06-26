@@ -65,7 +65,10 @@ class PameranController extends Controller
         $pameran = Pameran::with(['model3d', 'prodi'])->find($id);
 
         if (!$pameran) {
-            return response()->json(['status' => 'error', 'message' => 'Pameran tidak ditemukan'], 404);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pameran tidak ditemukan'
+            ], 404);
         }
 
         $transformed = [

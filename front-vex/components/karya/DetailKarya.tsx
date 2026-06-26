@@ -77,7 +77,7 @@ interface Props {
   id: number;
 }
 
-export default function EditKarya({ id }: Props) {
+export default function DetailKarya({ id }: Props) {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
