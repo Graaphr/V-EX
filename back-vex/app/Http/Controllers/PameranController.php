@@ -69,7 +69,10 @@ class PameranController extends Controller
             ->find($id);
 
         if (!$pameran) {
-            return response()->json(['status' => 'error', 'message' => 'Pameran tidak ditemukan'], 404);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pameran tidak ditemukan'
+            ], 404);
         }
 
         $transformed = [

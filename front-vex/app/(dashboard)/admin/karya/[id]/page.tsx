@@ -1,10 +1,10 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import EditKarya from '@/components/karya/EditKarya';
+import DetailKarya from '@/components/karya/DetailKarya';
 
-export default function DetailPage() {
+export default function DetailKaryaPage() {
   const { id } = useParams();
 
-  return <EditKarya id={Number(id)} />;
+  return <DetailKarya id={Number(id)} />;
 }
