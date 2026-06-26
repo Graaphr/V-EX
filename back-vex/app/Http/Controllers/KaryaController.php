@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Karya;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Models\ModelPameran; // ← tambah ini di bagian atas use
+use App\Models\Stan;         // ← pastikan ini juga ada
+use Illuminate\Support\Facades\DB; // ← pastikan ini juga ada
 
 class KaryaController extends Controller
 {
@@ -46,53 +49,79 @@ class KaryaController extends Controller
         ]);
     }
 
-
     // =============================
-    // TAMBAH KARYA
+    // AMBIL MODEL STAN (jenis = 'stan')
     // =============================
-    public function store(Request $request)
+    public function getModelStan()
     {
-        $user = $request->user();
+        $models = ModelPameran::where('jenis', 'stan')->get(['id_model', 'nama_model', '3d_model']);
 
-        $request->validate([
-            'id_pameran' => 'required|exists:pameran,id_pameran',
-            'id_stan' => 'required|exists:stan,id_stan',
-            'judul' => 'required|string|max:255',
-            'deskripsi' => 'required|string',
-            'tautan' => 'required|url',
-            'gambar_poster' => 'required|image|mimes:png,jpg,jpeg|max:5000',
-            'gambar_sampul' => 'required|image|mimes:png,jpg,jpeg|max:5000',
+        return response()->json([
+            'status' => 'success',
+            'data' => $models,
         ]);
+    }
 
-        $idPameran = $request->id_pameran;
+    // =============================
+// TAMBAH KARYA (store yang dibenahi)
+// =============================
+public function store(Request $request)
+{
+    $user = $request->user();
 
-        // =============================
-        // CEK APAKAH USER SUDAH PUNYA KARYA
-        // DI PAMERAN INI
-        // =============================
-        $existingKarya = Karya::where('id_pengguna', $user->id)
-            ->where('id_pameran', $idPameran)
-            ->first();
+    $request->validate([
+        'id_pameran'    => 'required|exists:pameran,id_pameran',
+        'id_model'      => 'required|exists:model,id_model',   // ← ganti dari id_stan
+        'judul'         => 'required|string|max:255',
+        'deskripsi'     => 'required|string',
+        'tautan'        => 'required|url',
+        'gambar_poster' => 'required|image|mimes:png,jpg,jpeg|max:5000',
+        'gambar_sampul' => 'required|image|mimes:png,jpg,jpeg|max:5000',
+    ]);
 
-        if ($existingKarya) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Anda sudah mengunggah karya pada pameran ini.',
-                'karya_id' => $existingKarya->id_karya,
-            ], 409);
-        }
+    $idPameran = $request->id_pameran;
 
-        $karya = Karya::create([
-            'id_pengguna' => $user->id,
-            'id_pameran' => $idPameran,
-            'id_stan' => $request->id_stan,
-            'judul' => $request->judul,
-            'deskripsi' => $request->deskripsi,
-            'tautan' => $request->tautan,
-            'gambar_poster' => '/',
-            'gambar_sampul' => '/',
-            'lantai' => 1,
-        ]);
+    // =============================
+    // CEK APAKAH USER SUDAH PUNYA KARYA
+    // DI PAMERAN INI
+    // =============================
+    $existingKarya = Karya::where('id_pengguna', $user->id)
+        ->where('id_pameran', $idPameran)
+        ->first();
+
+    if ($existingKarya) {
+        return response()->json([
+            'status'   => 'error',
+            'message'  => 'Anda sudah mengunggah karya pada pameran ini.',
+            'karya_id' => $existingKarya->id_karya,
+        ], 409);
+    }
+
+    // =============================
+    // BUAT ENTRY STAN BARU
+    // (model_stan diisi dari id_model yang dipilih user)
+    // =============================
+    $karya = null;
+        DB::transaction(function () use ($request, $user, $idPameran, &$karya) {
+            $stan = Stan::create([
+                'id_pameran' => $idPameran,
+                'model_stan' => $request->id_model,
+            ]);
+    // =============================
+    // BARU BUAT KARYA DENGAN id_stan HASIL INSERT
+    // =============================
+            $karya = Karya::create([
+                'id_pengguna'   => $user->id,
+                'id_pameran'    => $idPameran,
+                'id_stan'       => $stan->id_stan,
+                'judul'         => $request->judul,
+                'deskripsi'     => $request->deskripsi,
+                'tautan'        => $request->tautan,
+                'gambar_poster' => '/',
+                'gambar_sampul' => '/',
+                'lantai'        => 1,
+            ]);
+        });
 
         // =============================
         // BUAT FOLDER

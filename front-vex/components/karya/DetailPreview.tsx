@@ -1,16 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { GetStanTersedia } from '@/components/karya/apiKarya';
+import { GetModelStan } from '@/components/karya/apiKarya'; // ← ganti import
 
 interface StanOption {
-  id: number;
-  model_stan: string;
+  id_model: number;   // ← ganti dari id ke id_model
+  nama_model: string; // ← ganti dari model_stan ke nama_model
 }
 
 interface Props {
-  booth?: string;
   pameranId?: number;
+  booth: string;
   onChange: (value: string) => void;
   error?: string;
 }
@@ -26,33 +26,27 @@ function Label({ text, required }: { text: string; required?: boolean }) {
 }
 
 export default function DetailPreview({ booth, pameranId, onChange, error }: Props) {
-  const [stanList, setStanList] = useState<StanOption[]>([]);
-  const [loadingStan, setLoadingStan] = useState(false);
-
-  const isValidPameranId = !!pameranId && pameranId > 0;
+  const [modelList, setModelList] = useState<StanOption[]>([]);
+  const [loadingModel, setLoadingModel] = useState(false);
 
   useEffect(() => {
-    if (!isValidPameranId) {
-      setStanList([]);
-      return;
-    }
-
-    const fetchStan = async () => {
-      setLoadingStan(true);
+    // Tidak perlu tunggu pameranId — model stan tidak bergantung pameran
+    const fetchModel = async () => {
+      setLoadingModel(true);
       try {
-        const res = await GetStanTersedia(pameranId as number);
-        setStanList(res.stan ?? []);
+        const res = await GetModelStan();
+        setModelList(res.data ?? []);
       } catch (err) {
-        console.error('Gagal memuat stan:', err);
+        console.error('Gagal memuat model stan:', err);
       } finally {
-        setLoadingStan(false);
+        setLoadingModel(false);
       }
     };
 
-    fetchStan();
-  }, [pameranId, isValidPameranId]);
+    fetchModel();
+  }, []); // ← kosong, fetch sekali saat mount
 
-  const selectedStan = stanList.find((s) => String(s.id) === String(booth));
+  const selectedModel = modelList.find((m) => String(m.id_model) === String(booth));
 
   return (
     <div className="flex flex-col gap-4">
@@ -62,7 +56,7 @@ export default function DetailPreview({ booth, pameranId, onChange, error }: Pro
 
       <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl w-full h-[300px] flex items-center justify-center overflow-hidden">
         <img
-          src={selectedStan ? `/image/${encodeURIComponent(selectedStan.model_stan)}` : '/image/img-stan1.svg'}
+          src={selectedModel ? `/image/${encodeURIComponent(selectedModel.nama_model)}` : '/image/img-stan1.svg'}
           alt="booth"
           className="h-full w-full object-contain p-4"
           onError={(e) => {
@@ -75,9 +69,7 @@ export default function DetailPreview({ booth, pameranId, onChange, error }: Pro
         <Label text="Pilih Stan" required />
         <p className="text-xs text-gray-400 mt-1">Pilih tampilan stan untuk karya kamu</p>
 
-        {!isValidPameranId ? (
-          <p className="mt-1.5 text-xs text-gray-400 italic">Pilih pameran terlebih dahulu</p>
-        ) : loadingStan ? (
+        {loadingModel ? (
           <div className="mt-1.5 h-10 animate-pulse rounded-lg bg-gray-100" />
         ) : (
           <select
@@ -90,11 +82,11 @@ export default function DetailPreview({ booth, pameranId, onChange, error }: Pro
             }`}
           >
             <option value="" disabled>
-              -- Pilih Stan --
+              -- Pilih Model Stan --
             </option>
-            {stanList.map((s) => (
-              <option key={s.id} value={String(s.id)}>
-                Stan {s.id} — {s.model_stan}
+            {modelList.map((m) => (
+              <option key={m.id_model} value={String(m.id_model)}>
+                {m.nama_model}
               </option>
             ))}
           </select>

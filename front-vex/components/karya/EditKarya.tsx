@@ -403,7 +403,7 @@ export default function EditKarya({ id }: Props) {
             {/* Form — read-only untuk Admin & KPS */}
             <div className={isReadOnly ? "pointer-events-none opacity-75" : ""}>
               <DetailPreview
-                booth={form.booth}
+                booth={form.booth ?? ''}
                 pameranId={form.pameranId}
                 onChange={(value) => handleChange("booth", value)}
                 error={errors.booth}

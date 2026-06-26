@@ -111,6 +111,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/karya', [KaryaController::class, 'store']);
         Route::put('/karya/{id}', [KaryaController::class, 'update']);
         Route::post('/karya/{id}/update', [KaryaController::class, 'update']);
+        Route::get('/model-stan', [KaryaController::class, 'getModelStan']);
         // Route::delete('/karya/{id}', [KaryaController::class, 'destroy']);
     });
 
