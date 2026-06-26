@@ -32,11 +32,6 @@ class ModelSeeder extends Seeder
                 'nama_model'  => 'Stan C',
                 '3d_model'    => 'models/stand3.glb',
             ],
-            [
-                'jenis'       => 'Stan',
-                'nama_model'  => 'Stan D',
-                '3d_model'    => 'models/stand4.glb',
-            ],
         ]);
     }
 }

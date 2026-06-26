@@ -14,7 +14,13 @@ export async function getHallModel(exhibitionId: string) {
 
 export async function getKaryaList(exhibitionId: string) {
     const res = await url.get(`/api/experience/karya/pameran/${exhibitionId}`)
-    return { karya: res.data.karya ?? res.data, max_floor: res.data.max_floor ?? {} }
+    const data = res.data
+
+    // Pastikan selalu array
+    const karya = Array.isArray(data) ? data : (data.karya ?? data.data ?? [])
+    const max_floor = data.max_floor ?? {}
+
+    return { karya, max_floor }
 }
 
 export async function getPameranFolder(exhibitionId: string) {
@@ -30,18 +36,21 @@ export async function getGameAssets() {
 
 // ── page.tsx (ExhibitionPage) ──
 export async function getPlayerName() {
-    const res = await url.get("/api/player-name")
-    return res.data.name as string
+    const res = await fetch("/api/player-name")
+    const data = await res.json()
+    return data.name as string
 }
 
 export async function deletePlayer(playerId: string) {
-    await url.delete(`/api/player?id=${playerId}`)
+    await fetch(`/api/player?id=${playerId}`, { method: "DELETE" })
 }
 
 // ── PosterViewer ──
+
 export async function getKaryaDetail(exhibitionId: string) {
     const res = await url.get(`/api/experience/karya/pameran/${exhibitionId}`)
-    return res.data as any[]
+    const data = res.data
+    return (Array.isArray(data) ? data : (data.karya ?? data.data ?? [])) as any[]
 }
 
 export async function getKaryaLikeStatus(karyaId: number, token?: string) {
@@ -59,7 +68,7 @@ export async function toggleKaryaLike(karyaId: number, token: string) {
 }
 
 export async function getKomentar(karyaId: number) {
-    const res = await api.get(`/api/karya/${karyaId}/komentar`)
+    const res = await url.get(`/api/karya/${karyaId}/komentar`)
     const raw = Array.isArray(res.data) ? res.data : (res.data.komentar ?? [])
     return raw.map((k: any) => ({
         nama: k.pengguna?.nama ?? k.nama ?? "Anonim",
@@ -68,7 +77,7 @@ export async function getKomentar(karyaId: number) {
 }
 
 export async function postKomentar(karyaId: number, isi: string, token: string) {
-    const res = await api.post(
+    const res = await url.post(
         `/api/karya/${karyaId}/komentar`,
         { isi_komentar: isi },
         { headers: { Authorization: `Bearer ${token}` } }

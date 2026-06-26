@@ -39,4 +39,21 @@ class Pameran extends Model
     {
         return $this->hasMany(Karya::class, 'id_pameran', 'id_pameran');
     }
+
+    /**
+     * Relasi tidak langsung: Pameran -> Karya -> Suka
+     * Dipakai untuk withCount('suka') agar dapat total suka
+     * dari seluruh karya yang ada di pameran ini.
+     */
+    public function suka()
+    {
+        return $this->hasManyThrough(
+            Suka::class,
+            Karya::class,
+            'id_pameran', // FK di tabel karya yang merujuk ke pameran
+            'id_karya',   // FK di tabel suka yang merujuk ke karya
+            'id_pameran', // local key di pameran
+            'id_karya'    // local key di karya
+        );
+    }
 }

@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -15,7 +14,6 @@ import {
   useEffect,
   useRef,
   useState,
-  useMemo,
 } from "react";
 
 import * as THREE from "three";
@@ -36,7 +34,6 @@ type Props = {
     }
   ) => void;
 
-
   setWalking?: (
     value: boolean
   ) => void;
@@ -45,12 +42,12 @@ type Props = {
     value: boolean
   ) => void;
 
-  mobileMove?: {
+  mobileMove?: React.MutableRefObject<{
     w: boolean;
     a: boolean;
     s: boolean;
     d: boolean;
-  };
+  }>;
 
   lookDelta?: React.MutableRefObject<{
     x: number;
@@ -71,60 +68,31 @@ export default function Player({
 
   setPosition,
 }: Props) {
-  const {
-    camera,
-    scene: world,
-  } = useThree();
+  const { camera, scene: world } = useThree();
 
-  const orbitRef =
-    useRef<any>(null);
+  const orbitRef = useRef<any>(null);
+  const pointerRef = useRef<any>(null);
+  const playerMesh = useRef<THREE.Mesh>(null!);
 
-  const pointerRef =
-    useRef<any>(null);
-
-  const playerMesh =
-    useRef<THREE.Mesh>(
-      null!
-    );
-
-  const raycaster =
-    useRef(
-      new THREE.Raycaster()
-    );
+  const raycaster = useRef(new THREE.Raycaster());
 
   /* ===================== */
   /* PLAYER */
   /* ===================== */
 
-  const position =
-    useRef(
-      new THREE.Vector3(
-        0,
-        20,
-        -8
-      )
-    );
-
-  const velocityY =
-    useRef(0);
-
-  const grounded =
-    useRef(false);
+  const position = useRef(new THREE.Vector3(0, 20, -8));
+  const velocityY = useRef(0);
+  const grounded = useRef(false);
 
   /* ===================== */
   /* SETTINGS */
   /* ===================== */
 
   const MOVE_SPEED = 6;
-
   const GRAVITY = 24;
-
   const JUMP_FORCE = 10;
-
   const PLAYER_HEIGHT = 3;
-
-  const COLLISION_DISTANCE =
-    0.7;
+  const COLLISION_DISTANCE = 0.7;
 
   /* ===================== */
   /* INPUT */
@@ -139,105 +107,87 @@ export default function Player({
   });
 
   /* ===================== */
-  /* COLLIDERS */
+  /* COLLIDERS / FLOOR CACHE */
   /* ===================== */
 
-  const colliders =
-    useRef<
-      THREE.Object3D[]
-    >([]);
+  // Walls/obstacles, flagged via userData.collider
+  const colliders = useRef<THREE.Object3D[]>([]);
+  // Walkable meshes used for floor raycasting (cached instead of
+  // re-scanning world.children every frame)
+  const floorMeshes = useRef<THREE.Object3D[]>([]);
 
   /* ===================== */
   /* MOBILE */
   /* ===================== */
 
-  const [
-    isMobile,
-    setIsMobile,
-  ] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   /* ===================== */
   /* LOOK */
   /* ===================== */
 
-  const yaw =
-    useRef(0);
-
-  const pitch =
-    useRef(0);
+  const yaw = useRef(0);
+  const pitch = useRef(0);
 
   /* ===================== */
   /* MULTIPLAYER SAVE */
   /* ===================== */
 
-  const saveTimer =
-    useRef(0);
+  const saveTimer = useRef(0);
+  const rotationY = useRef(0);
+  const lastSent = useRef({ x: Infinity, y: Infinity, z: Infinity, rotation: Infinity });
 
-  const rotationY =
-    useRef(0);
+  /* ===================== */
+  /* REUSABLE SCRATCH OBJECTS (avoid per-frame GC pressure) */
+  /* ===================== */
+
+  const forwardVec = useRef(new THREE.Vector3());
+  const rightVec = useRef(new THREE.Vector3());
+  const nextVec = useRef(new THREE.Vector3());
+  const moveDirVec = useRef(new THREE.Vector3());
+  const originVec = useRef(new THREE.Vector3());
+  const floorOriginVec = useRef(new THREE.Vector3());
+  const downVec = useRef(new THREE.Vector3(0, -1, 0));
+  const eulerRef = useRef(new THREE.Euler(0, 0, 0, "YXZ"));
 
   /* ===================== */
   /* MOBILE DETECT */
   /* ===================== */
 
   useEffect(() => {
-    setIsMobile(
-      /Android|iPhone|iPad|iPod/i.test(
-        navigator.userAgent
-      )
-    );
+    setIsMobile(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
   }, []);
 
   /* ===================== */
-  /* COLLIDER SCAN */
+  /* COLLIDER + FLOOR SCAN */
   /* ===================== */
 
   useEffect(() => {
     const scan = () => {
-      const arr: THREE.Object3D[] =
-        [];
+      const colliderArr: THREE.Object3D[] = [];
+      const floorArr: THREE.Object3D[] = [];
 
-      world.traverse(
-        (obj: any) => {
-          if (
-            obj.userData
-              ?.collider &&
-            obj.isMesh
-          ) {
-            arr.push(obj);
+      world.traverse((obj: any) => {
+        if (!obj.isMesh) return;
 
-            obj.visible =
-              false;
-          }
+        if (obj.userData?.collider) {
+          colliderArr.push(obj);
+          obj.visible = false;
+        } else {
+          // Anything mesh-like that isn't a collider is a floor candidate.
+          floorArr.push(obj);
         }
-      );
+      });
 
-      colliders.current =
-        arr;
+      colliders.current = colliderArr;
+      floorMeshes.current = floorArr;
 
-      console.log(
-        "colliders:",
-        arr.length
-      );
+      console.log("colliders:", colliderArr.length, "floor candidates:", floorArr.length);
     };
 
-    const t1 =
-      setTimeout(
-        scan,
-        300
-      );
-
-    const t2 =
-      setTimeout(
-        scan,
-        1000
-      );
-
-    const t3 =
-      setTimeout(
-        scan,
-        2000
-      );
+    const t1 = setTimeout(scan, 300);
+    const t2 = setTimeout(scan, 1000);
+    const t3 = setTimeout(scan, 2000);
 
     return () => {
       clearTimeout(t1);
@@ -251,101 +201,30 @@ export default function Player({
   /* ===================== */
 
   useEffect(() => {
-    const down = (
-      e: KeyboardEvent
-    ) => {
-      if (
-        !controlsLocked
-      )
-        return;
+    const down = (e: KeyboardEvent) => {
+      if (!controlsLocked) return;
 
-      if (
-        e.code === "KeyW"
-      )
-        keys.current.w =
-          true;
-
-      if (
-        e.code === "KeyA"
-      )
-        keys.current.a =
-          true;
-
-      if (
-        e.code === "KeyS"
-      )
-        keys.current.s =
-          true;
-
-      if (
-        e.code === "KeyD"
-      )
-        keys.current.d =
-          true;
-
-      if (
-        e.code ===
-        "Space"
-      )
-        keys.current.space =
-          true;
+      if (e.code === "KeyW") keys.current.w = true;
+      if (e.code === "KeyA") keys.current.a = true;
+      if (e.code === "KeyS") keys.current.s = true;
+      if (e.code === "KeyD") keys.current.d = true;
+      if (e.code === "Space") keys.current.space = true;
     };
 
-    const up = (
-      e: KeyboardEvent
-    ) => {
-      if (
-        e.code === "KeyW"
-      )
-        keys.current.w =
-          false;
-
-      if (
-        e.code === "KeyA"
-      )
-        keys.current.a =
-          false;
-
-      if (
-        e.code === "KeyS"
-      )
-        keys.current.s =
-          false;
-
-      if (
-        e.code === "KeyD"
-      )
-        keys.current.d =
-          false;
-
-      if (
-        e.code ===
-        "Space"
-      )
-        keys.current.space =
-          false;
+    const up = (e: KeyboardEvent) => {
+      if (e.code === "KeyW") keys.current.w = false;
+      if (e.code === "KeyA") keys.current.a = false;
+      if (e.code === "KeyS") keys.current.s = false;
+      if (e.code === "KeyD") keys.current.d = false;
+      if (e.code === "Space") keys.current.space = false;
     };
 
-    window.addEventListener(
-      "keydown",
-      down
-    );
-
-    window.addEventListener(
-      "keyup",
-      up
-    );
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
 
     return () => {
-      window.removeEventListener(
-        "keydown",
-        down
-      );
-
-      window.removeEventListener(
-        "keyup",
-        up
-      );
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
     };
   }, [controlsLocked]);
 
@@ -354,28 +233,17 @@ export default function Player({
   /* ===================== */
 
   useEffect(() => {
-    const removePlayer =
-      () => {
-        fetch(
-          `/api/player?id=${playerId}`,
-          {
-            method: "DELETE",
-          }
-        ).catch(() => { });
-      };
+    const removePlayer = () => {
+      fetch(`/api/player?id=${playerId}`, {
+        method: "DELETE",
+      }).catch(() => {});
+    };
 
-    window.addEventListener(
-      "beforeunload",
-      removePlayer
-    );
+    window.addEventListener("beforeunload", removePlayer);
 
     return () => {
       removePlayer();
-
-      window.removeEventListener(
-        "beforeunload",
-        removePlayer
-      );
+      window.removeEventListener("beforeunload", removePlayer);
     };
   }, [playerId]);
 
@@ -384,11 +252,8 @@ export default function Player({
   /* ===================== */
 
   useEffect(() => {
-    if (
-      !controlsLocked
-    ) {
+    if (!controlsLocked) {
       pointerRef.current?.unlock?.();
-
       document.exitPointerLock?.();
     }
   }, [controlsLocked]);
@@ -398,286 +263,117 @@ export default function Player({
   /* ===================== */
 
   useFrame((_, delta) => {
-    const dt =
-      Math.min(
-        delta,
-        0.1
-      );
+    const dt = Math.min(delta, 0.1);
 
     /* ===================== */
     /* MOBILE LOOK */
     /* ===================== */
 
-    if (
-      isMobile &&
-      mode === "first" &&
-      lookDelta
-    ) {
-      yaw.current -=
-        lookDelta.current.x;
+    if (isMobile && mode === "first" && lookDelta) {
+      yaw.current -= lookDelta.current.x;
+      pitch.current -= lookDelta.current.y;
+      pitch.current = Math.max(-1.2, Math.min(1.2, pitch.current));
 
-      pitch.current -=
-        lookDelta.current.y;
-
-      pitch.current =
-        Math.max(
-          -1.2,
-          Math.min(
-            1.2,
-            pitch.current
-          )
-        );
-
-      const euler =
-        new THREE.Euler(
-          pitch.current,
-          yaw.current,
-          0,
-          "YXZ"
-        );
-
-      camera.quaternion.setFromEuler(
-        euler
-      );
+      eulerRef.current.set(pitch.current, yaw.current, 0, "YXZ");
+      camera.quaternion.setFromEuler(eulerRef.current);
     }
 
     /* ===================== */
     /* MOVE DIR */
     /* ===================== */
 
-    const forward =
-      new THREE.Vector3();
+    camera.getWorldDirection(forwardVec.current);
 
-    camera.getWorldDirection(
-      forward
-    );
+    rotationY.current = Math.atan2(forwardVec.current.x, forwardVec.current.z);
 
-    rotationY.current =
-      Math.atan2(
-        forward.x,
-        forward.z
-      );
+    forwardVec.current.y = 0;
+    forwardVec.current.normalize();
 
-    forward.y = 0;
+    rightVec.current.crossVectors(forwardVec.current, camera.up).normalize();
 
-    forward.normalize();
+    nextVec.current.copy(position.current);
 
-    const right =
-      new THREE.Vector3()
-        .crossVectors(
-          forward,
-          camera.up
-        )
-        .normalize();
+    let moving = false;
 
-    const next =
-      position.current.clone();
+    const moveAmount = MOVE_SPEED * dt;
 
-    let moving =
-      false;
+    const W = keys.current.w || mobileMove?.current.w;
+    const A = keys.current.a || mobileMove?.current.a;
+    const S = keys.current.s || mobileMove?.current.s;
+    const D = keys.current.d || mobileMove?.current.d;
 
-    const moveAmount =
-      MOVE_SPEED * dt;
-
-    const W =
-      keys.current.w ||
-      mobileMove?.w;
-
-    const A =
-      keys.current.a ||
-      mobileMove?.a;
-
-    const S =
-      keys.current.s ||
-      mobileMove?.s;
-
-    const D =
-      keys.current.d ||
-      mobileMove?.d;
-
-    if (
-      controlsLocked
-    ) {
+    if (controlsLocked) {
       if (W) {
-        next.add(
-          forward
-            .clone()
-            .multiplyScalar(
-              moveAmount
-            )
-        );
-
-        moving =
-          true;
+        nextVec.current.addScaledVector(forwardVec.current, moveAmount);
+        moving = true;
       }
 
       if (S) {
-        next.add(
-          forward
-            .clone()
-            .multiplyScalar(
-              -moveAmount
-            )
-        );
-
-        moving =
-          true;
+        nextVec.current.addScaledVector(forwardVec.current, -moveAmount);
+        moving = true;
       }
 
       if (A) {
-        next.add(
-          right
-            .clone()
-            .multiplyScalar(
-              -moveAmount
-            )
-        );
-
-        moving =
-          true;
+        nextVec.current.addScaledVector(rightVec.current, -moveAmount);
+        moving = true;
       }
 
       if (D) {
-        next.add(
-          right
-            .clone()
-            .multiplyScalar(
-              moveAmount
-            )
-        );
-
-        moving =
-          true;
+        nextVec.current.addScaledVector(rightVec.current, moveAmount);
+        moving = true;
       }
     }
 
-    setWalking?.(
-      moving &&
-      grounded.current
-    );
+    setWalking?.(moving && grounded.current);
 
     /* ===================== */
     /* WALL COLLISION */
     /* ===================== */
 
-    const moveDir =
-      next
-        .clone()
-        .sub(
-          position.current
-        );
+    moveDirVec.current.copy(nextVec.current).sub(position.current);
 
-    if (
-      moveDir.length() >
-      0
-    ) {
-      moveDir.normalize();
+    if (moveDirVec.current.length() > 0) {
+      moveDirVec.current.normalize();
 
-      const origin =
-        position.current.clone();
+      originVec.current.copy(position.current);
+      originVec.current.y -= 1;
 
-      origin.y -= 1;
+      raycaster.current.set(originVec.current, moveDirVec.current);
+      raycaster.current.far = COLLISION_DISTANCE;
 
-      raycaster.current.set(
-        origin,
-        moveDir
-      );
+      const hits = raycaster.current.intersectObjects(colliders.current, true);
 
-      raycaster.current.far =
-        COLLISION_DISTANCE;
-
-      const hits =
-        raycaster.current.intersectObjects(
-          colliders.current,
-          true
-        );
-
-      if (
-        hits.length ===
-        0
-      ) {
-        position.current.copy(
-          next
-        );
+      if (hits.length === 0) {
+        position.current.copy(nextVec.current);
       }
     }
 
     /* ===================== */
-    /* FLOOR CHECK */
+    /* FLOOR CHECK (cached floor meshes — no full-scene raycast) */
     /* ===================== */
 
-    grounded.current =
-      false;
+    grounded.current = false;
 
-    const floorOrigin =
-      position.current.clone();
+    floorOriginVec.current.copy(position.current);
+    floorOriginVec.current.y += 0.2;
 
-    floorOrigin.y +=
-      0.2;
+    raycaster.current.set(floorOriginVec.current, downVec.current);
+    raycaster.current.far = 50;
 
-    raycaster.current.set(
-      floorOrigin,
-      new THREE.Vector3(
-        0,
-        -1,
-        0
-      )
-    );
+    const floorHits = raycaster.current
+      .intersectObjects(floorMeshes.current, true)
+      .filter((hit: any) => hit.object.isMesh && !hit.object.userData?.collider)
+      .sort((a, b) => a.distance - b.distance);
 
-    raycaster.current.far =
-      50;
+    if (floorHits.length > 0) {
+      const floorY = floorHits[0].point.y;
+      const targetY = floorY + PLAYER_HEIGHT;
 
-    const floorHits =
-      raycaster.current
-        .intersectObjects(
-          world.children,
-          true
-        )
-        .filter(
-          (
-            hit: any
-          ) =>
-            hit.object
-              .isMesh &&
-            !hit.object
-              .userData
-              ?.collider
-        )
-        .sort(
-          (a, b) =>
-            a.distance -
-            b.distance
-        );
-
-    if (
-      floorHits.length >
-      0
-    ) {
-      const floorY =
-        floorHits[0]
-          .point.y;
-
-      const targetY =
-        floorY +
-        PLAYER_HEIGHT;
-
-      if (
-        velocityY.current <=
-        0 &&
-        position.current.y <=
-        targetY +
-        0.2
-      ) {
-        grounded.current =
-          true;
-
-        velocityY.current =
-          0;
-
+      if (velocityY.current <= 0 && position.current.y <= targetY + 0.2) {
+        grounded.current = true;
+        velocityY.current = 0;
         setJumping?.(false);
-
-        position.current.y =
-          targetY;
+        position.current.y = targetY;
       }
     }
 
@@ -685,16 +381,9 @@ export default function Player({
     /* JUMP */
     /* ===================== */
 
-    if (
-      grounded.current &&
-      keys.current.space
-    ) {
-      velocityY.current =
-        JUMP_FORCE;
-
-      grounded.current =
-        false;
-
+    if (grounded.current && keys.current.space) {
+      velocityY.current = JUMP_FORCE;
+      grounded.current = false;
       setJumping?.(true);
     }
 
@@ -702,27 +391,17 @@ export default function Player({
     /* GRAVITY */
     /* ===================== */
 
-    if (
-      !grounded.current
-    ) {
-      velocityY.current -=
-        GRAVITY * dt;
-
-      position.current.y +=
-        velocityY.current *
-        dt;
+    if (!grounded.current) {
+      velocityY.current -= GRAVITY * dt;
+      position.current.y += velocityY.current * dt;
     }
 
     /* ===================== */
     /* CAMERA */
     /* ===================== */
 
-    if (
-      mode === "first"
-    ) {
-      camera.position.copy(
-        position.current
-      );
+    if (mode === "first") {
+      camera.position.copy(position.current);
     }
 
     /* ===================== */
@@ -737,118 +416,74 @@ export default function Player({
 
     saveTimer.current += dt;
 
-    if (
-      saveTimer.current >= 0.2 &&
-      playerName !== "Loading..."
-    ) {
+    if (saveTimer.current >= 0.2 && playerName !== "Loading...") {
       saveTimer.current = 0;
 
-      fetch("/api/player", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: playerId,
+      const moved =
+        Math.abs(position.current.x - lastSent.current.x) > 0.01 ||
+        Math.abs(position.current.y - lastSent.current.y) > 0.01 ||
+        Math.abs(position.current.z - lastSent.current.z) > 0.01 ||
+        Math.abs(rotationY.current - lastSent.current.rotation) > 0.01;
 
-          name: playerName,
-
+      if (moved) {
+        lastSent.current = {
           x: position.current.x,
           y: position.current.y,
           z: position.current.z,
-
           rotation: rotationY.current,
-        }),
-      }).catch(() => { });
+        };
+
+        fetch("/api/player", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: playerId,
+            name: playerName,
+            x: position.current.x,
+            y: position.current.y,
+            z: position.current.z,
+            rotation: rotationY.current,
+          }),
+        }).catch(() => {});
+      }
     }
 
-    if (
-      playerMesh.current &&
-      mode ===
-      "third"
-    ) {
-      playerMesh.current.position.copy(
-        position.current
-      );
-
-      playerMesh.current.position.y -=
-        1.5;
+    if (playerMesh.current && mode === "third") {
+      playerMesh.current.position.copy(position.current);
+      playerMesh.current.position.y -= 1.5;
     }
 
-    if (
-      mode ===
-      "third" &&
-      orbitRef.current
-    ) {
-      orbitRef.current.target.copy(
-        position.current
-      );
-
+    if (mode === "third" && orbitRef.current) {
+      orbitRef.current.target.copy(position.current);
       orbitRef.current.update();
     }
   });
 
   return (
     <>
-      {!isMobile &&
-        mode ===
-        "first" &&
-        controlsLocked && (
-          <PointerLockControls
-            ref={
-              pointerRef
-            }
+      {!isMobile && mode === "first" && controlsLocked && (
+        <PointerLockControls ref={pointerRef} />
+      )}
+
+      {mode === "third" && (
+        <>
+          <OrbitControls
+            ref={orbitRef}
+            enablePan={false}
+            enableRotate={controlsLocked}
+            enableZoom={controlsLocked}
+            minDistance={4}
+            maxDistance={8}
           />
-        )}
 
-      {mode ===
-        "third" && (
-          <>
-            <OrbitControls
-              ref={
-                orbitRef
-              }
-              enablePan={
-                false
-              }
-              enableRotate={
-                controlsLocked
-              }
-              enableZoom={
-                controlsLocked
-              }
-              minDistance={
-                4
-              }
-              maxDistance={
-                8
-              }
-            />
-
-            <mesh
-              ref={
-                playerMesh
-              }
-            >
-              <capsuleGeometry
-                args={[
-                  0.5,
-                  1.2,
-                  4,
-                  8,
-                ]}
-              />
-
-              <meshStandardMaterial
-                color="lime"
-                transparent
-                opacity={
-                  0.35
-                }
-              />
-            </mesh>
-          </>
-        )}
+          <mesh ref={playerMesh}>
+            <capsuleGeometry args={[0.5, 1.2, 4, 8]} />
+            <meshStandardMaterial color="lime" transparent opacity={0.35} />
+          </mesh>
+        </>
+      )}
     </>
   );
 }

@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -71,6 +73,17 @@ export default function ExhibitionPage() {
   const [karyaList, setKaryaList] = useState<any[]>([]);
   const [mapOpen, setMapOpen] = useState(false);
 
+  // Derived from maxFloor — memoized so we don't re-spread Object.values(...)
+  // on every render (and every render happens a LOT during gameplay).
+  const globalMaxFloor = useMemo(
+    () => Math.max(...Object.values(maxFloor), 1),
+    [maxFloor]
+  );
+  const hasMultipleFloors = useMemo(
+    () => Object.values(maxFloor).some((v) => v > 1),
+    [maxFloor]
+  );
+
   // Load karya + max_floor once
   useEffect(() => {
     getKaryaList(id)
@@ -117,7 +130,14 @@ export default function ExhibitionPage() {
     initPlayerName();
   }, []);
 
-  const [mobileMove, setMobileMove] = useState({ w: false, a: false, s: false, d: false });
+  // mobileMove was previously React state, updated on every touchmove event
+  // (60+/sec while dragging). That re-rendered the ENTIRE page tree —
+  // Canvas, floor switcher, map button, modals — at touch-drag frequency,
+  // on the exact device class with the least CPU headroom. lookDelta was
+  // already correctly a ref; mobileMove now follows the same pattern so
+  // dragging the joystick no longer triggers any React re-render at all.
+  // Player reads mobileMoveRef.current directly inside its useFrame loop.
+  const mobileMoveRef = useRef({ w: false, a: false, s: false, d: false });
   const lookDelta = useRef({ x: 0, y: 0 });
 
   /* ====================== */
@@ -168,25 +188,29 @@ export default function ExhibitionPage() {
     return () => window.removeEventListener("keydown", down);
   }, [posterOpen]);
 
-  const openPoster = (src: string, booth: string) => {
+  // Stable identities via useCallback — these get passed down into the R3F
+  // tree (Experience/Booth), so keeping the same function reference across
+  // renders avoids unnecessary re-renders/effect re-runs in children that
+  // depend on them (e.g. Booth's onClick, or any future React.memo).
+  const openPoster = useCallback((src: string, booth: string) => {
     document.exitPointerLock?.();
     setPosterData({ src, booth });
     setPosterOpen(true);
-  };
+  }, []);
 
   // Dipanggil saat klik PanelVideo di booth → langsung buka embed
-  const openTautan = (url: string, _booth: string) => {
+  const openTautan = useCallback((url: string, _booth: string) => {
     document.exitPointerLock?.();
     setEmbedUrl(url);
     setEmbedOpen(true);
-  };
+  }, []);
 
   // Dipanggil dari PosterViewer tombol "Tonton Video"
-  const openEmbedFromPoster = (url: string) => {
+  const openEmbedFromPoster = useCallback((url: string) => {
     setPosterOpen(false);
     setEmbedUrl(url);
     setEmbedOpen(true);
-  };
+  }, []);
 
   const controlsLocked = !posterOpen && !menuOpen && !embedOpen && !mapOpen && introStep === null;
 
@@ -213,7 +237,7 @@ export default function ExhibitionPage() {
                 controlsLocked={controlsLocked}
                 soundOn={soundOn}
                 mobile={isMobile}
-                mobileMove={mobileMove}
+                mobileMove={mobileMoveRef}
                 lookDelta={lookDelta}
                 playerId={playerId}
                 playerName={playerName}
@@ -225,11 +249,11 @@ export default function ExhibitionPage() {
           {!isMobile && controlsLocked && <Crosshair />}
 
           {isMobile && controlsLocked && (
-            <MobileHUD setMobileMove={setMobileMove} lookDelta={lookDelta} />
+            <MobileHUD mobileMoveRef={mobileMoveRef} lookDelta={lookDelta} />
           )}
 
           {/* FLOOR SWITCHER — bottom center */}
-          {controlsLocked && Object.values(maxFloor).some(v => v > 1) && (
+          {controlsLocked && hasMultipleFloors && (
             <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 bg-black/70 backdrop-blur rounded-full px-4 py-2 border border-white/15">
               <button
                 onClick={() => setCurrentFloor(f => Math.max(1, f - 1))}
@@ -240,8 +264,8 @@ export default function ExhibitionPage() {
               </button>
               <span className="text-white text-sm font-bold px-2">Lantai {currentFloor}</span>
               <button
-                onClick={() => setCurrentFloor(f => Math.min(Math.max(...Object.values(maxFloor)), f + 1))}
-                disabled={currentFloor >= Math.max(...Object.values(maxFloor), 1)}
+                onClick={() => setCurrentFloor(f => Math.min(globalMaxFloor, f + 1))}
+                disabled={currentFloor >= globalMaxFloor}
                 className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center disabled:opacity-30 text-white text-sm"
               >
                 ▲
@@ -462,9 +486,18 @@ function toEmbedUrl(url: string): string {
 
 /* ======================= */
 /* MOBILE HUD              */
+/* mobileMoveRef is a ref now (not state) — updating it on every          */
+/* touchmove no longer triggers a re-render of the parent page.           */
+/* Player reads mobileMoveRef.current directly in its useFrame loop.      */
 /* ======================= */
 
-function MobileHUD({ setMobileMove, lookDelta }: any) {
+function MobileHUD({
+  mobileMoveRef,
+  lookDelta,
+}: {
+  mobileMoveRef: React.MutableRefObject<{ w: boolean; a: boolean; s: boolean; d: boolean }>;
+  lookDelta: React.MutableRefObject<{ x: number; y: number }>;
+}) {
   const moveBase = useRef<any>(null);
   const moveStick = useRef<any>(null);
   const lookBase = useRef<any>(null);
@@ -481,7 +514,7 @@ function MobileHUD({ setMobileMove, lookDelta }: any) {
     const dx = clamp(x, -35, 35);
     const dy = clamp(y, -35, 35);
     moveStick.current.style.transform = `translate(${dx}px,${dy}px)`;
-    setMobileMove({ w: dy < -10, s: dy > 10, a: dx < -10, d: dx > 10 });
+    mobileMoveRef.current = { w: dy < -10, s: dy > 10, a: dx < -10, d: dx > 10 };
   };
 
   const updateLook = (touch: Touch) => {
@@ -496,7 +529,15 @@ function MobileHUD({ setMobileMove, lookDelta }: any) {
 
   const moveStart = (e: any) => { moveTouchId.current = e.changedTouches[0].identifier; updateMove(e.changedTouches[0]); };
   const moveMove = (e: any) => { for (const t of e.touches) if (t.identifier === moveTouchId.current) updateMove(t); };
-  const moveEnd = (e: any) => { for (const t of e.changedTouches) if (t.identifier === moveTouchId.current) { moveTouchId.current = null; moveStick.current.style.transform = "translate(0px,0px)"; setMobileMove({ w: false, a: false, s: false, d: false }); } };
+  const moveEnd = (e: any) => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === moveTouchId.current) {
+        moveTouchId.current = null;
+        moveStick.current.style.transform = "translate(0px,0px)";
+        mobileMoveRef.current = { w: false, a: false, s: false, d: false };
+      }
+    }
+  };
 
   const lookStart = (e: any) => { lookTouchId.current = e.changedTouches[0].identifier; updateLook(e.changedTouches[0]); };
   const lookMove = (e: any) => { for (const t of e.touches) if (t.identifier === lookTouchId.current) updateLook(t); };
@@ -540,15 +581,25 @@ function KaryaMapPanel({
 }) {
   const [activeZone, setActiveZone] = useState(ZONES[0]);
 
-  const globalMax = Math.max(...Object.values(maxFloor), 1);
+  const globalMax = useMemo(
+    () => Math.max(...Object.values(maxFloor), 1),
+    [maxFloor]
+  );
 
-  const karyaInView = karyaList
-    .filter((k) => (k.kelas ?? "") === activeZone)
-    .sort((a, b) => a.id_karya - b.id_karya)
-    .slice((currentFloor - 1) * 6, currentFloor * 6);
+  const karyaInView = useMemo(
+    () =>
+      karyaList
+        .filter((k) => (k.kelas ?? "") === activeZone)
+        .sort((a, b) => a.id_karya - b.id_karya)
+        .slice((currentFloor - 1) * 6, currentFloor * 6),
+    [karyaList, activeZone, currentFloor]
+  );
 
   // Fill empty slots to always show 6
-  const slots = Array.from({ length: 6 }, (_, i) => karyaInView[i] ?? null);
+  const slots = useMemo(
+    () => Array.from({ length: 6 }, (_, i) => karyaInView[i] ?? null),
+    [karyaInView]
+  );
 
   return (
     <div className="fixed inset-0 z-[99998] bg-black/90 flex flex-col">
@@ -603,6 +654,7 @@ function KaryaMapPanel({
                       src={karya.poster}
                       alt={karya.judul}
                       fill
+                      sizes="(max-width: 640px) 50vw, 33vw"
                       className="object-cover"
                     />
                   ) : (
@@ -692,12 +744,18 @@ function PosterViewer({
   /* ====================== */
 
   useEffect(() => {
+    let cancelled = false;
+
     const load = async () => {
       try {
         const res = await getKaryaDetail(id);
+        const norm = (s: any) => String(s ?? "").trim().toLowerCase();
+        const boothNorm = norm(booth);
+
         const karya = res.find((k: any) =>
-          k.booth_name === booth || k.judul === booth ||
-          String(k.id_stan).toLowerCase() === booth.toLowerCase()
+          norm(k.booth_name) === boothNorm ||
+          norm(k.judul) === boothNorm ||
+          norm(k.id_stan) === boothNorm
         );
 
         if (!karya) throw new Error("Karya tidak ditemukan");
@@ -709,6 +767,8 @@ function PosterViewer({
         const totalSuka = sukaData.total_suka ?? karya.total_suka ?? 0;
 
         const komentar = await getKomentar(karya.id_karya);
+
+        if (cancelled) return;
 
         setInfo({
           id_karya: karya.id_karya,
@@ -722,6 +782,7 @@ function PosterViewer({
           komentar,
         });
       } catch {
+        if (cancelled) return;
         setInfo({
           id_karya: null,
           judul: "Data Tidak Ditemukan",
@@ -737,6 +798,10 @@ function PosterViewer({
     };
 
     load();
+
+    // Prevents a stale response from a previous booth overwriting state
+    // if the user opens posters quickly in succession.
+    return () => { cancelled = true; };
   }, [id, booth]);
 
   /* ====================== */
@@ -793,7 +858,6 @@ function PosterViewer({
         setInfo((prev) => ({ ...prev, komentar: [...prev.komentar, { nama, isi }] }));
         setNewComment("");
       }
-      // ← HAPUS semua kode res.json() / res.status / res.ok di bawah ini
     } catch {
       setCommentError("Gagal mengirim komentar. Coba lagi.");
     } finally {

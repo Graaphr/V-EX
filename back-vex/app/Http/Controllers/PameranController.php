@@ -14,7 +14,9 @@ class PameranController extends Controller
     // =============================
     public function index()
     {
-        $pameran = Pameran::with('prodi')->get();
+        $pameran = Pameran::with('prodi')
+            ->withCount(['karya', 'suka'])
+            ->get();
 
         $transformed = $pameran->map(fn($item) => [
             'id' => $item->id_pameran,
@@ -24,8 +26,8 @@ class PameranController extends Controller
             'kode_prodi' => $item->kategori,
             'date' => $item->tanggal_mulai,
             'bannerImage' => "http://localhost:8000/storage/{$item->banner}",
-            'likes' => 0,
-            'karya' => 0,
+            'likes' => $item->suka_count,
+            'karya' => $item->karya_count,
             'description' => [
                 [
                     'title' => 'Deskripsi',
@@ -33,8 +35,8 @@ class PameranController extends Controller
                 ],
             ],
             'stats' => [
-                'likes' => 0,
-                'karya' => 0,
+                'likes' => $item->suka_count,
+                'karya' => $item->karya_count,
                 'prepareStartDate' => $item->tanggal_mulai_persiapan,
                 'prepareEndDate' => $item->tanggal_akhir_persiapan,
                 'startDate' => $item->tanggal_mulai,
@@ -62,7 +64,9 @@ class PameranController extends Controller
     // =============================
     public function show($id)
     {
-        $pameran = Pameran::with(['model3d', 'prodi'])->find($id);
+        $pameran = Pameran::with(['model3d', 'prodi'])
+            ->withCount(['karya', 'suka'])
+            ->find($id);
 
         if (!$pameran) {
             return response()->json(['status' => 'error', 'message' => 'Pameran tidak ditemukan'], 404);
@@ -76,8 +80,8 @@ class PameranController extends Controller
             'category' => $pameran->prodi?->nama_prodi ?? $pameran->kategori,
             'date' => $pameran->tanggal_mulai,
             'bannerImage' => "http://localhost:8000/storage/{$pameran->banner}",
-            'likes' => 0,
-            'karya' => 0,
+            'likes' => $pameran->suka_count,
+            'karya' => $pameran->karya_count,
             'description' => [
                 [
                     'title' => 'Deskripsi',
@@ -85,8 +89,8 @@ class PameranController extends Controller
                 ],
             ],
             'stats' => [
-                'likes' => 0,
-                'karya' => 0,
+                'likes' => $pameran->suka_count,
+                'karya' => $pameran->karya_count,
                 'kapasitas' => $pameran->kapasitas,
                 'prepareStartDate' => $pameran->tanggal_mulai_persiapan,
                 'prepareEndDate' => $pameran->tanggal_akhir_persiapan,

@@ -30,9 +30,49 @@ type Props = {
   controlsLocked: boolean;
   soundOn: boolean;
   currentFloor: number;
-  mobileMove?: { w: boolean; a: boolean; s: boolean; d: boolean };
+  mobileMove?: React.MutableRefObject<{ w: boolean; a: boolean; s: boolean; d: boolean }>;
   lookDelta?: React.MutableRefObject<{ x: number; y: number }>;
 };
+
+/* ===================== */
+/* SHARED TEXTURE CACHE  */
+/* Avoids re-downloading/re-decoding the same texture URL    */
+/* across booths, panels, and floor switches.                */
+/* ===================== */
+
+const textureCache = new Map<string, THREE.Texture>();
+
+function loadCachedTexture(
+  loader: THREE.TextureLoader,
+  path: string,
+  onLoad: (tex: THREE.Texture) => void,
+  flipY = false
+) {
+  const cached = textureCache.get(path);
+  if (cached) {
+    onLoad(cached);
+    return;
+  }
+  loader.load(
+    path,
+    (tex) => {
+      tex.flipY = flipY;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      textureCache.set(path, tex);
+      onLoad(tex);
+    },
+    undefined,
+    () => {}
+  );
+}
+
+function disposeMaterial(obj: any) {
+  const mat = obj.material as THREE.MeshBasicMaterial | undefined;
+  if (!mat) return;
+  // Note: we intentionally do NOT dispose mat.map here, since textures are
+  // shared via textureCache and may still be referenced by other meshes.
+  mat.dispose?.();
+}
 
 /* ===================== */
 /* WRAPPER — fetch dulu  */
@@ -49,7 +89,7 @@ export default function Experience(props: Props) {
       .catch((err) => console.error("Failed to load hall model", err));
 
     getKaryaList(props.exhibitionId)
-      .then(setKaryaList)
+      .then(({ karya }) => setKaryaList(karya))  // ← ambil .karya saja
       .catch((err) => console.error("Failed to load karya list", err));
 
     getPameranFolder(props.exhibitionId)
@@ -155,30 +195,49 @@ function ExperienceInner({
   /* ===================== */
 
   useEffect(() => {
+    let cancelled = false;
+
     const load = async () => {
       try {
         const res = await fetch("/api/player");
-        const data = await res.json();
+        const data: RemotePlayer[] = await res.json();
+        if (cancelled) return;
+
         const now = Date.now();
-        const filtered = data.filter((p: any) => p.id !== playerId && now - p.updatedAt < 999999);
-        setRemotePlayers((prev) => JSON.stringify(prev) === JSON.stringify(filtered) ? prev : filtered);
+        const filtered = data.filter((p) => p.id !== playerId && now - p.updatedAt < 999999);
+
+        setRemotePlayers((prev) => {
+          if (prev.length !== filtered.length) return filtered;
+          for (let i = 0; i < filtered.length; i++) {
+            const a = prev[i];
+            const b = filtered[i];
+            if (
+              !a ||
+              a.id !== b.id ||
+              a.x !== b.x ||
+              a.y !== b.y ||
+              a.z !== b.z ||
+              a.rotation !== b.rotation
+            ) {
+              return filtered;
+            }
+          }
+          return prev;
+        });
       } catch { }
     };
+
     load();
     const iv = setInterval(load, 200);
-    return () => clearInterval(iv);
+    return () => { cancelled = true; clearInterval(iv); };
   }, [playerId]);
 
   /* ===================== */
   /* TEXTURE HELPER        */
   /* ===================== */
 
-  const loadTextureSafe = useCallback((path: string, onLoad: (tex: THREE.Texture) => void) => {
-    loader.current.load(path, (tex) => {
-      tex.flipY = false;
-      tex.colorSpace = THREE.SRGBColorSpace;
-      onLoad(tex);
-    }, undefined, () => { });
+  const loadTextureSafe = useCallback((path: string, onLoad: (tex: THREE.Texture) => void, flipY = false) => {
+    loadCachedTexture(loader.current, path, onLoad, flipY);
   }, []);
 
   /* ===================== */
@@ -192,11 +251,13 @@ function ExperienceInner({
       if (name.startsWith("paneldisplay")) {
         const num = parseInt(name.replace("paneldisplay", "")[1]);
         if (!isNaN(num)) loadTextureSafe(`/prodi/${folder}/${num}.png`, (tex) => {
+          disposeMaterial(obj);
           obj.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
         });
       }
       if (name === "panel") {
         loadTextureSafe(`/prodi/${folder}/${folder}.png`, (tex) => {
+          disposeMaterial(obj);
           obj.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
         });
       }
@@ -215,6 +276,7 @@ function ExperienceInner({
 
         if (karya?.poster) {
           loadTextureSafe(karya.poster, (tex) => {
+            disposeMaterial(obj);
             obj.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
           }, true);
         }
@@ -275,6 +337,16 @@ function ExperienceInner({
     }).filter(({ karya }) => karya && karya.model_path);
   }, [boothPoints, karyaList, currentFloor]);
 
+  // Preload booth GLTF models as soon as we know which ones are needed,
+  // so switching floors doesn't stall on model parsing.
+  useEffect(() => {
+    visibleBooths.forEach(({ karya }) => {
+      if (karya?.model_path) {
+        useGLTF.preload(karya.model_path);
+      }
+    });
+  }, [visibleBooths]);
+
   return (
     <>
       <ambientLight intensity={2.2} />
@@ -283,7 +355,7 @@ function ExperienceInner({
 
       <primitive object={scene} />
 
-      {visibleBooths.map(({ item, karya }, i) => (
+      {visibleBooths.map(({ item, karya }) => (
         <Booth
           key={`${item.name}-${currentFloor}`}
           boothName={karya.booth_name}
