@@ -43,6 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(userData);
 
       Cookies.set('role', userData.role);
+      
     } catch (error: any) {
       console.error('Fetch user gagal:', error);
 

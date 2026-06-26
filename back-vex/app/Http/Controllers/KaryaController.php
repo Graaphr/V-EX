@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Karya;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Models\ModelPameran; // ← tambah ini di bagian atas use
+use App\Models\Stan;         // ← pastikan ini juga ada
+use Illuminate\Support\Facades\DB; // ← pastikan ini juga ada
 
 class KaryaController extends Controller
 {
@@ -46,86 +49,79 @@ class KaryaController extends Controller
         ]);
     }
 
-
-     public function indexAdmin()
+    // =============================
+    // AMBIL MODEL STAN (jenis = 'stan')
+    // =============================
+    public function getModelStan()
     {
-
-        $karya = Karya::with(['stan', 'pameran'])
-            ->get()
-            ->map(fn($item) => [
-                'id' => $item->id_karya,
-                'title' => $item->judul,
-                'category' => $item->pameran?->kategori ?? '',
-                'image' => $item->gambar_poster
-                    ? asset("http://localhost:8000/storage/{$item->gambar_poster}")
-                    : '',
-                'thumbnail' => $item->gambar_sampul
-                    ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
-                    : '',
-                'link' => $item->tautan,
-                'description' => $item->deskripsi,
-                'booth' => $item->id_stan ? (string) $item->id_stan : '',
-                'pameranId' => $item->id_pameran,
-                'pameranTitle' => $item->pameran?->judul ?? '',
-                'year' => $item->pameran?->tanggal_mulai
-                    ? date('Y', strtotime($item->pameran->tanggal_mulai))
-                    : '',
-                'semester' => '',
-                'isTerbaik' => $item->is_terbaik,   // expose ke frontend
-            ]);
+        $models = ModelPameran::where('jenis', 'stan')->get(['id_model', 'nama_model', '3d_model']);
 
         return response()->json([
             'status' => 'success',
-            'karya' => $karya,
+            'data' => $models,
         ]);
     }
 
     // =============================
-    // TAMBAH KARYA
+// TAMBAH KARYA (store yang dibenahi)
+// =============================
+public function store(Request $request)
+{
+    $user = $request->user();
+
+    $request->validate([
+        'id_pameran'    => 'required|exists:pameran,id_pameran',
+        'id_model'      => 'required|exists:model,id_model',   // ← ganti dari id_stan
+        'judul'         => 'required|string|max:255',
+        'deskripsi'     => 'required|string',
+        'tautan'        => 'required|url',
+        'gambar_poster' => 'required|image|mimes:png,jpg,jpeg|max:5000',
+        'gambar_sampul' => 'required|image|mimes:png,jpg,jpeg|max:5000',
+    ]);
+
+    $idPameran = $request->id_pameran;
+
     // =============================
-    public function store(Request $request)
-    {
-        $user = $request->user();
+    // CEK APAKAH USER SUDAH PUNYA KARYA
+    // DI PAMERAN INI
+    // =============================
+    $existingKarya = Karya::where('id_pengguna', $user->id)
+        ->where('id_pameran', $idPameran)
+        ->first();
 
-        $request->validate([
-            'id_pameran' => 'required|exists:pameran,id_pameran',
-            'id_stan' => 'required|exists:stan,id_stan',
-            'judul' => 'required|string|max:255',
-            'deskripsi' => 'required|string',
-            'tautan' => 'required|url',
-            'gambar_poster' => 'required|image|mimes:png,jpg,jpeg|max:5000',
-            'gambar_sampul' => 'required|image|mimes:png,jpg,jpeg|max:5000',
-        ]);
+    if ($existingKarya) {
+        return response()->json([
+            'status'   => 'error',
+            'message'  => 'Anda sudah mengunggah karya pada pameran ini.',
+            'karya_id' => $existingKarya->id_karya,
+        ], 409);
+    }
 
-        $idPameran = $request->id_pameran;
-
-        // =============================
-        // CEK APAKAH USER SUDAH PUNYA KARYA
-        // DI PAMERAN INI
-        // =============================
-        $existingKarya = Karya::where('id_pengguna', $user->id)
-            ->where('id_pameran', $idPameran)
-            ->first();
-
-        if ($existingKarya) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Anda sudah mengunggah karya pada pameran ini.',
-                'karya_id' => $existingKarya->id_karya,
-            ], 409);
-        }
-
-        $karya = Karya::create([
-            'id_pengguna' => $user->id,
-            'id_pameran' => $idPameran,
-            'id_stan' => $request->id_stan,
-            'judul' => $request->judul,
-            'deskripsi' => $request->deskripsi,
-            'tautan' => $request->tautan,
-            'gambar_poster' => '/',
-            'gambar_sampul' => '/',
-            'lantai' => 1,
-        ]);
+    // =============================
+    // BUAT ENTRY STAN BARU
+    // (model_stan diisi dari id_model yang dipilih user)
+    // =============================
+    $karya = null;
+        DB::transaction(function () use ($request, $user, $idPameran, &$karya) {
+            $stan = Stan::create([
+                'id_pameran' => $idPameran,
+                'model_stan' => $request->id_model,
+            ]);
+    // =============================
+    // BARU BUAT KARYA DENGAN id_stan HASIL INSERT
+    // =============================
+            $karya = Karya::create([
+                'id_pengguna'   => $user->id,
+                'id_pameran'    => $idPameran,
+                'id_stan'       => $stan->id_stan,
+                'judul'         => $request->judul,
+                'deskripsi'     => $request->deskripsi,
+                'tautan'        => $request->tautan,
+                'gambar_poster' => '/',
+                'gambar_sampul' => '/',
+                'lantai'        => 1,
+            ]);
+        });
 
         // =============================
         // BUAT FOLDER

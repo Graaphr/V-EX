@@ -8,7 +8,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Booth from "./booth";
 import Player from "./player";
 
-import url from "@/lib/axios";
+import { getHallModel, getKaryaList, getPameranFolder, getGameAssets } from "@/components/play/apiPlay";
 
 type RemotePlayer = {
   id: string;
@@ -44,20 +44,17 @@ export default function Experience(props: Props) {
   const [folder, setFolder] = useState<string | null>(null); // ← null dulu
 
   useEffect(() => {
-    url.get(`/api/experience/3d-models/${props.exhibitionId}`)
-      .then((res) => setHallModel(res.data.model_hall))
+    getHallModel(props.exhibitionId)
+      .then(setHallModel)
       .catch((err) => console.error("Failed to load hall model", err));
 
-    url.get(`/api/experience/karya/pameran/${props.exhibitionId}`)
-      .then((res) => setKaryaList(res.data.karya ?? res.data))
+    getKaryaList(props.exhibitionId)
+      .then(setKaryaList)
       .catch((err) => console.error("Failed to load karya list", err));
 
-    url.get(`/api/pameran/${props.exhibitionId}`)
-      .then((res) => {
-        const kategori = res.data.pameran?.kode_prodi ?? "default"; // ← kode_prodi bukan kategori
-        setFolder(kategori.toLowerCase().replaceAll(" ", "-"));
-      })
-      .catch(() => setFolder("default")); // fallback kalau gagal
+    getPameranFolder(props.exhibitionId)
+      .then(setFolder)
+      .catch(() => setFolder("default"));
   }, [props.exhibitionId]);
 
   // ← tunggu keduanya sebelum render
@@ -111,8 +108,8 @@ function ExperienceInner({
   /* ===================== */
 
   useEffect(() => {
-    url.get("/api/experience/game-assets")
-      .then(({ data }) => setAudioUrls({ bgm: data.bgm, footstep: data.footstep, jump: data.jump }))
+    getGameAssets()
+      .then((data) => setAudioUrls({ bgm: data.bgm, footstep: data.footstep, jump: data.jump }))
       .catch(() => { });
   }, []);
 
