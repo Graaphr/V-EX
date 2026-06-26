@@ -105,7 +105,7 @@ class ChangeEmailController extends Controller
         if (!$cacheData) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'OTP sudah kadaluarsa atau tidak ditemukan'
+                'message' => 'OTP tidak ditemukan'
             ], 400);
         }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { gantiPassword } from './apiGantiPassword';
+import { GantiPassword } from './apiGantiPassword';
 import { useRouter } from 'next/navigation';
 import { PasswordField } from '@/components/shared/ui/InputFields';
 
@@ -92,7 +92,7 @@ export default function GantiPasswordPage() {
 
     try {
       setIsLoading(true);
-      const res = await gantiPassword({
+      const res = await GantiPassword({
         old_password: oldPassword,
         new_password: newPassword,
         new_password_confirmation: newPasswordConfirmation,

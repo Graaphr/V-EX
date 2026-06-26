@@ -131,7 +131,7 @@ export default function AddKaryaPage() {
     try {
       const formData = new FormData();
       formData.append('id_pameran', String(form.pameranId));
-      formData.append('id_stan', form.booth ?? '');
+      formData.append('id_model', form.booth ?? '');
       formData.append('judul', form.title.trim());
       formData.append('deskripsi', form.description?.trim() ?? '');
       formData.append('tautan', normalizeUrl(form.link ?? ''));
@@ -222,7 +222,7 @@ export default function AddKaryaPage() {
 
           <div>
             <DetailPreview
-              booth={form.booth}
+              booth={form.booth ?? ''}
               pameranId={form.pameranId}
               onChange={(value) => handleChange('booth', value)}
               error={errors.booth}
