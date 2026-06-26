@@ -7,7 +7,7 @@ interface GantiPasswordPayload {
 }
 
 // Ganti Password
-export async function gantiPassword(payload: GantiPasswordPayload) {
+export async function GantiPassword(payload: GantiPasswordPayload) {
   const res = await url.post('/api/change-password', payload);
   return res.data;
 }

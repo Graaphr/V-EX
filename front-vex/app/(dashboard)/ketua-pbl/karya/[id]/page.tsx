@@ -8,7 +8,7 @@ import EditKarya from '@/components/karya/EditKarya';
 import AddKarya from '@/components/karya/AddKarya';
 import NavKetuaPBL from '@/components/shared/ui/NavKetuaPBL';
 
-export default function DetailKarya() {
+export default function DetailKaryaPage() {
   const { id } = useParams();
 
   const [isFormOpen, setIsFormOpen] = useState(false);

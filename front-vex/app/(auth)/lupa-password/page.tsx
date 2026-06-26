@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button, ButtonPutih } from '@/components/shared/ui/Button';
 import { InputField } from '@/components/shared/ui/InputFields';
-import { forgotPassword, resendEmail } from './apiLupaPassword';
+import { ForgotPassword, ResendEmail } from './apiLupaPassword';
 
 export default function LupaPasswordPage() {
   const [emailSent, setEmailSent] = useState(false);
@@ -34,7 +34,7 @@ export default function LupaPasswordPage() {
 
     try {
       setIsLoading(true);
-      const res = await forgotPassword({ email });
+      const res = await ForgotPassword({ email });
       setSuccess(res.message || 'Email berhasil dikirim');
       localStorage.setItem('reset_email', email);
       setEmailSent(true);
@@ -52,7 +52,7 @@ export default function LupaPasswordPage() {
 
     try {
       setIsLoading(true);
-      const res = await resendEmail({ email });
+      const res = await ResendEmail({ email });
       setSuccess(res.message || 'Email berhasil dikirim ulang');
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Gagal mengirim email');

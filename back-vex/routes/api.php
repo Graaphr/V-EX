@@ -78,8 +78,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/pameran/{id}/update', [PameranController::class, 'update']);
 
         // Manajemen Karya (Admin)
-        Route::get('/karya', [KaryaController::class, 'index']);
+        Route::get('/karya', [KaryaController::class, 'indexAdmin']);
         Route::delete('/karya/{id}', [KaryaController::class, 'destroy']);
+    
     });
 
     // =============================
