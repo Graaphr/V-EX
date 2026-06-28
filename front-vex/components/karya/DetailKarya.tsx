@@ -117,14 +117,38 @@ export default function DetailKarya({ id }: Props) {
 
     const load = async () => {
       try {
-        // Pilih endpoint sesuai role
         const res = isKps
           ? await GetKaryaKps()
           : isAdmin
             ? await GetKaryaAdmin()
             : await GetKarya();
 
-        const list: KaryaItem[] = res.karya ?? [];
+        const raw = res.karya ?? [];
+
+        // Mapper khusus KPS (field backend berbeda)
+        const list: KaryaItem[] = isKps
+          ? raw.map((item: any) => ({
+              id: item.id_karya,
+              title: item.judul,
+              description: item.deskripsi,
+              category: item.stan?.pameran?.kategori ?? "",
+              image: item.gambar_poster
+                ? `http://localhost:8000/storage/${item.gambar_poster}`
+                : "",
+              thumbnail: item.gambar_sampul
+                ? `http://localhost:8000/storage/${item.gambar_sampul}`
+                : "",
+              link: item.tautan ?? "",
+              year: item.stan?.pameran?.tanggal_mulai?.slice(0, 4) ?? "",
+              semester: "",
+              booth: String(item.id_stan ?? ""),
+              pameranId: item.id_pameran,
+              pameranTitle:
+                item.stan?.pameran?.judul ?? `Pameran #${item.id_pameran}`,
+              isTerbaik: item.is_terbaik ?? false,
+            }))
+          : raw;
+
         const found = list.find((item) => item.id === id);
 
         if (found) {
@@ -402,22 +426,25 @@ export default function DetailKarya({ id }: Props) {
                 preview={posterPreview}
                 onUpload={(e) => handleImageUpload(e, "poster")}
                 error={errors.poster}
+                readOnly={isReadOnly} 
               />
             </div>
 
             {/* Form — read-only untuk Admin & KPS */}
             <div className={isReadOnly ? "pointer-events-none opacity-75" : ""}>
               <DetailPreview
-                booth={form.booth ?? ''}
+                booth={form.booth ?? ""}
                 pameranId={form.pameranId}
                 onChange={(value) => handleChange("booth", value)}
                 error={errors.booth}
+                readOnly={isReadOnly} 
               />
               <DetailForm
                 form={form}
                 onChange={handleChange}
                 currentPameran={currentPameran}
                 errors={errors}
+                readOnly={isReadOnly} 
               />
             </div>
           </div>
