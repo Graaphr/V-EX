@@ -127,26 +127,35 @@ export default function DetailKarya({ id }: Props) {
 
         // Mapper khusus KPS (field backend berbeda)
         const list: KaryaItem[] = isKps
-          ? raw.map((item: any) => ({
-              id: item.id_karya,
-              title: item.judul,
-              description: item.deskripsi,
-              category: item.stan?.pameran?.kategori ?? "",
-              image: item.gambar_poster
-                ? `http://localhost:8000/storage/${item.gambar_poster}`
-                : "",
-              thumbnail: item.gambar_sampul
-                ? `http://localhost:8000/storage/${item.gambar_sampul}`
-                : "",
-              link: item.tautan ?? "",
-              year: item.stan?.pameran?.tanggal_mulai?.slice(0, 4) ?? "",
-              semester: "",
-              booth: String(item.id_stan ?? ""),
-              pameranId: item.id_pameran,
-              pameranTitle:
-                item.stan?.pameran?.judul ?? `Pameran #${item.id_pameran}`,
-              isTerbaik: item.is_terbaik ?? false,
-            }))
+          ? raw.map((item: any) => {
+              const tanggalMulai = item.stan?.pameran?.tanggal_mulai ?? "";
+              const bulan = tanggalMulai
+                ? new Date(tanggalMulai).getMonth() + 1
+                : 0;
+              const semester =
+                bulan >= 8 || bulan <= 2 ? "Ganjil" : bulan >= 3 ? "Genap" : "";
+
+              return {
+                id: item.id_karya,
+                title: item.judul,
+                description: item.deskripsi,
+                category: item.stan?.pameran?.kategori ?? "",
+                image: item.gambar_poster
+                  ? `http://localhost:8000/storage/${item.gambar_poster}`
+                  : "",
+                thumbnail: item.gambar_sampul
+                  ? `http://localhost:8000/storage/${item.gambar_sampul}`
+                  : "",
+                link: item.tautan ?? "",
+                year: tanggalMulai.slice(0, 4),
+                semester,
+                booth: String(item.id_stan ?? ""),
+                pameranId: item.id_pameran,
+                pameranTitle:
+                  item.stan?.pameran?.judul ?? `Pameran #${item.id_pameran}`,
+                isTerbaik: item.is_terbaik ?? false,
+              };
+            })
           : raw;
 
         const found = list.find((item) => item.id === id);
@@ -338,15 +347,77 @@ export default function DetailKarya({ id }: Props) {
   }
 
   if (!form) {
-    return (
-      <div className="flex min-h-[500px] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-5 border-main-blue border-t-transparent" />
-          <p className="font-poppins text-sm text-gray-500">Loading data...</p>
+  return (
+    <div className="w-full px-4 sm:px-6 lg:px-0 py-6">
+      <div className="max-w-[1200px] mx-auto">
+        {/* Banner skeleton */}
+        <div className="mb-6 h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+          {/* Kolom kiri — Thumbnail + Poster */}
+          <div className="space-y-3">
+            {/* Thumbnail */}
+            <div>
+              <div className="h-6 w-28 rounded bg-gray-200 animate-pulse mt-10 mb-3" />
+              <div className="h-[200px] md:h-[320px] w-full rounded-xl bg-gray-200 animate-pulse" />
+            </div>
+
+            {/* Poster */}
+            <div>
+              <div className="h-6 w-20 rounded bg-gray-200 animate-pulse mt-10 mb-3" />
+              <div className="h-[410px] md:h-[820px] w-full rounded-xl bg-gray-200 animate-pulse" />
+            </div>
+          </div>
+
+          {/* Kolom kanan — Preview + Form */}
+          <div>
+            {/* DetailPreview — judul + gambar stan + select */}
+            <div className="flex flex-col gap-4">
+              <div className="h-7 w-20 rounded bg-gray-200 animate-pulse mt-10 mb-1.5" />
+              <div className="h-[300px] w-full rounded-xl bg-gray-200 animate-pulse" />
+              <div>
+                <div className="h-4 w-24 rounded bg-gray-200 animate-pulse mb-3" />
+                <div className="h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
+              </div>
+            </div>
+
+            {/* DetailForm */}
+            <div className="flex flex-col gap-4 mt-4">
+              {/* Pameran */}
+              <div>
+                <div className="h-4 w-20 rounded bg-gray-200 animate-pulse mb-3" />
+                <div className="h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
+              </div>
+
+              {/* Judul */}
+              <div>
+                <div className="h-4 w-16 rounded bg-gray-200 animate-pulse mb-3" />
+                <div className="h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
+              </div>
+
+              {/* Link YouTube */}
+              <div>
+                <div className="h-4 w-28 rounded bg-gray-200 animate-pulse mb-3" />
+                <div className="h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
+              </div>
+
+              {/* Deskripsi */}
+              <div>
+                <div className="h-4 w-32 rounded bg-gray-200 animate-pulse mb-3" />
+                <div className="h-[420px] w-full rounded-lg bg-gray-200 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action button skeleton */}
+        <div className="flex justify-end gap-3 pt-4">
+          <div className="h-10 w-32 rounded-lg bg-gray-200 animate-pulse" />
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <>
@@ -426,7 +497,7 @@ export default function DetailKarya({ id }: Props) {
                 preview={posterPreview}
                 onUpload={(e) => handleImageUpload(e, "poster")}
                 error={errors.poster}
-                readOnly={isReadOnly} 
+                readOnly={isReadOnly}
               />
             </div>
 
@@ -437,14 +508,14 @@ export default function DetailKarya({ id }: Props) {
                 pameranId={form.pameranId}
                 onChange={(value) => handleChange("booth", value)}
                 error={errors.booth}
-                readOnly={isReadOnly} 
+                readOnly={isReadOnly}
               />
               <DetailForm
                 form={form}
                 onChange={handleChange}
                 currentPameran={currentPameran}
                 errors={errors}
-                readOnly={isReadOnly} 
+                readOnly={isReadOnly}
               />
             </div>
           </div>

@@ -52,26 +52,35 @@ export default function PageKarya({ href }: Props) {
         // ← Tambah mapper ini khusus KPS
         const raw = res.karya ?? [];
         const data: KaryaItem[] = isKps
-          ? raw.map((item: any) => ({
-              id: item.id_karya,
-              title: item.judul,
-              description: item.deskripsi,
-              category: item.stan?.pameran?.kategori ?? "",
-              image: item.gambar_poster
-                ? `http://localhost:8000/storage/${item.gambar_poster}`
-                : "",
-              thumbnail: item.gambar_sampul
-                ? `http://localhost:8000/storage/${item.gambar_sampul}`
-                : "",
-              link: item.tautan ?? "",
-              year: item.stan?.pameran?.tanggal_mulai?.slice(0, 4) ?? "",
-              semester: "",
-              booth: String(item.id_stan ?? ""),
-              pameranId: item.id_pameran,
-              pameranTitle:
-                item.stan?.pameran?.judul ?? `Pameran #${item.id_pameran}`,
-              isTerbaik: item.is_terbaik ?? false,
-            }))
+          ? raw.map((item: any) => {
+              const tanggalMulai = item.stan?.pameran?.tanggal_mulai ?? "";
+              const bulan = tanggalMulai
+                ? new Date(tanggalMulai).getMonth() + 1
+                : 0;
+              const semester =
+                bulan >= 8 || bulan <= 2 ? "Ganjil" : bulan >= 3 ? "Genap" : "";
+
+              return {
+                id: item.id_karya,
+                title: item.judul,
+                description: item.deskripsi,
+                category: item.stan?.pameran?.kategori ?? "",
+                image: item.gambar_poster
+                  ? `http://localhost:8000/storage/${item.gambar_poster}`
+                  : "",
+                thumbnail: item.gambar_sampul
+                  ? `http://localhost:8000/storage/${item.gambar_sampul}`
+                  : "",
+                link: item.tautan ?? "",
+                year: tanggalMulai.slice(0, 4),
+                semester, // ← sekarang terisi "Ganjil" / "Genap"
+                booth: String(item.id_stan ?? ""),
+                pameranId: item.id_pameran,
+                pameranTitle:
+                  item.stan?.pameran?.judul ?? `Pameran #${item.id_pameran}`,
+                isTerbaik: item.is_terbaik ?? false,
+              };
+            })
           : raw;
 
         setKaryaList(data);
@@ -121,11 +130,15 @@ export default function PageKarya({ href }: Props) {
     if (!isKps) return [];
 
     const keyword = search.toLowerCase();
-    const filtered = karyaList.filter(
-      (item) =>
+    const filtered = karyaList.filter((item) => {
+      const matchSearch =
         (item.title ?? "").toLowerCase().includes(keyword) ||
-        (item.pameranTitle ?? "").toLowerCase().includes(keyword),
-    );
+        (item.pameranTitle ?? "").toLowerCase().includes(keyword);
+      const matchTahun = !selectedTahun || item.year === selectedTahun.name;
+      const matchSemester =
+        !selectedSemester || item.semester === selectedSemester.name;
+      return matchSearch && matchTahun && matchSemester;
+    });
 
     const map = new Map<number, { pameran: PameranItem; karya: KaryaItem[] }>();
     filtered.forEach((item) => {
@@ -144,7 +157,7 @@ export default function PageKarya({ href }: Props) {
     });
 
     return Array.from(map.values());
-  }, [isKps, karyaList, pameranList, search]);
+  }, [isKps, karyaList, pameranList, search, selectedTahun, selectedSemester]);
 
   // =============================
   // DATA NON-KPS — group by category
@@ -188,43 +201,43 @@ export default function PageKarya({ href }: Props) {
   // LOADING
   // =============================
   // Jadi ini:
-if (authLoading || loading) {
-  return (
-    <div className="min-h-screen bg-secondary-color font-poppins">
-      {/* HERO SKELETON */}
-      <section className="bg-main-blue rounded-b-[25px] md:rounded-b-[40px] py-6">
-        <div className="autoMid">
-          {/* Filter bar skeleton */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 md:pt-[30px] pb-5">
-            <div className="h-[42px] rounded-xl bg-white/20 animate-pulse flex-1" />
-            <div className="h-[42px] rounded-xl bg-white/20 animate-pulse w-full sm:w-[140px]" />
-            <div className="h-[42px] rounded-xl bg-white/20 animate-pulse w-full sm:w-[140px]" />
-          </div>
-        </div>
-      </section>
-
-      {/* CATEGORY + CARDS SKELETON */}
-      <main className="autoMid py-10 space-y-10">
-        {Array.from({ length: 2 }).map((_, catIdx) => (
-          <div key={catIdx}>
-            {/* Category title skeleton */}
-            <div className="h-[22px] w-[140px] rounded-lg bg-gray-200 animate-pulse mb-4" />
-
-            {/* Cards skeleton — ikuti grid KaryaGrid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-[80px] rounded-xl bg-gray-200 animate-pulse"
-                />
-              ))}
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-secondary-color font-poppins">
+        {/* HERO SKELETON */}
+        <section className="bg-main-blue rounded-b-[25px] md:rounded-b-[40px] py-6">
+          <div className="autoMid">
+            {/* Filter bar skeleton */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4 md:pt-[30px] pb-5">
+              <div className="h-[42px] rounded-xl bg-white/20 animate-pulse flex-1" />
+              <div className="h-[42px] rounded-xl bg-white/20 animate-pulse w-full sm:w-[140px]" />
+              <div className="h-[42px] rounded-xl bg-white/20 animate-pulse w-full sm:w-[140px]" />
             </div>
           </div>
-        ))}
-      </main>
-    </div>
-  );
-}
+        </section>
+
+        {/* CATEGORY + CARDS SKELETON */}
+        <main className="autoMid py-10 space-y-10">
+          {Array.from({ length: 2 }).map((_, catIdx) => (
+            <div key={catIdx}>
+              {/* Category title skeleton */}
+              <div className="h-[22px] w-[140px] rounded-lg bg-gray-200 animate-pulse mb-4" />
+
+              {/* Cards skeleton — ikuti grid KaryaGrid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-[80px] rounded-xl bg-gray-200 animate-pulse"
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </main>
+      </div>
+    );
+  }
 
   // =============================
   // RENDER KPS
@@ -234,23 +247,16 @@ if (authLoading || loading) {
       <div className="min-h-screen bg-secondary-color font-poppins">
         <section className="bg-main-blue rounded-b-[25px] md:rounded-b-[40px] py-6">
           <div className="autoMid">
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pt-4 md:pt-[30px] pb-5">
-              <div>
-                <p className="text-xs font-medium text-blue-200 uppercase tracking-widest mb-1">
-                  Karya Mahasiswa
-                </p>
-                <h1 className="text-xl font-bold text-white">{kpsProdiNama}</h1>
-              </div>
-              <div className="w-full lg:w-[50%]">
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Cari karya atau pameran..."
-                  className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-blue-200 focus:outline-none focus:ring-2 focus:ring-white/30"
-                />
-              </div>
-            </div>
+            <FilterSection
+              search={search}
+              setSearch={setSearch}
+              selectedTahun={selectedTahun}
+              setSelectedTahun={setSelectedTahun}
+              selectedSemester={selectedSemester}
+              setSelectedSemester={setSelectedSemester}
+              hideProdi={true}
+              searchPlaceholder="Cari karya atau pameran..."
+            />
           </div>
         </section>
 
