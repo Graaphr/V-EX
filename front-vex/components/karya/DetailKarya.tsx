@@ -17,6 +17,7 @@ import {
   BatalkanTerbaik,
 } from "@/components/karya/apiKarya";
 import { KaryaItem } from "@/types/karya";
+import { showToast } from "@/components/shared/ui/ToastNotification";
 import { useAuth } from "@/context/AuthContext";
 
 // =============================
@@ -230,6 +231,7 @@ export default function DetailKarya({ id }: Props) {
     const validationErrors = validate(form, thumbnailFile, posterFile, true);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      showToast("Lengkapi semua data terlebih dahulu.", "warning");
       return;
     }
 
@@ -250,6 +252,7 @@ export default function DetailKarya({ id }: Props) {
         throw new Error(result.message || "Gagal memperbarui karya");
       }
 
+      showToast("Karya berhasil diperbarui!", "success");
       router.push("/ketua-pbl/karya");
     } catch (err: any) {
       if (err.response?.status === 422) {
@@ -270,8 +273,13 @@ export default function DetailKarya({ id }: Props) {
         if (laravelErrors.gambar_poster)
           mapped.poster = laravelErrors.gambar_poster[0];
         setErrors(mapped);
+        showToast("Periksa kembali data yang diisi.", "warning");
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        console.error("Gagal menyimpan karya:", err);
+        showToast(
+          err.response?.data?.message || "Gagal terhubung ke server.",
+          "error",
+        );
       }
     } finally {
       setIsLoading(false);
@@ -287,8 +295,10 @@ export default function DetailKarya({ id }: Props) {
       if (result.status !== "success") {
         throw new Error(result.message || "Gagal menghapus karya");
       }
+      showToast("Karya berhasil dihapus.", "success");
       router.push("/admin/karya");
     } catch (err) {
+      showToast("Gagal menghapus karya.", "error");
       console.error("Gagal menghapus karya:", err);
     } finally {
       setIsDeleting(false);
@@ -305,9 +315,10 @@ export default function DetailKarya({ id }: Props) {
       if (result.status !== "success") {
         throw new Error(result.message || "Gagal memilih karya terbaik");
       }
-      // Update state lokal agar tombol langsung berubah tanpa reload
       setForm((prev) => (prev ? { ...prev, isTerbaik: true } : prev));
+      showToast("Karya berhasil dipilih sebagai terbaik!", "success");
     } catch (err) {
+      showToast("Gagal memilih karya terbaik.", "error");
       console.error("Gagal memilih terbaik:", err);
     } finally {
       setIsLoading(false);
@@ -324,7 +335,9 @@ export default function DetailKarya({ id }: Props) {
         throw new Error(result.message || "Gagal membatalkan karya terbaik");
       }
       setForm((prev) => (prev ? { ...prev, isTerbaik: false } : prev));
+      showToast("Predikat terbaik berhasil dibatalkan.", "info");
     } catch (err) {
+      showToast("Gagal membatalkan predikat terbaik.", "error");
       console.error("Gagal membatalkan terbaik:", err);
     } finally {
       setIsLoading(false);
@@ -347,77 +360,77 @@ export default function DetailKarya({ id }: Props) {
   }
 
   if (!form) {
-  return (
-    <div className="w-full px-4 sm:px-6 lg:px-0 py-6">
-      <div className="max-w-[1200px] mx-auto">
-        {/* Banner skeleton */}
-        <div className="mb-6 h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
+    return (
+      <div className="w-full px-4 sm:px-6 lg:px-0 py-6">
+        <div className="max-w-[1200px] mx-auto">
+          {/* Banner skeleton */}
+          <div className="mb-6 h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-          {/* Kolom kiri — Thumbnail + Poster */}
-          <div className="space-y-3">
-            {/* Thumbnail */}
-            <div>
-              <div className="h-6 w-28 rounded bg-gray-200 animate-pulse mt-10 mb-3" />
-              <div className="h-[200px] md:h-[320px] w-full rounded-xl bg-gray-200 animate-pulse" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+            {/* Kolom kiri — Thumbnail + Poster */}
+            <div className="space-y-3">
+              {/* Thumbnail */}
+              <div>
+                <div className="h-6 w-28 rounded bg-gray-200 animate-pulse mt-10 mb-3" />
+                <div className="h-[200px] md:h-[320px] w-full rounded-xl bg-gray-200 animate-pulse" />
+              </div>
+
+              {/* Poster */}
+              <div>
+                <div className="h-6 w-20 rounded bg-gray-200 animate-pulse mt-10 mb-3" />
+                <div className="h-[410px] md:h-[820px] w-full rounded-xl bg-gray-200 animate-pulse" />
+              </div>
             </div>
 
-            {/* Poster */}
+            {/* Kolom kanan — Preview + Form */}
             <div>
-              <div className="h-6 w-20 rounded bg-gray-200 animate-pulse mt-10 mb-3" />
-              <div className="h-[410px] md:h-[820px] w-full rounded-xl bg-gray-200 animate-pulse" />
+              {/* DetailPreview — judul + gambar stan + select */}
+              <div className="flex flex-col gap-4">
+                <div className="h-7 w-20 rounded bg-gray-200 animate-pulse mt-10 mb-1.5" />
+                <div className="h-[300px] w-full rounded-xl bg-gray-200 animate-pulse" />
+                <div>
+                  <div className="h-4 w-24 rounded bg-gray-200 animate-pulse mb-3" />
+                  <div className="h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
+                </div>
+              </div>
+
+              {/* DetailForm */}
+              <div className="flex flex-col gap-4 mt-4">
+                {/* Pameran */}
+                <div>
+                  <div className="h-4 w-20 rounded bg-gray-200 animate-pulse mb-3" />
+                  <div className="h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
+                </div>
+
+                {/* Judul */}
+                <div>
+                  <div className="h-4 w-16 rounded bg-gray-200 animate-pulse mb-3" />
+                  <div className="h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
+                </div>
+
+                {/* Link YouTube */}
+                <div>
+                  <div className="h-4 w-28 rounded bg-gray-200 animate-pulse mb-3" />
+                  <div className="h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
+                </div>
+
+                {/* Deskripsi */}
+                <div>
+                  <div className="h-4 w-32 rounded bg-gray-200 animate-pulse mb-3" />
+                  <div className="h-[420px] w-full rounded-lg bg-gray-200 animate-pulse" />
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Kolom kanan — Preview + Form */}
-          <div>
-            {/* DetailPreview — judul + gambar stan + select */}
-            <div className="flex flex-col gap-4">
-              <div className="h-7 w-20 rounded bg-gray-200 animate-pulse mt-10 mb-1.5" />
-              <div className="h-[300px] w-full rounded-xl bg-gray-200 animate-pulse" />
-              <div>
-                <div className="h-4 w-24 rounded bg-gray-200 animate-pulse mb-3" />
-                <div className="h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
-              </div>
-            </div>
-
-            {/* DetailForm */}
-            <div className="flex flex-col gap-4 mt-4">
-              {/* Pameran */}
-              <div>
-                <div className="h-4 w-20 rounded bg-gray-200 animate-pulse mb-3" />
-                <div className="h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
-              </div>
-
-              {/* Judul */}
-              <div>
-                <div className="h-4 w-16 rounded bg-gray-200 animate-pulse mb-3" />
-                <div className="h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
-              </div>
-
-              {/* Link YouTube */}
-              <div>
-                <div className="h-4 w-28 rounded bg-gray-200 animate-pulse mb-3" />
-                <div className="h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
-              </div>
-
-              {/* Deskripsi */}
-              <div>
-                <div className="h-4 w-32 rounded bg-gray-200 animate-pulse mb-3" />
-                <div className="h-[420px] w-full rounded-lg bg-gray-200 animate-pulse" />
-              </div>
-            </div>
+          {/* Action button skeleton */}
+          <div className="flex justify-end gap-3 pt-4">
+            <div className="h-10 w-32 rounded-lg bg-gray-200 animate-pulse" />
           </div>
-        </div>
-
-        {/* Action button skeleton */}
-        <div className="flex justify-end gap-3 pt-4">
-          <div className="h-10 w-32 rounded-lg bg-gray-200 animate-pulse" />
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   return (
     <>
