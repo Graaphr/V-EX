@@ -80,7 +80,7 @@ export default function Navbar({ menuItems }: NavbarProps) {
     isLogin ? (
       <button
         onClick={() => setOpenProfile(true)}
-        className="w-10 h-10 flex items-center justify-center rounded-full bg-main-blue text-white hover:scale-110 transition-all duration-300 shadow-md"
+        className="w-10 cursor-pointer h-10 flex items-center justify-center rounded-full bg-main-blue text-white hover:scale-110 transition-all duration-300 shadow-md"
       >
         <FaUser size={24} className="rounded-full" />
       </button>

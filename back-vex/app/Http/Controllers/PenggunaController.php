@@ -243,7 +243,7 @@ class PenggunaController extends Controller
     // ==========
     public function login(Request $request)
     {
-        try {
+        // try {
             $request->validate([
                 'email' => 'required|email',
                 'password' => 'required',
@@ -310,12 +310,12 @@ class PenggunaController extends Controller
                 ],
             ]);
             
-        } catch (\Throwable $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Terjadi kesalahan pada server.',
-            ], 500);
-        }
+        // } catch (\Throwable $e) {
+        //     return response()->json([
+        //         'status' => 'error',
+        //         'message' => 'Terjadi kesalahan pada server.',
+        //     ], 500);
+        // }
     }
 
     // ===========

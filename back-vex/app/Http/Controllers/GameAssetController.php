@@ -34,7 +34,7 @@ class GameAssetController extends Controller
 
         return response()->file($path, [
             'Content-Type' => 'model/gltf-binary',
-            'Access-Control-Allow-Origin' => 'http://localhost:3000',
+            'Access-Control-Allow-Origin' => 'http://72.61.210.158:3001',
             'Cache-Control' => 'public, max-age=86400',
         ]);
     }
@@ -59,7 +59,7 @@ class GameAssetController extends Controller
 
         return response()->file($path, [
             'Content-Type' => 'model/gltf-binary',
-            'Access-Control-Allow-Origin' => 'http://localhost:3000',
+            'Access-Control-Allow-Origin' => 'http://72.61.210.158:3001',
             'Cache-Control' => 'public, max-age=86400',
         ]);
     }
@@ -76,7 +76,7 @@ class GameAssetController extends Controller
         }
 
         return response()->json([
-            'model_hall' => "http://localhost:8000/api/experience/hall-model/{$modelId}",
+            'model_hall' => "http://72.61.210.158:8000/api/experience/hall-model/{$modelId}",
         ]);
     }
 
@@ -149,7 +149,7 @@ class GameAssetController extends Controller
                     : null,
                 'sampul' => $this->getYoutubeThumbnail($karya->tautan),
                 'model_path' => $boothModel
-                    ? "http://localhost:8000/api/experience/booth-model/" . basename($boothModel)
+                    ? "http://72.61.210.158:8000/api/experience/booth-model/" . basename($boothModel)
                     : null,
                 'lantai' => $karya->lantai,
                 'is_terbaik' => (bool) $karya->is_terbaik,

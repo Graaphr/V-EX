@@ -1,0 +1,49 @@
+# Disable directory listing
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Block access to hidden files/folders
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
+
+    # Block .env
+    RewriteRule ^\.env - [F,L]
+
+    # Block composer files
+    RewriteRule ^composer\.(json|lock)$ - [F,L]
+
+    # Block package files
+    RewriteRule ^package(-lock)?\.json$ - [F,L]
+
+    # Block yarn/pnpm files
+    RewriteRule ^(yarn\.lock|pnpm-lock\.yaml)$ - [F,L]
+
+    # Block git
+    RewriteRule (^|/)\.git - [F,L]
+
+    # Block svn
+    RewriteRule (^|/)\.svn - [F,L]
+
+    # Block htaccess itself
+    RewriteRule ^\.htaccess$ - [F,L]
+
+    # Block config files
+    RewriteRule \.(ini|log|sh|sql|bak|old|backup|swp|dist)$ - [F,L]
+
+    # Block vendor access
+    RewriteRule ^vendor/ - [F,L]
+
+    # Block storage logs
+    RewriteRule ^storage/logs/ - [F,L]
+
+    # Protect node_modules
+    RewriteRule ^node_modules/ - [F,L]
+</IfModule>
+
+# Extra security headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>

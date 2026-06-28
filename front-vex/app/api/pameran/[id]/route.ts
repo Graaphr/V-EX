@@ -19,7 +19,7 @@ export async function GET(
       subtitle: item.prodi?.nama_prodi ?? item.kategori,
       category: item.prodi?.nama_prodi ?? item.kategori,
       date: item.tanggal_mulai,
-      bannerImage: `http://localhost:8000/storage/${item.banner}`,
+      bannerImage: `http://72.61.210.158:8000/storage/${item.banner}`,
       likes: 0,
       karya: 0,
       description: [
