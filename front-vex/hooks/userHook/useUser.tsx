@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StatusType } from '@/components/shared/filter/SelectStatus';
-import { UserType, KelasType, ProdiType } from '@/types/pengguna';
+import { UserType } from '@/types/pengguna';
 import { GetRole, CreateUser, UpdateUser } from '@/components/pengguna/apiPengguna';
+import { useAuth } from '@/context/AuthContext'; // sesuaikan path
 
 const ITEMS_PER_PAGE = 9;
 const itemsPerPageKps = 9;
 
 export function useUsers() {
+  const { user, loading: authLoading } = useAuth(); // ← tambah ini
+
   const [users, setUsers] = useState<UserType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<StatusType | null>(null);
@@ -14,13 +17,10 @@ export function useUsers() {
   const [pageKps, setPageKps] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
-  /* ---------- Load ---------- */
   const loadUsers = async () => {
     try {
       setIsLoading(true);
-
       const [kpsRes, mhsRes] = await Promise.all([GetRole('KPS'), GetRole('Ketua PBL')]);
-
       setUsers([...kpsRes.data, ...mhsRes.data]);
     } catch (error) {
       console.error(error);
@@ -30,17 +30,29 @@ export function useUsers() {
     }
   };
 
+  // Tunggu auth selesai dan user sudah ada
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
     loadUsers();
-  }, []);
+  }, [authLoading, user]); // ← ganti dependency
 
+  // ... sisanya sama persis
   /* ---------- Filter ---------- */
-  const filterData = (data: UserType[]) =>
-    data.filter((item) => {
-      const matchName = item.nama.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchStatus = selectedStatus ? item.status === selectedStatus.value : true;
-      return matchName && matchStatus;
-    });
+const filterData = (data: UserType[]) =>
+  data.filter((item) => {
+    const matchName = item.nama.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Map value 'active'/'inactive' ke 'Aktif'/'Tidak Aktif'
+    const matchStatus = selectedStatus
+      ? item.status === (selectedStatus.value === 'active' ? 'Aktif' : 'Tidak Aktif')
+      : true;
+
+    return matchName && matchStatus;
+  });
 
   const filteredKps = useMemo(
     () => filterData(users.filter((u) => u.role === 'KPS')),

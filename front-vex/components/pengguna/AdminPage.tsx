@@ -148,10 +148,12 @@ export default function Admin() {
           </div>
 
           <div className="w-full md:w-[20%]">
+
             <SelectStatus
-              selected={selectedStatus}
-              onChange={setSelectedStatus}
-            />
+  selected={selectedStatus}
+  onChange={setSelectedStatus}
+/>
+
           </div>
         </div>
       </div>

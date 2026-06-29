@@ -1,8 +1,10 @@
+// UserDetail.tsx
+
 import React from 'react';
 import { FaUser } from 'react-icons/fa';
 import { FiInfo } from 'react-icons/fi';
 import { HiPencilAlt } from 'react-icons/hi';
-import { UserType } from '@/types/pengguna';
+import { UserType, getProdiKode, getKelasId, getKelasNama } from '@/types/pengguna';
 import { Button } from '@/components/shared/ui/Button';
 import { PRODI_OPTIONS, KELAS_OPTIONS } from '@/types/pameran';
 
@@ -15,7 +17,14 @@ type Props = {
   onFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
 };
 
-export default function UserDetail({ selectedUser, formData, isEdit, onToggleEdit, onSaveEdit, onFormChange }: Props) {
+export default function UserDetail({
+  selectedUser,
+  formData,
+  isEdit,
+  onToggleEdit,
+  onSaveEdit,
+  onFormChange,
+}: Props) {
   return (
     <div className="bg-white rounded-lg min-h-[420px] p-6 shadow-sm">
       {!selectedUser ? (
@@ -29,7 +38,7 @@ export default function UserDetail({ selectedUser, formData, isEdit, onToggleEdi
           <div title="Edit" className="flex justify-end">
             <HiPencilAlt
               size={26}
-              className="cursor-pointer duration-200 transition-all  hover:scale-120"
+              className="cursor-pointer duration-200 transition-all hover:scale-120"
               onClick={onToggleEdit}
             />
           </div>
@@ -45,7 +54,7 @@ export default function UserDetail({ selectedUser, formData, isEdit, onToggleEdi
             <DetailField
               label="Nama"
               name="nama"
-              value={formData?.nama || ''}
+              value={formData?.nama ?? ''}
               isEdit={isEdit}
               onChange={onFormChange}
             />
@@ -54,16 +63,16 @@ export default function UserDetail({ selectedUser, formData, isEdit, onToggleEdi
             <DetailField
               label="Email"
               name="email"
-              value={formData?.email || ''}
+              value={formData?.email ?? ''}
               isEdit={isEdit}
               onChange={onFormChange}
             />
 
-            {/* Program Studi */}
+            {/* Program Studi — ambil kode dari ProdiType | string */}
             <SelectField
               label="Program Studi"
-              name="program_studi"
-              value={formData?.program_studi ?? ''}
+              name="prodi"
+              value={formData?.prodi ? getProdiKode(formData.prodi) : ''}
               isEdit={isEdit}
               onChange={onFormChange}
               options={PRODI_OPTIONS}
@@ -74,7 +83,13 @@ export default function UserDetail({ selectedUser, formData, isEdit, onToggleEdi
               <DetailField
                 label="Kelas"
                 name="kelas"
-                value={isEdit ? String(formData?.kelas?.id_kelas ?? '') : (formData?.kelas?.nama_kelas ?? '')}
+                value={
+                  formData?.kelas
+                    ? isEdit
+                      ? getKelasId(formData.kelas)
+                      : getKelasNama(formData.kelas)
+                    : ''
+                }
                 isEdit={isEdit}
                 onChange={onFormChange}
               />
@@ -85,30 +100,30 @@ export default function UserDetail({ selectedUser, formData, isEdit, onToggleEdi
               <DetailField
                 label="Role"
                 name="role"
-                value={formData?.role || ''}
-                // isEdit={isEdit}
+                value={formData?.role ?? ''}
                 onChange={onFormChange}
                 className="w-full"
               />
 
               <div className="w-full">
-                {!isEdit && <p className="text-sm font-semibold mb-1 text-gray-600">Status</p>}
-                {isEdit && <p className="text-sm font-semibold mb-1 text-gray-600">Aksi</p>}
+                <p className="text-sm font-semibold mb-1 text-gray-600">
+                  {isEdit ? 'Aksi' : 'Status'}
+                </p>
 
-                {!isEdit && (
+                {isEdit ? (
+                  <Button onClick={onSaveEdit} className="w-full h-[42px] text-white rounded-lg">
+                    Simpan
+                  </Button>
+                ) : (
                   <div
                     className={`w-full h-[42px] rounded-lg flex items-center justify-center ${
-                      selectedUser.status === 'Aktif' ? 'bg-green-500 text-white' : 'bg-red-100 text-red-600'
+                      selectedUser.status === 'Aktif'
+                        ? 'bg-green-500 text-white'
+                        : 'bg-red-100 text-red-600'
                     }`}
                   >
                     {selectedUser.status === 'Aktif' ? 'Aktif' : 'Tidak Aktif'}
                   </div>
-                )}
-
-                {isEdit && (
-                  <Button onClick={onSaveEdit} className="w-full h-[42px] text-white rounded-lg">
-                    Simpan
-                  </Button>
                 )}
               </div>
             </div>

@@ -1,7 +1,8 @@
 import { FaUser } from 'react-icons/fa';
 import { FaCircleCheck } from 'react-icons/fa6';
 import { FiXCircle } from 'react-icons/fi';
-import { UserType } from '@/types/pengguna';
+import { UserType, getProdiKode } from '@/types/pengguna';
+import { PRODI_OPTIONS } from '@/types/pameran';
 
 type Props = {
   user: UserType;
@@ -12,6 +13,11 @@ type Props = {
 
 export default function UserCard({ user, onClick, isActive, onToggleStatus }: Props) {
   const inactive = user.status === 'Tidak Aktif';
+
+  // Resolve nama prodi dari kode atau object
+  const prodiNama = typeof user.prodi === 'object'
+    ? user.prodi.nama_prodi ?? ''
+    : PRODI_OPTIONS.find(p => p.kode === user.prodi)?.nama ?? user.prodi;
 
   return (
     <div
@@ -39,15 +45,21 @@ export default function UserCard({ user, onClick, isActive, onToggleStatus }: Pr
             {user.nama}
           </h4>
 
+          {/* Tooltip nama */}
           <div className="pointer-events-none absolute -top-8 left-0 whitespace-nowrap rounded-xl bg-blue-100 px-3 py-1.5 text-xs font-bold text-main-blue opacity-0 shadow-lg transition-all duration-400 delay-[800ms] group-hover:-top-10 group-hover:opacity-100">
             {user.nama}
           </div>
 
           <p className="text-xs text-gray-400 truncate">{user.role}</p>
+
+          {/* Tampilkan prodi jika ada */}
+          {prodiNama && (
+            <p className="text-xs text-gray-300 truncate">{prodiNama}</p>
+          )}
         </div>
       </div>
 
-      {/* Kanan */}
+      {/* Kanan – toggle status */}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -56,9 +68,9 @@ export default function UserCard({ user, onClick, isActive, onToggleStatus }: Pr
         className="shrink-0 ml-2"
       >
         {inactive ? (
-          <FiXCircle title='Akun mati' className="text-red-500 text-xl hover:scale-110 transition" />
+          <FiXCircle title="Akun mati" className="text-red-500 text-xl hover:scale-110 transition" />
         ) : (
-          <FaCircleCheck title='Akun aktif' className="text-green-500 text-xl hover:scale-110 transition" />
+          <FaCircleCheck title="Akun aktif" className="text-green-500 text-xl hover:scale-110 transition" />
         )}
       </button>
     </div>
