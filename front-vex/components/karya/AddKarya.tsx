@@ -7,6 +7,7 @@ import DetailPoster from '@/components/karya/DetailPoster';
 import DetailPreview from '@/components/karya/DetailPreview';
 import DetailForm from '@/components/karya/DetailForm';
 import DetailAction from '@/components/karya/DetailAction';
+import { showToast } from "@/components/shared/ui/ToastNotification";
 import { PostKarya } from '@/components/karya/apiKarya';
 import { KaryaItem } from '@/types/karya';
 
@@ -87,7 +88,7 @@ export default function AddKaryaPage() {
   const [posterFile, setPosterFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [globalError, setGlobalError] = useState('');
+  // const [globalError, setGlobalError] = useState('');
 
   const clearFieldError = (key: string) =>
     setErrors((prev) => {
@@ -117,75 +118,61 @@ export default function AddKaryaPage() {
   };
 
   const handleSave = async () => {
-    setGlobalError('');
+  const validationErrors = validate(form, thumbnailFile, posterFile);
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    showToast("Lengkapi semua data terlebih dahulu.", "warning");
+    return;
+  }
 
-    // Blok 1: validasi frontend — cegah request yang pasti gagal
-    const validationErrors = validate(form, thumbnailFile, posterFile);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
+  setIsLoading(true);
+  setErrors({});
+  try {
+    const formData = new FormData();
+    formData.append("id_pameran", String(form.pameranId));
+    formData.append("id_model", form.booth ?? "");
+    formData.append("judul", form.title.trim());
+    formData.append("deskripsi", form.description?.trim() ?? "");
+    formData.append("tautan", normalizeUrl(form.link ?? ""));
+    formData.append("gambar_sampul", thumbnailFile!);
+    formData.append("gambar_poster", posterFile!);
+
+    const result = await PostKarya(formData);
+
+    if (!result.success && result.status !== "success") {
+      throw new Error(result.message || "Gagal menambahkan karya");
     }
 
-    setIsLoading(true);
-    setErrors({});
-    try {
-      const formData = new FormData();
-      formData.append('id_pameran', String(form.pameranId));
-      formData.append('id_model', form.booth ?? '');
-      formData.append('judul', form.title.trim());
-      formData.append('deskripsi', form.description?.trim() ?? '');
-      formData.append('tautan', normalizeUrl(form.link ?? ''));
-      formData.append('gambar_sampul', thumbnailFile!); // dijamin ada — sudah divalidasi
-      formData.append('gambar_poster', posterFile!);
+    showToast("Karya berhasil ditambahkan!", "success");
+    window.location.reload();
+  } catch (error: any) {
+    const status = error.response?.status;
 
-      const result = await PostKarya(formData);
-
-      if (!result.success && result.status !== 'success') {
-        throw new Error(result.message || 'Gagal menambahkan karya');
-      }
-
-      window.location.reload();
-    } catch (error: any) {
-      const status = error.response?.status;
-
-      if (status === 422) {
-        const laravelErrors = error.response.data.errors as Record<string, string[]>;
-
-        setErrors(mapLaravelErrors(laravelErrors));
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth',
-        });
-      } else if (status === 409) {
-        setGlobalError('Anda sudah mengunggah karya pada pameran ini.');
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth',
-        });
-      } else if (status === 500) {
-        setErrors({
-          thumbnail: 'Server gagal memproses gambar sampul. Coba upload ulang.',
-          poster: 'Server gagal memproses gambar poster. Coba upload ulang.',
-        });
-
-        setGlobalError(
-          'Terjadi kesalahan di server (500). Pastikan kedua gambar sudah dipilih, lalu coba simpan lagi.',
-        );
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth',
-        });
-      } else {
-        setGlobalError(error.response?.data?.massage || 'Gagal terhubung ke server. Periksa koneksi internet kamu.');
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth',
-        });
-      }
-    } finally {
-      setIsLoading(false);
+    if (status === 422) {
+      const laravelErrors = error.response.data.errors as Record<string, string[]>;
+      setErrors(mapLaravelErrors(laravelErrors));
+      showToast("Periksa kembali data yang diisi.", "warning");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (status === 409) {
+      showToast("Anda sudah mengunggah karya pada pameran ini.", "error");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (status === 500) {
+      setErrors({
+        thumbnail: "Server gagal memproses gambar sampul. Coba upload ulang.",
+        poster: "Server gagal memproses gambar poster. Coba upload ulang.",
+      });
+      showToast("Terjadi kesalahan di server (500). Coba simpan lagi.", "error");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      showToast(
+        error.response?.data?.message || "Gagal terhubung ke server.",
+        "error"
+      );
     }
-  };
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // const handleDelete = () => {
   //   setForm(initialForm);
@@ -200,11 +187,6 @@ export default function AddKaryaPage() {
   return (
     <div className="w-full px-4 sm:px-6 lg:px-0 py-6">
       <div className="max-w-[1200px] mx-auto">
-        {globalError && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600 shadow-sm">
-            {globalError}
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
           <div className="space-y-3">
