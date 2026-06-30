@@ -19,7 +19,7 @@ export async function GET(
       subtitle: item.prodi?.nama_prodi ?? item.kategori,
       category: item.prodi?.nama_prodi ?? item.kategori,
       date: item.tanggal_mulai,
-      bannerImage: `http://72.61.210.158:8000/storage/${item.banner}`,
+      bannerImage: `https://vex.terpalb25.web.id/storage/${item.banner}`,
       likes: 0,
       karya: 0,
       description: [

@@ -1,27 +1,25 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['72.61.210.158'],
   images: {
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: '72.61.210.158',
-        port: '8000',
+        protocol: 'https',
+        hostname: 'vex.terpalb25.web.id',
         pathname: '/storage/**',
       },
     ],
-    dangerouslyAllowLocalIP: true,
   },
+
   async rewrites() {
     return [
       {
         source: '/storage/:path*',
-        destination: 'http://72.61.210.158:8000/storage/:path*',
+        destination: 'https://vex.terpalb25.web.id/storage/:path*',
       },
       {
         source: '/api/:path*',
-        destination: 'http://72.61.210.158:8000/api/:path*',
+        destination: 'https://vex.terpalb25.web.id/api/:path*',
       },
     ];
   },

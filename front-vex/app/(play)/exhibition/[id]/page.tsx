@@ -305,7 +305,7 @@ export default function ExhibitionPage() {
             </button>
             <button
               onClick={async () => {
-                await fetch(`/api/player?id=${playerId}`, { method: "DELETE" });
+                await fetch(`/api-internal/player?id=${playerId}`, { method: "DELETE" });
                 sessionStorage.removeItem("playerId");
                 sessionStorage.removeItem("playerName");
                 router.push(`/pameran/${id}`);

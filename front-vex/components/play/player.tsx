@@ -234,7 +234,7 @@ export default function Player({
 
   useEffect(() => {
     const removePlayer = () => {
-      fetch(`/api/player?id=${playerId}`, {
+      fetch(`/api-internal/player?id=${playerId}`, {
         method: "DELETE",
       }).catch(() => {});
     };
@@ -433,7 +433,7 @@ export default function Player({
           rotation: rotationY.current,
         };
 
-        fetch("/api/player", {
+        fetch("/api-internal/player", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

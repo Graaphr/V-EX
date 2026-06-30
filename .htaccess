@@ -7,8 +7,8 @@ Options -Indexes
     # Block access to hidden files/folders
     RewriteRule (^|/)\.(?!well-known/) - [F,L]
 
-    # Block .env
-    RewriteRule ^\.env - [F,L]
+    # Block all .env files
+    RewriteRule (^|/)\.env.* - [F,L]
 
     # Block composer files
     RewriteRule ^composer\.(json|lock)$ - [F,L]
@@ -39,7 +39,16 @@ Options -Indexes
 
     # Protect node_modules
     RewriteRule ^node_modules/ - [F,L]
+    # Block framework/internal files
+    
+    RewriteRule ^(artisan|server\.php)$ - [F,L]
+
+    # Block Next.js internal build files
+    RewriteRule ^\.next/ - [F,L]
 </IfModule>
+<FilesMatch "^\.env">
+    Require all denied
+</FilesMatch>
 
 # Extra security headers
 <IfModule mod_headers.c>

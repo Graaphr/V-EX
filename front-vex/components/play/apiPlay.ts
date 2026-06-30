@@ -36,13 +36,13 @@ export async function getGameAssets() {
 
 // ── page.tsx (ExhibitionPage) ──
 export async function getPlayerName() {
-    const res = await fetch("/api/player-name")
+    const res = await fetch("/api-internal/player-name")
     const data = await res.json()
     return data.name as string
 }
 
 export async function deletePlayer(playerId: string) {
-    await fetch(`/api/player?id=${playerId}`, { method: "DELETE" })
+    await fetch(`/api-internal/player?id=${playerId}`, { method: "DELETE" })
 }
 
 // ── PosterViewer ──
