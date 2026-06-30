@@ -376,26 +376,24 @@ class KaryaController extends Controller
         if ($pameranAktifIds->isEmpty()) {
             return response()->json([
                 'status' => 'success',
-                'karya' => [],
+                'karya' => null,
             ]);
         }
 
         $karya = Karya::whereIn('id_pameran', $pameranAktifIds)
             ->withCount('suka')
             ->orderByDesc('suka_count')
-            ->take(10)
-            ->get()
-            ->map(fn($item) => [
-                'id' => $item->id_karya,
-                'title' => $item->judul,
-                'banner' => $item->gambar_sampul
-                    ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
-                    : '',
-            ]);
+            ->first();
 
         return response()->json([
             'status' => 'success',
-            'karya' => $karya,
+            'karya' => $karya ? [
+                'id' => $karya->id_karya,
+                'title' => $karya->judul,
+                'banner' => $karya->gambar_sampul
+                    ? asset("https://vex.terpalb25.web.id/storage/{$karya->gambar_sampul}")
+                    : '',
+            ] : null,
         ]);
     }
 }
