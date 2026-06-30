@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import FilterSection from '@/components/pameran/FilterSection';
-import KaryaGrid from '@/components/karya/KaryaGrid';
-import { KaryaItem, PameranItem } from '@/types/karya';
-import { PRODI_OPTIONS } from '@/types/pameran';
-import { ProdiType } from '@/components/shared/filter/SelectProdi';
-import { TahunType } from '@/components/shared/filter/SelectTahun';
-import { SemesterType } from '@/components/shared/filter/SelectSemester';
-import { useAuth } from '@/context/AuthContext';
-import { GetKarya, GetKaryaAdmin, GetKaryaKps } from './apiKarya';
+import { useEffect, useMemo, useState } from "react";
+import FilterSection from "@/components/pameran/FilterSection";
+import KaryaGrid from "@/components/karya/KaryaGrid";
+import { KaryaItem, PameranItem } from "@/types/karya";
+import { PRODI_OPTIONS } from "@/types/pameran";
+import { ProdiType } from "@/components/shared/filter/SelectProdi";
+import { TahunType } from "@/components/shared/filter/SelectTahun";
+import { SemesterType } from "@/components/shared/filter/SelectSemester";
+import { useAuth } from "@/context/AuthContext";
+import { GetKarya, GetKaryaAdmin, GetKaryaKps } from "./apiKarya";
 
 interface Props {
   href: string;
@@ -18,8 +18,8 @@ interface Props {
 export default function PageKarya({ href }: Props) {
   const { user, loading: authLoading } = useAuth();
 
-  const isAdmin = user?.role === 'Admin';
-  const isKps   = user?.role === 'KPS';
+  const isAdmin = user?.role === "Admin";
+  const isKps = user?.role === "KPS";
 
   const [karyaList, setKaryaList] = useState<KaryaItem[]>([]);
   const [pameranList, setPameranList] = useState<PameranItem[]>([]);
@@ -27,8 +27,10 @@ export default function PageKarya({ href }: Props) {
 
   const [selectedProdi, setSelectedProdi] = useState<ProdiType | null>(null);
   const [selectedTahun, setSelectedTahun] = useState<TahunType | null>(null);
-  const [selectedSemester, setSelectedSemester] = useState<SemesterType | null>(null);
-  const [search, setSearch] = useState('');
+  const [selectedSemester, setSelectedSemester] = useState<SemesterType | null>(
+    null,
+  );
+  const [search, setSearch] = useState("");
   const [pages, setPages] = useState<Record<string, number>>({});
 
   const PER_PAGE = 4;
@@ -44,10 +46,43 @@ export default function PageKarya({ href }: Props) {
         const res = isKps
           ? await GetKaryaKps()
           : isAdmin
-          ? await GetKaryaAdmin()
-          : await GetKarya();
+            ? await GetKaryaAdmin()
+            : await GetKarya();
 
-        const data: KaryaItem[] = res.karya ?? [];
+        // ← Tambah mapper ini khusus KPS
+        const raw = res.karya ?? [];
+        const data: KaryaItem[] = isKps
+          ? raw.map((item: any) => {
+              const tanggalMulai = item.stan?.pameran?.tanggal_mulai ?? "";
+              const bulan = tanggalMulai
+                ? new Date(tanggalMulai).getMonth() + 1
+                : 0;
+              const semester =
+                bulan >= 8 || bulan <= 2 ? "Ganjil" : bulan >= 3 ? "Genap" : "";
+
+              return {
+                id: item.id_karya,
+                title: item.judul,
+                description: item.deskripsi,
+                category: item.stan?.pameran?.kategori ?? "",
+                image: item.gambar_poster
+                  ? `http://localhost:8000/storage/${item.gambar_poster}`
+                  : "",
+                thumbnail: item.gambar_sampul
+                  ? `http://localhost:8000/storage/${item.gambar_sampul}`
+                  : "",
+                link: item.tautan ?? "",
+                year: tanggalMulai.slice(0, 4),
+                semester, // ← sekarang terisi "Ganjil" / "Genap"
+                booth: String(item.id_stan ?? ""),
+                pameranId: item.id_pameran,
+                pameranTitle:
+                  item.stan?.pameran?.judul ?? `Pameran #${item.id_pameran}`,
+                isTerbaik: item.is_terbaik ?? false,
+              };
+            })
+          : raw;
+
         setKaryaList(data);
 
         const pameranMap = new Map<number, PameranItem>();
@@ -55,13 +90,13 @@ export default function PageKarya({ href }: Props) {
           if (item.pameranId && !pameranMap.has(item.pameranId)) {
             pameranMap.set(item.pameranId, {
               id: item.pameranId,
-              title: (item as any).pameranTitle ?? `Pameran #${item.pameranId}`,
+              title: item.pameranTitle ?? `Pameran #${item.pameranId}`,
             });
           }
         });
         setPameranList(Array.from(pameranMap.values()));
       } catch (err) {
-        console.error('Gagal memuat karya:', err);
+        console.error("Gagal memuat karya:", err);
       } finally {
         setLoading(false);
       }
@@ -73,11 +108,17 @@ export default function PageKarya({ href }: Props) {
   // =============================
   // PAGINATION HELPER
   // =============================
-  const changePage = (key: string, type: 'next' | 'prev', totalPages: number) => {
+  const changePage = (
+    key: string,
+    type: "next" | "prev",
+    totalPages: number,
+  ) => {
     setPages((prev) => {
       const current = prev[key] || 1;
       const next =
-        type === 'next' ? Math.min(current + 1, totalPages) : Math.max(current - 1, 1);
+        type === "next"
+          ? Math.min(current + 1, totalPages)
+          : Math.max(current - 1, 1);
       return { ...prev, [key]: next };
     });
   };
@@ -89,11 +130,15 @@ export default function PageKarya({ href }: Props) {
     if (!isKps) return [];
 
     const keyword = search.toLowerCase();
-    const filtered = karyaList.filter(
-      (item) =>
-        item.title.toLowerCase().includes(keyword) ||
-        (item.pameranTitle ?? '').toLowerCase().includes(keyword)
-    );
+    const filtered = karyaList.filter((item) => {
+      const matchSearch =
+        (item.title ?? "").toLowerCase().includes(keyword) ||
+        (item.pameranTitle ?? "").toLowerCase().includes(keyword);
+      const matchTahun = !selectedTahun || item.year === selectedTahun.name;
+      const matchSemester =
+        !selectedSemester || item.semester === selectedSemester.name;
+      return matchSearch && matchTahun && matchSemester;
+    });
 
     const map = new Map<number, { pameran: PameranItem; karya: KaryaItem[] }>();
     filtered.forEach((item) => {
@@ -112,7 +157,7 @@ export default function PageKarya({ href }: Props) {
     });
 
     return Array.from(map.values());
-  }, [isKps, karyaList, pameranList, search]);
+  }, [isKps, karyaList, pameranList, search, selectedTahun, selectedSemester]);
 
   // =============================
   // DATA NON-KPS — group by category
@@ -128,30 +173,68 @@ export default function PageKarya({ href }: Props) {
         categoryName.toLowerCase().includes(keyword);
       const matchProdi = !selectedProdi || categoryName === selectedProdi.name;
       const matchTahun = !selectedTahun || item.year === selectedTahun.name;
-      const matchSemester = !selectedSemester || item.semester === selectedSemester.name;
+      const matchSemester =
+        !selectedSemester || item.semester === selectedSemester.name;
       return matchSearch && matchProdi && matchTahun && matchSemester;
     });
-  }, [isKps, karyaList, search, selectedProdi, selectedTahun, selectedSemester]);
+  }, [
+    isKps,
+    karyaList,
+    search,
+    selectedProdi,
+    selectedTahun,
+    selectedSemester,
+  ]);
 
   const categories = [
-    ...new Set(filteredData.map((i) => i.category).filter((c): c is string => !!c)),
+    ...new Set(
+      filteredData.map((i) => i.category).filter((c): c is string => !!c),
+    ),
   ];
 
   const kpsProdiNama =
     PRODI_OPTIONS.find((p) => p.kode === user?.program_studi)?.nama ||
     user?.program_studi ||
-    'Prodi Anda';
+    "Prodi Anda";
 
   // =============================
   // LOADING
   // =============================
+  // Jadi ini:
   if (authLoading || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-secondary-color">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-main-blue border-t-transparent" />
-          <p className="font-poppins text-sm text-gray-500">Memuat karya...</p>
-        </div>
+      <div className="min-h-screen bg-secondary-color font-poppins">
+        {/* HERO SKELETON */}
+        <section className="bg-main-blue rounded-b-[25px] md:rounded-b-[40px] py-6">
+          <div className="autoMid">
+            {/* Filter bar skeleton */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4 md:pt-[30px] pb-5">
+              <div className="h-[42px] rounded-xl bg-white/20 animate-pulse flex-1" />
+              <div className="h-[42px] rounded-xl bg-white/20 animate-pulse w-full sm:w-[140px]" />
+              <div className="h-[42px] rounded-xl bg-white/20 animate-pulse w-full sm:w-[140px]" />
+            </div>
+          </div>
+        </section>
+
+        {/* CATEGORY + CARDS SKELETON */}
+        <main className="autoMid py-10 space-y-10">
+          {Array.from({ length: 2 }).map((_, catIdx) => (
+            <div key={catIdx}>
+              {/* Category title skeleton */}
+              <div className="h-[22px] w-[140px] rounded-lg bg-gray-200 animate-pulse mb-4" />
+
+              {/* Cards skeleton — ikuti grid KaryaGrid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-[80px] rounded-xl bg-gray-200 animate-pulse"
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </main>
       </div>
     );
   }
@@ -164,23 +247,16 @@ export default function PageKarya({ href }: Props) {
       <div className="min-h-screen bg-secondary-color font-poppins">
         <section className="bg-main-blue rounded-b-[25px] md:rounded-b-[40px] py-6">
           <div className="autoMid">
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pt-4 md:pt-[30px] pb-5">
-              <div>
-                <p className="text-xs font-medium text-blue-200 uppercase tracking-widest mb-1">
-                  Karya Mahasiswa
-                </p>
-                <h1 className="text-xl font-bold text-white">{kpsProdiNama}</h1>
-              </div>
-              <div className="w-full lg:w-[50%]">
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Cari karya atau pameran..."
-                  className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-blue-200 focus:outline-none focus:ring-2 focus:ring-white/30"
-                />
-              </div>
-            </div>
+            <FilterSection
+              search={search}
+              setSearch={setSearch}
+              selectedTahun={selectedTahun}
+              setSelectedTahun={setSelectedTahun}
+              selectedSemester={selectedSemester}
+              setSelectedSemester={setSelectedSemester}
+              hideProdi={true}
+              searchPlaceholder="Cari karya atau pameran..."
+            />
           </div>
         </section>
 
@@ -206,8 +282,8 @@ export default function PageKarya({ href }: Props) {
                   totalPages={totalPages}
                   href={href}
                   pameranList={pameranList}
-                  onPrev={() => changePage(key, 'prev', totalPages)}
-                  onNext={() => changePage(key, 'next', totalPages)}
+                  onPrev={() => changePage(key, "prev", totalPages)}
+                  onNext={() => changePage(key, "next", totalPages)}
                 />
               );
             })
@@ -261,8 +337,8 @@ export default function PageKarya({ href }: Props) {
                 totalPages={totalPages}
                 href={href}
                 pameranList={pameranList}
-                onPrev={() => changePage(cat, 'prev', totalPages)}
-                onNext={() => changePage(cat, 'next', totalPages)}
+                onPrev={() => changePage(cat, "prev", totalPages)}
+                onNext={() => changePage(cat, "next", totalPages)}
               />
             );
           })

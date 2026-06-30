@@ -1,14 +1,15 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { KaryaItem } from '../../types/karya';
-import { GetPameranTersedia } from '@/components/karya/apiKarya';
+import { useEffect, useState } from "react";
+import { KaryaItem } from "../../types/karya";
+import { GetPameranTersedia } from "@/components/karya/apiKarya";
 
 interface Props {
   form: KaryaItem;
   onChange: (field: keyof KaryaItem, value: string) => void;
   currentPameran?: { id: number; title: string } | null;
   errors?: Record<string, string>;
+  readOnly?: boolean; // ← tambah ini
 }
 
 interface PameranOption {
@@ -17,7 +18,8 @@ interface PameranOption {
   isClosedCurrent?: boolean;
 }
 
-const inputClass = 'w-full p-2.5 px-3 rounded-lg border mt-1.5 focus:outline-none focus:ring-1 transition-all text-sm';
+const inputClass =
+  "w-full p-2.5 px-3 rounded-lg border mt-1.5 focus:outline-none focus:ring-1 transition-all text-sm";
 
 const fieldClass = (error?: string) =>
   error
@@ -37,12 +39,27 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-xs text-red-500 mt-1">{message}</p>;
 }
 
-export default function DetailForm({ form, onChange, currentPameran, errors = {} }: Props) {
+export default function DetailForm({
+  form,
+  onChange,
+  currentPameran,
+  errors = {},
+  readOnly,
+}: Props) {
   const [pameranList, setPameranList] = useState<PameranOption[]>([]);
   const [loadingPameran, setLoadingPameran] = useState(true);
   const [pameranError, setPameranError] = useState(false);
 
   useEffect(() => {
+    if (readOnly) {
+      // KPS/Admin: tidak perlu fetch dropdown, pakai currentPameran langsung
+      if (currentPameran) {
+        setPameranList([{ ...currentPameran, isClosedCurrent: true }]);
+      }
+      setLoadingPameran(false);
+      return;
+    }
+
     const fetchPameran = async () => {
       setPameranError(false);
       try {
@@ -58,7 +75,7 @@ export default function DetailForm({ form, onChange, currentPameran, errors = {}
 
         setPameranList(list);
       } catch (err) {
-        console.error('Gagal memuat pameran:', err);
+        console.error("Gagal memuat pameran:", err);
         if (currentPameran) {
           setPameranList([{ ...currentPameran, isClosedCurrent: true }]);
         }
@@ -74,11 +91,21 @@ export default function DetailForm({ form, onChange, currentPameran, errors = {}
   return (
     <div className="flex flex-col gap-4 mt-4">
       {/* Pameran */}
+      {/* Pameran */}
       <div>
         <Label text="Pameran" required />
-        <p className="text-xs text-gray-400 mt-1">Pilih Pameran yang tersedia</p>
+        <p className="text-xs text-gray-400 mt-1">
+          Pilih Pameran yang tersedia
+        </p>
 
-        {loadingPameran ? (
+        {readOnly ? (
+          // KPS/Admin: tampilkan sebagai teks, tidak bisa diubah
+          <div
+            className={`${inputClass} border-gray-200 bg-gray-50 text-gray-700`}
+          >
+            {currentPameran?.title ?? "-"}
+          </div>
+        ) : loadingPameran ? (
           <div className="mt-1.5 h-10 animate-pulse rounded-lg bg-gray-100" />
         ) : pameranError && pameranList.length === 0 ? (
           <p className="mt-1.5 text-xs text-red-500 italic">
@@ -86,17 +113,21 @@ export default function DetailForm({ form, onChange, currentPameran, errors = {}
           </p>
         ) : (
           <select
-            value={form.pameranId ?? ''}
-            onChange={(e) => onChange('pameranId', e.target.value)}
+            value={form.pameranId ?? ""}
+            onChange={(e) => onChange("pameranId", e.target.value)}
             className={fieldClass(errors.pameranId)}
           >
             <option value="" disabled>
               -- Pilih Pameran --
             </option>
             {pameranList.map((p) => (
-              <option key={p.id} value={String(p.id)} disabled={p.isClosedCurrent}>
+              <option
+                key={p.id}
+                value={String(p.id)}
+                disabled={p.isClosedCurrent}
+              >
                 {p.title}
-                {p.isClosedCurrent ? ' (Sudah dibuka)' : ''}
+                {p.isClosedCurrent ? " (Sudah dibuka)" : ""}
               </option>
             ))}
           </select>
@@ -111,7 +142,7 @@ export default function DetailForm({ form, onChange, currentPameran, errors = {}
         <input
           type="text"
           value={form.title}
-          onChange={(e) => onChange('title', e.target.value)}
+          onChange={(e) => onChange("title", e.target.value)}
           placeholder="Masukkan judul karya"
           className={fieldClass(errors.title)}
         />
@@ -121,11 +152,13 @@ export default function DetailForm({ form, onChange, currentPameran, errors = {}
       {/* Link YouTube */}
       <div>
         <Label text="Link Youtube" required />
-        <p className="text-xs text-gray-400 mt-1">Masukkan link video demo (contoh: https://youtube.com/...)</p>
+        <p className="text-xs text-gray-400 mt-1">
+          Masukkan link video demo (contoh: https://youtube.com/...)
+        </p>
         <input
           type="text"
           value={form.link}
-          onChange={(e) => onChange('link', e.target.value)}
+          onChange={(e) => onChange("link", e.target.value)}
           placeholder="https://youtube.com/watch?v=..."
           className={fieldClass(errors.link)}
         />
@@ -135,13 +168,23 @@ export default function DetailForm({ form, onChange, currentPameran, errors = {}
       {/* Deskripsi */}
       <div>
         <Label text="Deskripsi Karya" required />
-        <p className="text-xs text-gray-400 mt-1">Sertakan deskripsi, nama tim PBL dan nama manager proyek.</p>
-        <textarea
-          value={form.description}
-          onChange={(e) => onChange('description', e.target.value)}
-          placeholder="Masukkan deskripsi karya..."
-          className={`${fieldClass(errors.description)} h-[420px] resize-none`}
-        />
+        <p className="text-xs text-gray-400 mt-1">
+          Sertakan deskripsi, nama tim PBL dan nama manager proyek.
+        </p>
+        {readOnly ? (
+          <div
+            className={`${inputClass} border-gray-200 bg-gray-50 text-gray-700 h-[420px] overflow-y-auto whitespace-pre-wrap`}
+          >
+            {form.description ?? "-"}
+          </div>
+        ) : (
+          <textarea
+            value={form.description}
+            onChange={(e) => onChange("description", e.target.value)}
+            placeholder="Masukkan deskripsi karya..."
+            className={`${fieldClass(errors.description)} h-[420px] resize-none overflow-y-auto`}
+          />
+        )}
         <FieldError message={errors.description} />
       </div>
     </div>
