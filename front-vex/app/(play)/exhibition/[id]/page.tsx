@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  Suspense,
 } from "react";
 
 import {
@@ -281,20 +282,22 @@ export default function ExhibitionPage() {
           {playerName && (
             <Canvas camera={{ position: [0, 2, 5], fov: 75 }}>
               <LoaderWatcher dataReady={dataReady} onProgress={setAssetProgress} onLoaded={handleAssetsLoaded} />
-              <Experience
-                exhibitionId={id}
-                openTautan={openTautan}
-                openPoster={openPoster}
-                controlsLocked={controlsLocked}
-                soundOn={soundOn}
-                mobile={isMobile}
-                mobileMove={mobileMoveRef}
-                lookDelta={lookDelta}
-                playerId={playerId}
-                playerName={playerName}
-                currentFloor={currentFloor}
-                onDataReady={handleDataReady}
-              />
+              <Suspense fallback={null}>
+                <Experience
+                  exhibitionId={id}
+                  openTautan={openTautan}
+                  openPoster={openPoster}
+                  controlsLocked={controlsLocked}
+                  soundOn={soundOn}
+                  mobile={isMobile}
+                  mobileMove={mobileMoveRef}
+                  lookDelta={lookDelta}
+                  playerId={playerId}
+                  playerName={playerName}
+                  currentFloor={currentFloor}
+                  onDataReady={handleDataReady}
+                />
+              </Suspense>
             </Canvas>
           )}
 
@@ -551,48 +554,60 @@ function LoaderWatcher({
   onProgress: (percent: number) => void;
   onLoaded: () => void;
 }) {
-  const { progress, active } = useProgress();
   const firedRef = useRef(false);
   const sawActiveRef = useRef(false);
+  const dataReadyRef = useRef(dataReady);
 
   useEffect(() => {
-    onProgress(progress);
-  }, [progress, onProgress]);
+    dataReadyRef.current = dataReady;
+  }, [dataReady]);
 
+  // Subscribe manual ke progress store milik drei (zustand-based) lewat
+  // useEffect, BUKAN dengan memanggil hook useProgress() langsung di body
+  // render. useProgress() di render-time membaca state yang di-update oleh
+  // THREE.DefaultLoadingManager tepat saat sebuah loader baru (mis.
+  // useGLTF(hallModel) di ExperienceInner) mendaftarkan diri — ini terjadi
+  // dalam render-pass yang sama dengan LoaderWatcher sebagai sibling-nya,
+  // sehingga React menganggapnya "update a component while rendering a
+  // different component". Subscribe via store di luar render path
+  // sepenuhnya menghindari race ini (lihat: pmndrs/drei#314).
   useEffect(() => {
-    if (active) sawActiveRef.current = true;
-  }, [active]);
+    const unsub = useProgress.subscribe((state) => {
+      const { progress, active } = state;
 
+      onProgress(progress);
+
+      if (active) sawActiveRef.current = true;
+
+      if (firedRef.current) return;
+      if (!dataReadyRef.current) return;
+
+      if (sawActiveRef.current && !active && progress >= 100) {
+        firedRef.current = true;
+        onLoaded();
+      }
+    });
+
+    return () => unsub();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fallback: kalau asset sudah ter-cache / tidak ada yang perlu di-load,
+  // store tidak akan pernah memanggil listener dengan active=true sama
+  // sekali. Beri sedikit delay supaya loading screen tetap tampil sebentar
+  // (tidak "flash"), lalu lanjut otomatis.
   useEffect(() => {
-    if (firedRef.current) return;
-    // Fase fetch data (getHallModel/getKaryaList/getPameranFolder) harus
-    // selesai dulu — sebelum itu, ExperienceInner belum mount sehingga
-    // GLTF/texture belum mulai di-load sama sekali. Tanpa guard ini,
-    // "progress >= 100 && !active" bisa salah ke-trigger di momen sesaat
-    // sebelum loader pertama mulai berjalan.
     if (!dataReady) return;
 
-    // Kasus normal: loader sempat aktif (ada asset di-load), lalu selesai.
-    if (sawActiveRef.current && !active && progress >= 100) {
-      firedRef.current = true;
-      onLoaded();
-      return;
-    }
+    const t = setTimeout(() => {
+      if (!firedRef.current && !sawActiveRef.current) {
+        firedRef.current = true;
+        onLoaded();
+      }
+    }, 600);
 
-    // Fallback: kalau asset sudah ter-cache / tidak ada yang perlu di-load,
-    // drei tidak akan pernah set active=true sama sekali. Beri sedikit
-    // delay supaya loading screen tetap tampil sebentar (tidak "flash"),
-    // lalu lanjut otomatis.
-    if (!sawActiveRef.current) {
-      const t = setTimeout(() => {
-        if (!firedRef.current) {
-          firedRef.current = true;
-          onLoaded();
-        }
-      }, 600);
-      return () => clearTimeout(t);
-    }
-  }, [dataReady, active, progress, onLoaded]);
+    return () => clearTimeout(t);
+  }, [dataReady, onLoaded]);
 
   return null;
 }

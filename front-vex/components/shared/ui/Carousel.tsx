@@ -1,39 +1,25 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import Image from "next/image";
 
-import {
-  BiSolidRightArrow,
-  BiSolidLeftArrow,
-} from "react-icons/bi";
-
-/* ===================== */
-/* IMPORT JSON */
-/* ===================== */
-import CarouselData from "@/public/data/Carousel.json";
+import { BiSolidRightArrow, BiSolidLeftArrow } from "react-icons/bi";
 
 /* ===================== */
 /* TYPE */
 /* ===================== */
 
-export interface SlideItem {
-  poster: string;
-  banner: string;
+export interface CarouselKaryaItem {
+  id: number;
   title: string;
+  banner: string;
 }
 
 interface CarouselProps {
-  type:
-    | "DataFotoTerbaik"
-    | "DataFotoTerfavorit";
+  data: CarouselKaryaItem[]; // wajib, datang dari API backend
 
   className?: string;
 }
@@ -42,76 +28,23 @@ interface CarouselProps {
 /* COMPONENT */
 /* ===================== */
 
-export default function Carousel({
-  type,
-  className,
-}: CarouselProps) {
-  const [isMobile, setIsMobile] =
-    useState(false);
+export default function Carousel({ data, className }: CarouselProps) {
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
+    Autoplay({
+      delay: 6000,
+      stopOnInteraction: false,
+    }),
+  ]);
 
-  const [data, setData] =
-    useState<SlideItem[]>([]);
+  const scrollPrev = useCallback(() => {
+    emblaApi?.scrollPrev();
+  }, [emblaApi]);
 
-  const [emblaRef, emblaApi] =
-    useEmblaCarousel(
-      { loop: true },
-      [
-        Autoplay({
-          delay: 6000,
-          stopOnInteraction: false,
-        }),
-      ]
-    );
+  const scrollNext = useCallback(() => {
+    emblaApi?.scrollNext();
+  }, [emblaApi]);
 
-  /* ===================== */
-  /* LOAD DATA JSON */
-  /* ===================== */
-
-  useEffect(() => {
-    const jsonData =
-      CarouselData[
-        type
-      ] as SlideItem[];
-
-    setData(jsonData || []);
-  }, [type]);
-
-  /* ===================== */
-  /* DETECT MOBILE */
-  /* ===================== */
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(
-        window.innerWidth < 768
-      );
-    };
-
-    handleResize();
-
-    window.addEventListener(
-      "resize",
-      handleResize
-    );
-
-    return () =>
-      window.removeEventListener(
-        "resize",
-        handleResize
-      );
-  }, []);
-
-  const scrollPrev =
-    useCallback(() => {
-      emblaApi?.scrollPrev();
-    }, [emblaApi]);
-
-  const scrollNext =
-    useCallback(() => {
-      emblaApi?.scrollNext();
-    }, [emblaApi]);
-
-  if (data.length === 0) {
+  if (!data || data.length === 0) {
     return (
       <div className="h-[400px] flex items-center justify-center bg-gray-200 rounded-xl font-medium">
         Tidak ada foto ditemukan
@@ -120,54 +53,40 @@ export default function Carousel({
   }
 
   return (
-    <div
-      className={`relative group max-w-5xl mx-auto ${className}`}
-    >
+    <div className={`relative group max-w-5xl mx-auto ${className}`}>
       {/* CAROUSEL */}
       <div
         className="overflow-hidden rounded-2xl shadow-lg border border-gray-100"
         ref={emblaRef}
       >
         <div className="flex">
-          {data.map(
-            (item, index) => (
-              <div
-                key={index}
-                className="
+          {data.map((item, index) => (
+            <div
+              key={item.id ?? index}
+              className="
                 flex-[0_0_100%]
                 min-w-0
                 relative
                 aspect-[3/4]
                 md:aspect-video
               "
-              >
-                <Image
-                  src={
-                    isMobile
-                      ? item.poster
-                      : item.banner
-                  }
-                  alt={
-                    item.title
-                  }
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  priority={
-                    index === 0
-                  }
-                  sizes="100vw"
-                />
+            >
+              <Image
+                src={item.banner}
+                alt={item.title}
+                fill
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                priority={index === 0}
+                sizes="100vw"
+              />
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-6 md:p-8">
-                  <p className="text-white font-semibold text-lg md:text-xl">
-                    {
-                      item.title
-                    }
-                  </p>
-                </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-6 md:p-8">
+                <p className="text-white font-semibold text-lg md:text-xl">
+                  {item.title}
+                </p>
               </div>
-            )
-          )}
+            </div>
+          ))}
         </div>
       </div>
 

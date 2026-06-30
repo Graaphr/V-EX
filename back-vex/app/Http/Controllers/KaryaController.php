@@ -65,61 +65,61 @@ class KaryaController extends Controller
     // =============================
 // TAMBAH KARYA (store yang dibenahi)
 // =============================
-public function store(Request $request)
-{
-    $user = $request->user();
+    public function store(Request $request)
+    {
+        $user = $request->user();
 
-    $request->validate([
-        'id_pameran'    => 'required|exists:pameran,id_pameran',
-        'id_model'      => 'required|exists:model,id_model',   // ← ganti dari id_stan
-        'judul'         => 'required|string|max:255',
-        'deskripsi'     => 'required|string',
-        'tautan'        => 'required|url',
-        'gambar_poster' => 'required|image|mimes:png,jpg,jpeg|max:5000',
-        'gambar_sampul' => 'required|image|mimes:png,jpg,jpeg|max:5000',
-    ]);
+        $request->validate([
+            'id_pameran' => 'required|exists:pameran,id_pameran',
+            'id_model' => 'required|exists:model,id_model',   // ← ganti dari id_stan
+            'judul' => 'required|string|max:255',
+            'deskripsi' => 'required|string',
+            'tautan' => 'required|url',
+            'gambar_poster' => 'required|image|mimes:png,jpg,jpeg|max:5000',
+            'gambar_sampul' => 'required|image|mimes:png,jpg,jpeg|max:5000',
+        ]);
 
-    $idPameran = $request->id_pameran;
+        $idPameran = $request->id_pameran;
 
-    // =============================
-    // CEK APAKAH USER SUDAH PUNYA KARYA
-    // DI PAMERAN INI
-    // =============================
-    $existingKarya = Karya::where('id_pengguna', $user->id)
-        ->where('id_pameran', $idPameran)
-        ->first();
+        // =============================
+        // CEK APAKAH USER SUDAH PUNYA KARYA
+        // DI PAMERAN INI
+        // =============================
+        $existingKarya = Karya::where('id_pengguna', $user->id)
+            ->where('id_pameran', $idPameran)
+            ->first();
 
-    if ($existingKarya) {
-        return response()->json([
-            'status'   => 'error',
-            'message'  => 'Anda sudah mengunggah karya pada pameran ini.',
-            'karya_id' => $existingKarya->id_karya,
-        ], 409);
-    }
+        if ($existingKarya) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Anda sudah mengunggah karya pada pameran ini.',
+                'karya_id' => $existingKarya->id_karya,
+            ], 409);
+        }
 
-    // =============================
-    // BUAT ENTRY STAN BARU
-    // (model_stan diisi dari id_model yang dipilih user)
-    // =============================
-    $karya = null;
+        // =============================
+        // BUAT ENTRY STAN BARU
+        // (model_stan diisi dari id_model yang dipilih user)
+        // =============================
+        $karya = null;
         DB::transaction(function () use ($request, $user, $idPameran, &$karya) {
             $stan = Stan::create([
                 'id_pameran' => $idPameran,
                 'model_stan' => $request->id_model,
             ]);
-    // =============================
-    // BARU BUAT KARYA DENGAN id_stan HASIL INSERT
-    // =============================
+            // =============================
+            // BARU BUAT KARYA DENGAN id_stan HASIL INSERT
+            // =============================
             $karya = Karya::create([
-                'id_pengguna'   => $user->id,
-                'id_pameran'    => $idPameran,
-                'id_stan'       => $stan->id_stan,
-                'judul'         => $request->judul,
-                'deskripsi'     => $request->deskripsi,
-                'tautan'        => $request->tautan,
+                'id_pengguna' => $user->id,
+                'id_pameran' => $idPameran,
+                'id_stan' => $stan->id_stan,
+                'judul' => $request->judul,
+                'deskripsi' => $request->deskripsi,
+                'tautan' => $request->tautan,
                 'gambar_poster' => '/',
                 'gambar_sampul' => '/',
-                'lantai'        => 1,
+                'lantai' => 1,
             ]);
         });
 
@@ -323,6 +323,79 @@ public function store(Request $request)
         return response()->json([
             'status' => 'success',
             'message' => 'Karya PBL berhasil dihapus.',
+        ]);
+    }
+
+    // =============================
+// KARYA TERBAIK (PAMERAN AKTIF)
+// =============================
+    public function karyaTerbaikAktif()
+    {
+        $today = now()->toDateString();
+
+        $pameranAktifIds = \App\Models\Pameran::where('tanggal_mulai', '<=', $today)
+            ->where('tanggal_akhir', '>=', $today)
+            ->pluck('id_pameran');
+
+        if ($pameranAktifIds->isEmpty()) {
+            return response()->json([
+                'status' => 'success',
+                'karya' => [],
+            ]);
+        }
+
+        $karya = Karya::where('is_terbaik', true)
+            ->whereIn('id_pameran', $pameranAktifIds)
+            ->get()
+            ->map(fn($item) => [
+                'id' => $item->id_karya,
+                'title' => $item->judul,
+                'banner' => $item->gambar_sampul
+                    ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
+                    : '',
+            ]);
+
+        return response()->json([
+            'status' => 'success',
+            'karya' => $karya,
+        ]);
+    }
+
+    // =============================
+// KARYA FAVORIT (PAMERAN AKTIF)
+// Berdasarkan jumlah suka terbanyak
+// =============================
+    public function karyaFavoritAktif()
+    {
+        $today = now()->toDateString();
+
+        $pameranAktifIds = \App\Models\Pameran::where('tanggal_mulai', '<=', $today)
+            ->where('tanggal_akhir', '>=', $today)
+            ->pluck('id_pameran');
+
+        if ($pameranAktifIds->isEmpty()) {
+            return response()->json([
+                'status' => 'success',
+                'karya' => [],
+            ]);
+        }
+
+        $karya = Karya::whereIn('id_pameran', $pameranAktifIds)
+            ->withCount('suka')
+            ->orderByDesc('suka_count')
+            ->take(10)
+            ->get()
+            ->map(fn($item) => [
+                'id' => $item->id_karya,
+                'title' => $item->judul,
+                'banner' => $item->gambar_sampul
+                    ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
+                    : '',
+            ]);
+
+        return response()->json([
+            'status' => 'success',
+            'karya' => $karya,
         ]);
     }
 }
