@@ -906,27 +906,50 @@ function PosterViewer({
 
         if (!karya) throw new Error("Karya tidak ditemukan");
 
-        // Ambil status like user saat ini (butuh auth)
-        const token = localStorage.getItem("token") ?? undefined;
-        const sukaData = await getKaryaLikeStatus(karya.id_karya, token);
-        const liked = sukaData.liked ?? false;
-        const totalSuka = sukaData.total_suka ?? karya.total_suka ?? 0;
-
-        const komentar = await getKomentar(karya.id_karya);
-
         if (cancelled) return;
 
-        setInfo({
+        // Tampilkan dulu judul/deskripsi langsung dari getKaryaDetail,
+        // tidak menunggu like-status / komentar yang butuh auth.
+        setInfo((prev) => ({
+          ...prev,
           id_karya: karya.id_karya,
           judul: karya.judul ?? "-",
           deskripsi: karya.deskripsi ?? "-",
-          likes: totalSuka,
-          liked,
+          likes: karya.total_suka ?? 0,
+          liked: false,
           is_terbaik: karya.is_terbaik ?? false,
           is_terbanyak: karya.is_terbanyak ?? false,
           tautan: karya.tautan ?? null,
-          komentar,
-        });
+        }));
+
+        // Like-status butuh token — kalau gagal (mis. belum login),
+        // jangan sampai menimpa judul/deskripsi yang sudah berhasil dimuat.
+        const token = localStorage.getItem("token") ?? undefined;
+        if (token) {
+          try {
+            const sukaData = await getKaryaLikeStatus(karya.id_karya, token);
+            if (!cancelled) {
+              setInfo((prev) => ({
+                ...prev,
+                liked: sukaData.liked ?? false,
+                likes: sukaData.total_suka ?? prev.likes,
+              }));
+            }
+          } catch {
+            // diamkan saja — tetap pakai total_suka dari karya & liked=false
+          }
+        }
+
+        // Komentar bisa publik (tidak butuh token) — tapi tetap diisolasi
+        // supaya kalau gagal, tidak menimpa judul/deskripsi yang sudah ada.
+        try {
+          const komentar = await getKomentar(karya.id_karya);
+          if (!cancelled) {
+            setInfo((prev) => ({ ...prev, komentar }));
+          }
+        } catch {
+          // diamkan saja — komentar tetap kosong
+        }
       } catch {
         if (cancelled) return;
         setInfo({
@@ -935,8 +958,8 @@ function PosterViewer({
           deskripsi: "Data karya belum tersedia.",
           likes: 0,
           liked: false,
-          is_terbaik: false,    // ← ganti penilaian
-          is_terbanyak: false,  // ← tambah
+          is_terbaik: false,
+          is_terbanyak: false,
           tautan: null,
           komentar: [],
         });
@@ -945,8 +968,6 @@ function PosterViewer({
 
     load();
 
-    // Prevents a stale response from a previous booth overwriting state
-    // if the user opens posters quickly in succession.
     return () => { cancelled = true; };
   }, [id, booth]);
 
