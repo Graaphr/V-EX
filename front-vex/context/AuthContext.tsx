@@ -92,7 +92,8 @@ export const AuthProvider = ({
   const logout = async () => {
     // Clear dulu biar UI langsung responsif
     clearSession();
-
+  localStorage.removeItem('token');
+  // localStorage.removeItem('user');
     router.replace('/');
 
     try {

@@ -376,7 +376,7 @@ export default function ExhibitionPage() {
                 await fetch(`/api-internal/player?id=${playerId}`, { method: "DELETE" });
                 sessionStorage.removeItem("playerId");
                 sessionStorage.removeItem("playerName");
-                router.push(`/pameran/${id}`);
+                router.back();
               }}
               className="w-full h-12 rounded-xl bg-red-500 font-bold"
             >
