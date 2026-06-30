@@ -69,8 +69,8 @@ export default function DetailPreview({
         <img
           src={
             selectedModel
-              ? `/image/${encodeURIComponent(selectedModel.nama_model)}`
-              : "/image/img-stan1.svg"
+              ? `/image/${encodeURIComponent(selectedModel.nama_model)}.svg`
+              : "/image/Stan A.svg"
           }
           alt="booth"
           className="h-full w-full object-contain p-4"
