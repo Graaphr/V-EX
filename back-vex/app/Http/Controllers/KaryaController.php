@@ -362,24 +362,26 @@ class KaryaController extends Controller
     }
 
     // =============================
-// KARYA FAVORIT (PAMERAN AKTIF)
+// KARYA FAVORIT (ALL PAMERAN)
 // Berdasarkan jumlah suka terbanyak
 // =============================
     public function karyaFavoritAktif()
-    {
-        $karya = Karya::withCount('suka')
-            ->orderByDesc('suka_count')
-            ->first();
-
-        return response()->json([
-            'status' => 'success',
-            'karya' => $karya ? [
-                'id' => $karya->id_karya,
-                'title' => $karya->judul,
-                'banner' => $karya->gambar_sampul
-                    ? asset("http://vex.terpal25.web.id/storage/{$karya->gambar_sampul}")
-                    : '',
-            ] : null,
+{
+    $karya = Karya::withCount('suka')
+        ->orderByDesc('suka_count')
+        ->take(1)
+        ->get()
+        ->map(fn($item) => [
+            'id' => $item->id_karya,
+            'title' => $item->judul,
+            'banner' => $item->gambar_sampul
+                ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
+                : '',
         ]);
-    }
+
+    return response()->json([
+        'status' => 'success',
+        'karya' => $karya,
+    ]);
+}
 }
