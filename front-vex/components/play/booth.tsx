@@ -3,9 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-
-// Shared loader — bukan dibuat ulang tiap Booth
-const textureLoader = new THREE.TextureLoader();
+import { sharedTextureLoader } from "@/components/shared/ui/LoadingManager";
 
 // Shared texture cache across all booths (and experience.tsx panels),
 // keyed by URL, so the same poster/sampul isn't downloaded/decoded twice.
@@ -24,7 +22,10 @@ function loadCachedTexture(
     return;
   }
 
-  textureLoader.load(
+  // sharedTextureLoader pakai THREE.DefaultLoadingManager — sama dengan
+  // manager yang dibaca useProgress() di ExhibitionPage — sehingga texture
+  // poster/sampul ikut terhitung dalam progress bar loading.
+  sharedTextureLoader.load(
     path,
     (tex) => {
       tex.flipY = flipY;

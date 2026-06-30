@@ -14,6 +14,7 @@ import {
 } from "next/navigation";
 
 import { Canvas } from "@react-three/fiber";
+import { useProgress } from "@react-three/drei";
 import { v4 as uuidv4 } from 'uuid';
 
 import Experience from "@/components/play/experience";
@@ -60,8 +61,44 @@ export default function ExhibitionPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
 
+  // Loading dibagi 2 fase, digabung jadi satu progress bar 0-100%:
+  //   Fase 1 (bobot 30%): fetch data awal di Experience — getHallModel,
+  //     getKaryaList, getPameranFolder. Ini terjadi SEBELUM scene di-mount,
+  //     jadi useProgress() drei belum ada apa pun untuk dibaca di sini.
+  //     Experience memanggil onDataReady() sekali saat fase ini selesai.
+  //   Fase 2 (bobot 70%): load GLTF (hall + booth model) dan texture
+  //     (poster/sampul/panel display) — semuanya lewat sharedTextureLoader
+  //     (lihat loadingManager.ts) sehingga ikut terbaca oleh useProgress()
+  //     dari <LoaderWatcher> di dalam <Canvas>.
+  // Pembagian 30/70 ini perkiraan kasar (fetch JSON biasanya jauh lebih
+  // cepat dari decode model 3D + texture), bukan ukuran presisi — tapi
+  // progress tetap representatif dan tidak pernah mundur.
+  const DATA_FETCH_WEIGHT = 30;
+  const ASSET_LOAD_WEIGHT = 70;
+
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [dataReady, setDataReady] = useState(false);
+  const [assetProgress, setAssetProgress] = useState(0); // 0-100 dari useProgress()
+  const [loadProgress, setLoadProgress] = useState(0);   // gabungan 0-100, dipakai progress bar
+
+  const handleDataReady = useCallback(() => {
+    setDataReady(true);
+  }, []);
+
+  // Gabungkan kedua fase jadi satu angka. Pakai Math.max terhadap nilai
+  // sebelumnya supaya progress bar tidak pernah terlihat mundur, walau
+  // misal assetProgress sempat reset karena re-render Experience.
+  useEffect(() => {
+    const dataPortion = dataReady ? DATA_FETCH_WEIGHT : 0;
+    const assetPortion = dataReady ? (assetProgress / 100) * ASSET_LOAD_WEIGHT : 0;
+    const combined = dataPortion + assetPortion;
+    setLoadProgress((prev) => Math.max(prev, combined));
+  }, [dataReady, assetProgress]);
+
   // Intro: "controls" → "welcome" → null (ditutup)
-  const [introStep, setIntroStep] = useState<"controls" | "welcome" | null>("controls");
+  // Sengaja mulai dari null — baru di-set ke "controls" setelah asset selesai load,
+  // supaya panduan kontrol tidak numpuk dengan loading screen.
+  const [introStep, setIntroStep] = useState<"controls" | "welcome" | null>(null);
 
   const [posterData, setPosterData] = useState<PosterData>({ src: "", booth: "" });
   const [embedOpen, setEmbedOpen] = useState(false);
@@ -212,7 +249,20 @@ export default function ExhibitionPage() {
     setEmbedOpen(true);
   }, []);
 
-  const controlsLocked = !posterOpen && !menuOpen && !embedOpen && !mapOpen && introStep === null;
+  // Dipanggil oleh LoaderWatcher saat semua asset (model 3D, texture, dll)
+  // di dalam Canvas sudah selesai di-load. Setelah ini intro "controls" baru muncul.
+  const handleAssetsLoaded = useCallback(() => {
+    setAssetsLoaded(true);
+    setLoadProgress(100);
+  }, []);
+
+  // Begitu kedua fase (data + asset) selesai, baru munculkan intro kontrol.
+  useEffect(() => {
+    if (assetsLoaded) setIntroStep("controls");
+  }, [assetsLoaded]);
+
+  const controlsLocked =
+    assetsLoaded && !posterOpen && !menuOpen && !embedOpen && !mapOpen && introStep === null;
 
   return (
     <div className="w-screen h-screen bg-black overflow-hidden relative touch-none select-none">
@@ -230,6 +280,7 @@ export default function ExhibitionPage() {
         <>
           {playerName && (
             <Canvas camera={{ position: [0, 2, 5], fov: 75 }}>
+              <LoaderWatcher dataReady={dataReady} onProgress={setAssetProgress} onLoaded={handleAssetsLoaded} />
               <Experience
                 exhibitionId={id}
                 openTautan={openTautan}
@@ -242,6 +293,7 @@ export default function ExhibitionPage() {
                 playerId={playerId}
                 playerName={playerName}
                 currentFloor={currentFloor}
+                onDataReady={handleDataReady}
               />
             </Canvas>
           )}
@@ -284,6 +336,22 @@ export default function ExhibitionPage() {
             </button>
           )}
         </>
+      )}
+
+      {/* LOADING SCREEN — menutupi semuanya sampai asset 3D selesai load */}
+      {!assetsLoaded && (!isMobile || !isPortrait) && (
+        <div className="fixed inset-0 z-[999999] bg-black flex flex-col items-center justify-center px-6">
+          <div className="w-[280px] max-w-full space-y-4">
+            <p className="text-white text-center font-bold text-lg">Memuat Pameran...</p>
+            <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+              <div
+                className="h-full bg-blue-500 rounded-full transition-[width] duration-150 ease-out"
+                style={{ width: `${loadProgress}%` }}
+              />
+            </div>
+            <p className="text-white/50 text-center text-sm">{Math.round(loadProgress)}%</p>
+          </div>
+        </div>
       )}
 
       {/* MENU */}
@@ -464,6 +532,69 @@ export default function ExhibitionPage() {
       )}
     </div>
   );
+}
+
+/* ======================= */
+/* LOADER WATCHER          */
+/* Dipasang sebagai child dari <Canvas>. useProgress() dari drei membaca   */
+/* status loading manager Three.js (semua useGLTF/useLoader/useTexture    */
+/* yang aktif). Komponen ini tidak merender apa pun — cuma melaporkan     */
+/* progress ke parent lewat callback.                                     */
+/* ======================= */
+
+function LoaderWatcher({
+  dataReady,
+  onProgress,
+  onLoaded,
+}: {
+  dataReady: boolean;
+  onProgress: (percent: number) => void;
+  onLoaded: () => void;
+}) {
+  const { progress, active } = useProgress();
+  const firedRef = useRef(false);
+  const sawActiveRef = useRef(false);
+
+  useEffect(() => {
+    onProgress(progress);
+  }, [progress, onProgress]);
+
+  useEffect(() => {
+    if (active) sawActiveRef.current = true;
+  }, [active]);
+
+  useEffect(() => {
+    if (firedRef.current) return;
+    // Fase fetch data (getHallModel/getKaryaList/getPameranFolder) harus
+    // selesai dulu — sebelum itu, ExperienceInner belum mount sehingga
+    // GLTF/texture belum mulai di-load sama sekali. Tanpa guard ini,
+    // "progress >= 100 && !active" bisa salah ke-trigger di momen sesaat
+    // sebelum loader pertama mulai berjalan.
+    if (!dataReady) return;
+
+    // Kasus normal: loader sempat aktif (ada asset di-load), lalu selesai.
+    if (sawActiveRef.current && !active && progress >= 100) {
+      firedRef.current = true;
+      onLoaded();
+      return;
+    }
+
+    // Fallback: kalau asset sudah ter-cache / tidak ada yang perlu di-load,
+    // drei tidak akan pernah set active=true sama sekali. Beri sedikit
+    // delay supaya loading screen tetap tampil sebentar (tidak "flash"),
+    // lalu lanjut otomatis.
+    if (!sawActiveRef.current) {
+      const t = setTimeout(() => {
+        if (!firedRef.current) {
+          firedRef.current = true;
+          onLoaded();
+        }
+      }, 600);
+      return () => clearTimeout(t);
+    }
+  }, [dataReady, active, progress, onLoaded]);
+
+  return null;
 }
 
 /* ======================= */
