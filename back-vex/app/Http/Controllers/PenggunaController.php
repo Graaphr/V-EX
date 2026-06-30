@@ -297,8 +297,9 @@ class PenggunaController extends Controller
 
             return response()->json([
                 'status' => 'success',
+                'message' => 'Berhasil masuk ke akun',
                 'role' => $user->role,
-                'redirect_to' => $redirectTo,
+                'redirect' => $redirectTo,
                 'token' => $token,
                 'user' => [
                     'id' => $user->id,

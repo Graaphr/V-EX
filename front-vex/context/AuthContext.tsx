@@ -1,8 +1,15 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import url from '@/lib/axios';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
+
+import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
+import url from '@/lib/axios';
 
 type User = {
   id: number;
@@ -23,39 +30,48 @@ type AuthType = {
 
 const AuthContext = createContext<AuthType | null>(null);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const router = useRouter();
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const clearSession = () => {
+    localStorage.removeItem('token');
+    Cookies.remove('role');
+    setUser(null);
+  };
+
   const fetchUser = async () => {
+    const token = localStorage.getItem('token');
+
+    // Tidak ada token = langsung selesai
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-
-      if (!token) {
-        setUser(null);
-        return;
-      }
-
       const response = await url.get('/api/user');
+
       const userData = response.data.user ?? response.data;
 
       setUser(userData);
 
       Cookies.set('role', userData.role);
-      
     } catch (error: any) {
-      console.error('Fetch user gagal:', error);
-
+      // Kalau unauthorized langsung reset session
       if (error?.response?.status === 401) {
-        localStorage.removeItem('token');
-        Cookies.remove('role'); 
-        setUser(null);
-        window.location.href = '/';
-        return;
+        clearSession();
+        router.replace('/');
+      } else {
+        // Error lain jangan spam
+        clearSession();
       }
-
-      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -67,27 +83,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = (token: string, userData: User) => {
     localStorage.setItem('token', token);
-    Cookies.set('role', userData.role); // simpan role ke cookie
+
+    Cookies.set('role', userData.role);
+
     setUser(userData);
   };
 
   const logout = async () => {
+    // Clear dulu biar UI langsung responsif
+    clearSession();
+
+    router.replace('/');
+
     try {
       await url.post('/api/logout');
-    } catch (error) {
-      console.warn('Logout request failed, clearing local session anyway.');
-    } finally {
-      localStorage.removeItem('token');
-      Cookies.remove('role');
-      setUser(null);
+    } catch (_) {
+      // sengaja dikosongkan
     }
   };
 
-  return <AuthContext.Provider value={{ user, loading, login, logout, fetchUser }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+        fetchUser,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth harus di dalam AuthProvider');
+
+  if (!ctx) {
+    throw new Error('useAuth harus di dalam AuthProvider');
+  }
+
   return ctx;
 };
