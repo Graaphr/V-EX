@@ -142,10 +142,10 @@ export default function DetailKarya({ id }: Props) {
                 description: item.deskripsi,
                 category: item.stan?.pameran?.kategori ?? "",
                 image: item.gambar_poster
-                  ? `http://localhost:8000/storage/${item.gambar_poster}`
+                  ? `https://vex.terpalb25.web.id/storage/${item.gambar_poster}`
                   : "",
                 thumbnail: item.gambar_sampul
-                  ? `http://localhost:8000/storage/${item.gambar_sampul}`
+                  ? `https://vex.terpalb25.web.id/storage/${item.gambar_sampul}`
                   : "",
                 link: item.tautan ?? "",
                 year: tanggalMulai.slice(0, 4),

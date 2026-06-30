@@ -262,12 +262,12 @@ export default function HomePage() {
         <div className="autoMid min-h-[460px] py-[48px] px-4 sm:px-6 lg:px-0 grid grid-cols-1 lg:grid-cols-10 gap-10 lg:gap-20 items-start">
           <div className="order-1 lg:order-2 lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
             <Card
-              link="/image/img-best1.svg"
+              link="/image/ImgBest1.svg"
               className="w-full aspect-video object-cover rounded-xl shadow-xl"
               title="Best 1"
             />
             <Card
-              link="/image/img-best1.svg"
+              link="/image/ImgBest2.svg"
               className="w-full aspect-video object-cover rounded-xl shadow-xl"
               title="Best 2"
             />
