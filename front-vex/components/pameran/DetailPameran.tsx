@@ -162,7 +162,6 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
 
           {/* DESCRIPTION */}
           <div className="mt-10">
-            <h2 className="text-xl font-bold mb-4">Deskripsi</h2>
             <div className="space-y-6 text-gray-600 leading-relaxed">
               {description.map((section: any, index: number) => (
                 <div key={index}>
