@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 
 import Booth from "./booth";
 import Player from "./player";
+import { sharedTextureLoader } from "@/components/shared/ui/LoadingManager";
 
 import { getHallModel, getKaryaList, getPameranFolder, getGameAssets } from "@/components/play/apiPlay";
 
@@ -32,6 +33,11 @@ type Props = {
   currentFloor: number;
   mobileMove?: React.MutableRefObject<{ w: boolean; a: boolean; s: boolean; d: boolean }>;
   lookDelta?: React.MutableRefObject<{ x: number; y: number }>;
+  // Dipanggil sekali, saat fetch data awal (hall model, karya list, folder)
+  // selesai dan ExperienceInner siap mulai dirender. ExhibitionPage memakai
+  // ini sebagai fase pertama dari total progress loading (lihat ringkasan
+  // pembagian fase di ExhibitionPage).
+  onDataReady?: () => void;
 };
 
 /* ===================== */
@@ -83,6 +89,8 @@ export default function Experience(props: Props) {
   const [karyaList, setKaryaList] = useState<any[]>([]);
   const [folder, setFolder] = useState<string | null>(null); // ← null dulu
 
+  const notifiedRef = useRef(false);
+
   useEffect(() => {
     getHallModel(props.exhibitionId)
       .then(setHallModel)
@@ -99,6 +107,17 @@ export default function Experience(props: Props) {
 
   // ← tunggu keduanya sebelum render
   if (!hallModel || !folder) return null;
+
+  // Lapor ke ExhibitionPage bahwa fase fetch data sudah selesai, supaya
+  // progress bar bisa lanjut ke fase loading GLTF + texture.
+  // (Dipanggil di body komponen, bukan di useEffect, sehingga terjadi pada
+  // render yang sama saat hallModel & folder sudah ada — useEffect terpisah
+  // di sini tidak diperlukan karena setState dari onDataReady seharusnya
+  // tidak terjadi; ExhibitionPage hanya mengubah progress angka.)
+  if (!notifiedRef.current) {
+    notifiedRef.current = true;
+    props.onDataReady?.();
+  }
 
   return (
     <ExperienceInner
@@ -139,7 +158,10 @@ function ExperienceInner({
   const bgmRef = useRef<HTMLAudioElement | null>(null);
   const footRef = useRef<HTMLAudioElement | null>(null);
   const jumpRef = useRef<HTMLAudioElement | null>(null);
-  const loader = useRef(new THREE.TextureLoader());
+  // Pakai sharedTextureLoader (lihat loadingManager.ts) supaya texture panel
+  // display & panel poster di hall ikut terhitung di useProgress() drei,
+  // sama seperti texture poster/sampul booth di booth.tsx.
+  const loader = useRef(sharedTextureLoader);
 
   const { scene } = useGLTF(hallModel);
 

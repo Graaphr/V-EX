@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { GetModelStan } from '@/components/karya/apiKarya'; // ← ganti import
+import { useEffect, useState } from "react";
+import { GetModelStan } from "@/components/karya/apiKarya"; // ← ganti import
 
 interface StanOption {
-  id_model: number;   // ← ganti dari id ke id_model
+  id_model: number; // ← ganti dari id ke id_model
   nama_model: string; // ← ganti dari model_stan ke nama_model
 }
 
@@ -13,9 +13,11 @@ interface Props {
   booth: string;
   onChange: (value: string) => void;
   error?: string;
+  readOnly?: boolean; // ← tambah
 }
 
-const inputClass = 'w-full p-2.5 px-3 rounded-lg border mt-1.5 focus:outline-none focus:ring-1 transition-all text-sm';
+const inputClass =
+  "w-full p-2.5 px-3 rounded-lg border mt-1.5 focus:outline-none focus:ring-1 transition-all text-sm";
 
 function Label({ text, required }: { text: string; required?: boolean }) {
   return (
@@ -25,28 +27,37 @@ function Label({ text, required }: { text: string; required?: boolean }) {
   );
 }
 
-export default function DetailPreview({ booth, pameranId, onChange, error }: Props) {
+export default function DetailPreview({
+  booth,
+  pameranId,
+  onChange,
+  error,
+  readOnly,
+}: Props) {
   const [modelList, setModelList] = useState<StanOption[]>([]);
   const [loadingModel, setLoadingModel] = useState(false);
 
   useEffect(() => {
-    // Tidak perlu tunggu pameranId — model stan tidak bergantung pameran
+    if (readOnly) return; // ← skip fetch kalau KPS/Admin
+
     const fetchModel = async () => {
       setLoadingModel(true);
       try {
         const res = await GetModelStan();
         setModelList(res.data ?? []);
       } catch (err) {
-        console.error('Gagal memuat model stan:', err);
+        console.error("Gagal memuat model stan:", err);
       } finally {
         setLoadingModel(false);
       }
     };
 
     fetchModel();
-  }, []); // ← kosong, fetch sekali saat mount
+  }, [readOnly]); // ← kosong, fetch sekali saat mount
 
-  const selectedModel = modelList.find((m) => String(m.id_model) === String(booth));
+  const selectedModel = modelList.find(
+    (m) => String(m.id_model) === String(booth),
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -56,29 +67,41 @@ export default function DetailPreview({ booth, pameranId, onChange, error }: Pro
 
       <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl w-full h-[300px] flex items-center justify-center overflow-hidden">
         <img
-          src={selectedModel ? `/image/${encodeURIComponent(selectedModel.nama_model)}` : '/image/img-stan1.svg'}
+          src={
+            selectedModel
+              ? `/image/${encodeURIComponent(selectedModel.nama_model)}`
+              : "/image/img-stan1.svg"
+          }
           alt="booth"
           className="h-full w-full object-contain p-4"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = '/image/img-stan1.svg';
+            (e.target as HTMLImageElement).src = "/image/img-stan1.svg";
           }}
         />
       </div>
 
       <div>
         <Label text="Pilih Stan" required />
-        <p className="text-xs text-gray-400 mt-1">Pilih tampilan stan untuk karya kamu</p>
+        <p className="text-xs text-gray-400 mt-1">
+          Pilih tampilan stan untuk karya kamu
+        </p>
 
-        {loadingModel ? (
+        {readOnly ? (
+          <div
+            className={`${inputClass} border-gray-200 bg-gray-50 text-gray-700`}
+          >
+            {booth ? `Stan #${booth}` : "-"}
+          </div>
+        ) : loadingModel ? (
           <div className="mt-1.5 h-10 animate-pulse rounded-lg bg-gray-100" />
         ) : (
           <select
-            value={booth ?? ''}
+            value={booth ?? ""}
             onChange={(e) => onChange(e.target.value)}
             className={`${inputClass} ${
               error
-                ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
-                : 'border-gray-300 focus:border-main-blue focus:ring-main-blue'
+                ? "border-red-400 focus:border-red-400 focus:ring-red-200"
+                : "border-gray-300 focus:border-main-blue focus:ring-main-blue"
             }`}
           >
             <option value="" disabled>
