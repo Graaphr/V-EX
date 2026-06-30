@@ -26,10 +26,10 @@ class KaryaController extends Controller
                 'title' => $item->judul,
                 'category' => $item->pameran?->kategori ?? '',
                 'image' => $item->gambar_poster
-                    ? asset("http://72.61.210.158:8000/storage/{$item->gambar_poster}")
+                    ? asset("https://vex.terpalb25.web.id/storage/{$item->gambar_poster}")
                     : '',
                 'thumbnail' => $item->gambar_sampul
-                    ? asset("http://72.61.210.158:8000/storage/{$item->gambar_sampul}")
+                    ? asset("https://vex.terpalb25.web.id/storage/{$item->gambar_sampul}")
                     : '',
                 'link' => $item->tautan,
                 'description' => $item->deskripsi,

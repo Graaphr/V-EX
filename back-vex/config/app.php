@@ -52,9 +52,9 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://72.61.210.158'),
+    'url' => env('APP_URL', 'https://vex.terpalb25.web.id'),
 
-    'frontend_url' => env('FRONTEND_URL', 'http://72.61.210.158:3001'),
+    'frontend_url' => env('FRONTEND_URL', 'https://vex.terpalb25.web.id'),
 
     /*
     |--------------------------------------------------------------------------

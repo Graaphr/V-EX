@@ -25,7 +25,7 @@ class PameranController extends Controller
             'category' => $item->prodi?->nama_prodi ?? $item->kategori,
             'kode_prodi' => $item->kategori,
             'date' => $item->tanggal_mulai,
-            'bannerImage' => "http://72.61.210.158:8000/storage/{$item->banner}",
+            'bannerImage' => "https://vex.terpalb25.web.id/storage/{$item->banner}",
             'likes' => $item->suka_count,
             'karya' => $item->karya_count,
             'description' => [
@@ -82,7 +82,7 @@ class PameranController extends Controller
             'kode_prodi' => $pameran->kategori,
             'category' => $pameran->prodi?->nama_prodi ?? $pameran->kategori,
             'date' => $pameran->tanggal_mulai,
-            'bannerImage' => "http://72.61.210.158:8000/storage/{$pameran->banner}",
+            'bannerImage' => "https://vex.terpalb25.web.id/storage/{$pameran->banner}",
             'likes' => $pameran->suka_count,
             'karya' => $pameran->karya_count,
             'description' => [
