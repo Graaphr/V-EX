@@ -10,9 +10,17 @@ import { FaStar } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { GetKaryaTerbaikAktif, GetKaryaFavoritAktif } from "./api";
 
+interface KaryaFavoritItem {
+  id: number;
+  title: string;
+  banner: string;
+}
+
 export default function HomePage() {
   const [karyaTerbaik, setKaryaTerbaik] = useState<CarouselKaryaItem[]>([]);
-  const [karyaFavorit, setKaryaFavorit] = useState<CarouselKaryaItem[]>([]);
+  const [karyaFavorit, setKaryaFavorit] = useState<KaryaFavoritItem | null>(
+    null,
+  );
 
   useEffect(() => {
     GetKaryaTerbaikAktif()
@@ -223,10 +231,17 @@ export default function HomePage() {
           <div className="order-1 lg:col-span-5 relative rounded-xl shadow-xl overflow-hidden w-full">
             <FavTag className="absolute left-0 top-0 z-10 scale-75 sm:scale-90 lg:scale-100 origin-top-left" />
             <div className="w-full aspect-[3/4] md:aspect-video">
-              <Carousel
-                data={karyaFavorit}
-                className="w-full h-full rounded-xl overflow-hidden"
-              />
+              {karyaFavorit ? (
+                <Card
+                  link={karyaFavorit.banner}
+                  title={karyaFavorit.title}
+                  className="w-full h-full object-cover rounded-xl"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-sm">
+                  Belum ada karya favorit
+                </div>
+              )}
             </div>
           </div>
 
