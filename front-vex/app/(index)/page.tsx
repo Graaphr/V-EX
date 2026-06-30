@@ -10,17 +10,11 @@ import { FaStar } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { GetKaryaTerbaikAktif, GetKaryaFavoritAktif } from "./api";
 
-interface KaryaFavoritItem {
-  id: number;
-  title: string;
-  banner: string;
-}
+
 
 export default function HomePage() {
   const [karyaTerbaik, setKaryaTerbaik] = useState<CarouselKaryaItem[]>([]);
-  const [karyaFavorit, setKaryaFavorit] = useState<KaryaFavoritItem | null>(
-    null,
-  );
+  const [karyaFavorit, setKaryaFavorit] = useState<CarouselKaryaItem[]>([]);
 
   useEffect(() => {
     GetKaryaTerbaikAktif()
@@ -175,12 +169,8 @@ export default function HomePage() {
           </div>
 
           <div className="flex flex-col justify-start items-start lg:items-end text-main-blue text-left lg:text-right gap-1 self-start">
-            <p className="font-poppins font-thin text-4xl sm:text-5xl lg:text-6xl leading-none">
-              DAPATKAN
-            </p>
-            <p className="font-tilt-wrap font-bold text-4xl sm:text-5xl lg:text-6xl leading-none">
-              PENGHARGAAN
-            </p>
+            <p className="font-poppins font-thin text-4xl sm:text-5xl lg:text-6xl leading-none">DAPATKAN</p>
+            <p className="font-tilt-wrap font-bold text-4xl sm:text-5xl lg:text-6xl leading-none">PENGHARGAAN</p>
           </div>
         </div>
       </section>
@@ -226,22 +216,15 @@ export default function HomePage() {
       </section>
 
       {/* SECTION 6 - Karya Favorit */}
-      <section className="bg-secondary-color w-full">
+            <section className="bg-secondary-color w-full">
         <div className="autoMid pt-[68px] pb-[78px] min-h-[580px] grid grid-cols-1 lg:grid-cols-8 gap-10 px-4 sm:px-6 lg:px-0 items-start">
           <div className="order-1 lg:col-span-5 relative rounded-xl shadow-xl overflow-hidden w-full">
             <FavTag className="absolute left-0 top-0 z-10 scale-75 sm:scale-90 lg:scale-100 origin-top-left" />
             <div className="w-full aspect-[3/4] md:aspect-video">
-              {karyaFavorit ? (
-                <Card
-                  link={karyaFavorit.banner}
-                  title={karyaFavorit.title}
-                  className="w-full h-full object-cover rounded-xl"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-sm">
-                  Belum ada karya favorit
-                </div>
-              )}
+              <Carousel
+                data={karyaFavorit}
+                className="w-full h-full rounded-xl overflow-hidden"
+              />
             </div>
           </div>
 
@@ -271,6 +254,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+
 
       {/* SECTION 7 - CTA */}
       <section className="bg-white w-full">

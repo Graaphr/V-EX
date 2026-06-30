@@ -47,7 +47,7 @@ export default function Carousel({ data, className }: CarouselProps) {
   if (!data || data.length === 0) {
     return (
       <div className="h-[400px] flex items-center justify-center bg-gray-200 rounded-xl font-medium">
-        Tidak ada foto ditemukan
+        Belum ada karya terbaik
       </div>
     );
   }
