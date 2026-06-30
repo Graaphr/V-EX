@@ -138,18 +138,18 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-[50px] w-full">
             <Card
-              link="/image/img-stan1.svg"
+              link="/image/Stan A.svg"
               title="img stan 1"
               className="w-full aspect-[4/3] object-cover rounded-xl"
             />
             <Card
-              link="/image/img-stan2.svg"
+              link="/image/Stan B.svg"
               title="img stan 2"
               className="w-full aspect-[4/3] object-cover rounded-xl"
             />
             <div className="sm:col-span-2 lg:col-span-1">
               <Card
-                link="/image/img-stan3.svg"
+                link="/image/Stan C.svg"
                 title="img stan 3"
                 className="w-full aspect-[4/3] object-cover rounded-xl"
               />

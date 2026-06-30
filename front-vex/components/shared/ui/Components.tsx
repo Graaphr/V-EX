@@ -50,7 +50,7 @@ export function Card({ link, title, className, ...props }: dataCard) {
         alt={title}
         width={100}
         height={100}
-        className="object-fill rounded-xl size-full "
+        className="object-fill rounded-xl size-full self-start"
         {...props}
       />
     </div>
