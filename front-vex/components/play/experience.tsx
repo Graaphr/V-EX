@@ -106,18 +106,23 @@ export default function Experience(props: Props) {
   }, [props.exhibitionId]);
 
   // ← tunggu keduanya sebelum render
-  if (!hallModel || !folder) return null;
+  const ready = !!hallModel && !!folder;
 
   // Lapor ke ExhibitionPage bahwa fase fetch data sudah selesai, supaya
   // progress bar bisa lanjut ke fase loading GLTF + texture.
-  // (Dipanggil di body komponen, bukan di useEffect, sehingga terjadi pada
-  // render yang sama saat hallModel & folder sudah ada — useEffect terpisah
-  // di sini tidak diperlukan karena setState dari onDataReady seharusnya
-  // tidak terjadi; ExhibitionPage hanya mengubah progress angka.)
-  if (!notifiedRef.current) {
+  // Dipanggil di useEffect (bukan di body render) karena onDataReady
+  // memicu setState di komponen lain (ExhibitionPage) — melakukannya
+  // langsung di body render melanggar aturan React ("cannot update a
+  // component while rendering a different component") dan bisa
+  // mengganggu commit React lain yang sedang berjalan (mis. LoaderWatcher).
+  useEffect(() => {
+    if (!ready || notifiedRef.current) return;
     notifiedRef.current = true;
     props.onDataReady?.();
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
+
+  if (!ready) return null;
 
   return (
     <ExperienceInner
