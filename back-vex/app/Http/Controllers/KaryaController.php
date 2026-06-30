@@ -367,21 +367,7 @@ class KaryaController extends Controller
 // =============================
     public function karyaFavoritAktif()
     {
-        $today = now()->toDateString();
-
-        $pameranAktifIds = \App\Models\Pameran::where('tanggal_mulai', '<=', $today)
-            ->where('tanggal_akhir', '>=', $today)
-            ->pluck('id_pameran');
-
-        if ($pameranAktifIds->isEmpty()) {
-            return response()->json([
-                'status' => 'success',
-                'karya' => null,
-            ]);
-        }
-
-        $karya = Karya::whereIn('id_pameran', $pameranAktifIds)
-            ->withCount('suka')
+        $karya = Karya::withCount('suka')
             ->orderByDesc('suka_count')
             ->first();
 
@@ -391,7 +377,7 @@ class KaryaController extends Controller
                 'id' => $karya->id_karya,
                 'title' => $karya->judul,
                 'banner' => $karya->gambar_sampul
-                    ? asset("https://vex.terpalb25.web.id/storage/{$karya->gambar_sampul}")
+                    ? asset("http://vex.terpal25.web.id/storage/{$karya->gambar_sampul}")
                     : '',
             ] : null,
         ]);
