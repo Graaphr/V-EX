@@ -30,6 +30,8 @@ Route::get('/pameran', [PameranController::class, 'index']);
 Route::get('/pameran/{id}', [PameranController::class, 'show']);
 Route::get('/karya/{id_karya}/komentar', [KomentarController::class, 'index']);
 Route::get('/karya-terbaik', [KpsController::class, 'karyaTerbaik']); // ✅ public
+Route::get('/public/karya/terbaik', [KaryaController::class, 'karyaTerbaikAktif']);
+Route::get('/public/karya/favorit', [KaryaController::class, 'karyaFavoritAktif']);
 
 //-----------------------
 // !! JANGAN DISENTUH !!
@@ -113,7 +115,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/karya/{id}', [KaryaController::class, 'update']);
         Route::post('/karya/{id}/update', [KaryaController::class, 'update']);
         Route::get('/model-stan', [KaryaController::class, 'getModelStan']);
-        // Route::delete('/karya/{id}', [KaryaController::class, 'destroy']);
+        
     });
 
     // =============================
