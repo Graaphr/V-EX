@@ -105,7 +105,7 @@ export function LinkAkses({ link, title, className, ...props }: LinkAkses) {
 // Footer.tsx
 export function LinkAksesEks({ link, title, children, className, ...props }: LinkAkses) {
   return (
-    <a href={link || '/icon/logo-vex.svg'} className="hover-text" {...props}>
+    <a href={link || '/icon/logo-vex.svg'} className="hover-text " {...props}>
       {title}
       {children}
     </a>

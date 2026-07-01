@@ -146,7 +146,7 @@ const AuthDesktop = () => {
           </div>
 
           {/* AUTH DESKTOP */}
-          
+
           <div className="hidden lg:block">
             <AuthDesktop />
           </div>
@@ -172,7 +172,6 @@ const AuthDesktop = () => {
         </div>
       </nav>
 
-
       {/* PROFILE SIDEBAR */}
       <div
         className={`fixed inset-0 z-50 transition-all duration-300 ${
@@ -184,22 +183,31 @@ const AuthDesktop = () => {
 
         {/* DRAWER */}
         <div
-          className={`absolute top-0 right-0 min-h-[400px] w-[700px] sm:w-[320px] bg-white shadow-2xl p-4 transform transition-transform duration-300 rounded-l-xl
-          ${openProfile ? 'translate-x-0' : 'translate-x-full'}`}
+          className={`fixed top-0 right-0 z-50
+  h-screen w-[85%] max-w-[380px]
+  bg-white shadow-2xl p-4
+  transform transition-transform duration-300
+  rounded-l-2xl
+  ${openProfile ? 'translate-x-0' : 'translate-x-full'}`}
         >
-          <div className="flex flex-col h-100">
+          <div className="flex flex-col h-full">
             {/* HEADER */}
-            <div className="flex items-center justify-between border-b pb-3 select-none">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-main-blue flex items-center justify-center text-white">
+            <div className="flex items-center justify-between border-b pb-4 select-none">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="w-12 h-12 rounded-full bg-main-blue flex items-center justify-center text-white shrink-0">
                   <FaUser size={20} className="rounded-full" />
                 </div>
-                <div>
-                  <p className="font-semibold">{user?.nama || 'User'}</p>
-                  <p className="text-xs text-gray-500 truncate max-w-[170px]">{user?.email || 'user@mail.com'}</p>
+
+                <div className="overflow-hidden">
+                  <p className="font-semibold text-sm sm:text-base truncate">{user?.nama || 'User'}</p>
+
+                  <p className="text-xs text-gray-500 truncate max-w-[180px] sm:max-w-[220px]">
+                    {user?.email || 'user@mail.com'}
+                  </p>
                 </div>
               </div>
-              <button className="cursor-pointer" onClick={() => setOpenProfile(false)}>
+
+              <button className="cursor-pointer shrink-0" onClick={() => setOpenProfile(false)}>
                 <HiX size={24} />
               </button>
             </div>
@@ -208,16 +216,18 @@ const AuthDesktop = () => {
             <div className="flex flex-col mt-4">
               <Link
                 href="/ganti-password"
-                className="p-3 flex items-center gap-3 hover:bg-gray-100 transition border-b-2"
+                className="p-3 flex items-center gap-3 hover:bg-gray-100 transition border-b rounded-lg"
               >
                 <FaLock size={18} />
-                Ganti Kata Sandi
+                <span className="text-sm sm:text-base">Ganti Kata Sandi</span>
               </Link>
-            </div>
-            <div className="flex flex-col mt-4">
-              <Link href="/ganti-email" className="p-3 flex items-center gap-3 hover:bg-gray-100 transition border-b-2">
+
+              <Link
+                href="/ganti-email"
+                className="p-3 flex items-center gap-3 hover:bg-gray-100 transition border-b rounded-lg mt-2"
+              >
                 <HiOutlineMail size={22} />
-                Ganti Email
+                <span className="text-sm sm:text-base">Ganti Email</span>
               </Link>
             </div>
 
@@ -225,12 +235,15 @@ const AuthDesktop = () => {
             <div className="mt-auto pt-4 border-t">
               <button
                 onClick={() => {
+                  const yakin = confirm('Apakah anda yakin ?');
+
+                  if (!yakin) return;
+
                   logout();
                   setOpenProfile(false);
-                  confirm('Apakah anda yakin ?');
                   router.push('/');
                 }}
-                className="w-full p-3 flex items-center justify-center gap-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition active:scale-95"
+                className="w-full p-3 flex items-center justify-center gap-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition active:scale-95 text-sm sm:text-base"
               >
                 <FiLogOut />
                 Logout

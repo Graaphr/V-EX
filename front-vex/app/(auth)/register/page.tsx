@@ -121,33 +121,33 @@ export default function RegisterPage() {
   });
 
   // Position
-  const boxes = [
-    {
-      d: 0.2,
-      className: 'top-10 left-10',
-      size: 'h-[300px] w-[300px] rotate-45',
-    },
-    {
-      d: 0.3,
-      className: 'top-10 right-10',
-      size: 'h-[300px] w-[300px] -rotate-12',
-    },
-    {
-      d: 0.1,
-      className: 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
-      size: 'h-[250px] w-[250px] rotate-90',
-    },
-    {
-      d: 0.5,
-      className: 'bottom-20 left-1/4',
-      size: 'h-[100px] w-[100px] rotate-12',
-    },
-    {
-      d: 0.6,
-      className: 'bottom-20 right-1/4',
-      size: 'h-[100px] w-[100px] -rotate-45',
-    },
-  ];
+const boxes = [
+  {
+    d: 0.2,
+    className: 'top-4 left-4 sm:top-8 sm:left-8 md:top-10 md:left-0',
+    size: 'h-[130px] w-[130px] sm:h-[180px] sm:w-[180px] md:h-[230px] md:w-[230px] lg:h-[300px] lg:w-[300px] rotate-45',
+  },
+  {
+    d: 0.3,
+    className: 'top-4 right-4 sm:top-8 sm:right-8 md:top-10 md:right-0',
+    size: 'h-[130px] w-[130px] sm:h-[180px] sm:w-[180px] md:h-[230px] md:w-[230px] lg:h-[300px] lg:w-[300px] -rotate-12',
+  },
+  {
+    d: 0.1,
+    className: 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
+    size: 'h-[120px] w-[120px] sm:h-[170px] sm:w-[170px] md:h-[210px] md:w-[210px] lg:h-[250px] lg:w-[250px] rotate-90',
+  },
+  {
+    d: 0.5,
+    className: 'bottom-6 left-[12%] sm:bottom-14 sm:left-1/4',
+    size: 'h-[65px] w-[65px] sm:h-[85px] sm:w-[85px] md:h-[95px] md:w-[95px] lg:h-[100px] lg:w-[100px] rotate-12',
+  },
+  {
+    d: 0.6,
+    className: 'bottom-6 right-[12%] sm:bottom-14 sm:right-0',
+    size: 'h-[65px] w-[65px] sm:h-[85px] sm:w-[85px] md:h-[95px] md:w-[95px] lg:h-[100px] lg:w-[100px] -rotate-45',
+  },
+];
 
   return (
     <motion.div
@@ -160,7 +160,7 @@ export default function RegisterPage() {
         initial={{ y: '-100vh' }}
         animate={{ y: 0 }}
         transition={{ duration: 2, ease: 'circOut' }}
-        className="absolute h-[95%] top-0 w-[95%] bg-secondary-color rounded-b-full"
+        className="absolute h-[100%] sm:h-[90%] md:h-[93%] lg:h-[95%] w-[100%] sm:w-[94%] md:w-[95%] top-0 bg-secondary-color lg:rounded-b-full "
       >
         {boxes.map((box, i) => (
           <motion.div
@@ -185,7 +185,7 @@ export default function RegisterPage() {
         <Logo />
 
         <form onSubmit={handleRegister} className="w-full space-y-4 mt-6 select-none">
-        {success && <div className="bg-green-50 text-green-600 text-sm p-3 rounded-lg mb-4">{success}</div>}
+          {success && <div className="bg-green-50 text-green-600 text-sm p-3 rounded-lg mb-4">{success}</div>}
           <InputField
             type="text"
             value={nama}
