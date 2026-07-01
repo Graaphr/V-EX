@@ -375,7 +375,7 @@ class KaryaController extends Controller
             'id' => $item->id_karya,
             'title' => $item->judul,
             'banner' => $item->gambar_sampul
-                ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
+                ? asset("https://vex.terpalb25.web.id/storage/{$item->gambar_sampul}")
                 : '',
         ]);
 
