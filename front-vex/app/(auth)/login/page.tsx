@@ -84,43 +84,43 @@ export default function LoginPage() {
     ease: 'easeOut',
   });
 
-  const boxes = [
-    {
-      d: 0.2,
-      className: 'absolute z-2 bottom-0 left-8',
-      size: 'h-[250px] w-[250px] rotate-12',
-    },
-    {
-      d: 0.4,
-      className: 'absolute top-15 left-20',
-      size: 'h-[200px] w-[200px] opacity-90 -rotate-12',
-    },
-    {
-      d: 0.1,
-      className: 'absolute z-2 top-5/4 left-1/2 -translate-x-1/2 -translate-y-1/2',
-      size: 'h-[400px] w-[400px] rotate-45',
-    },
-    {
-      d: 0.3,
-      className: 'absolute z-2 bottom-1 right-0 ',
-      size: 'h-[250px] w-[250px] -rotate-12',
-    },
-    {
-      d: 0.5,
-      className: 'absolute z-2 top-10 right-[100px]',
-      size: 'h-[200px] w-[200px] rotate-12 opacity-90',
-    },
-    {
-      d: 0.6,
-      className: 'absolute top-1/2 z-2 left-75',
-      size: 'h-[100px] w-[100px] opacity-90 rotate-45',
-    },
-    {
-      d: 0.7,
-      className: 'absolute z-2 bottom-50 right-60',
-      size: 'h-[100px] w-[100px] -rotate-45 opacity-90',
-    },
-  ];
+const boxes = [
+  {
+    d: 0.2,
+    className: 'absolute z-2 -bottom-4 left-2 sm:left-6 md:left-8',
+    size: 'h-[130px] w-[130px] sm:h-[170px] sm:w-[170px] md:h-[210px] md:w-[210px] lg:h-[250px] lg:w-[250px] rotate-12',
+  },
+  {
+    d: 0.4,
+    className: 'absolute top-6 left-4 sm:top-10 sm:left-10 md:top-14 md:left-16 lg:top-15 lg:left-20',
+    size: 'h-[100px] w-[100px] sm:h-[130px] sm:w-[130px] md:h-[165px] md:w-[165px] lg:h-[200px] lg:w-[200px] opacity-90 -rotate-12',
+  },
+  {
+    d: 0.1,
+    className: 'absolute z-2 top-[62%] left-1/2 -translate-x-1/2 -translate-y-1/2',
+    size: 'h-[200px] w-[200px] sm:h-[260px] sm:w-[260px] md:h-[330px] md:w-[330px] lg:h-[400px] lg:w-[400px] rotate-45',
+  },
+  {
+    d: 0.3,
+    className: 'absolute z-2 -bottom-4 right-0',
+    size: 'h-[130px] w-[130px] sm:h-[170px] sm:w-[170px] md:h-[210px] md:w-[210px] lg:h-[250px] lg:w-[250px] -rotate-12',
+  },
+  {
+    d: 0.5,
+    className: 'absolute z-2 top-8 right-2 sm:top-10 sm:right-[30px] md:right-[65px] lg:right-[100px]',
+    size: 'h-[95px] w-[95px] sm:h-[130px] sm:w-[130px] md:h-[165px] md:w-[165px] lg:h-[200px] lg:w-[200px] rotate-12 opacity-90',
+  },
+  {
+    d: 0.6,
+    className: 'absolute top-[45%] z-2 left-[8%] sm:left-[15%] md:left-[20%] lg:left-75',
+    size: 'h-[60px] w-[60px] sm:h-[75px] sm:w-[75px] md:h-[90px] md:w-[90px] lg:h-[100px] lg:w-[100px] opacity-90 rotate-45',
+  },
+  {
+    d: 0.7,
+    className: 'absolute z-2 bottom-[18%] right-[10%] sm:right-[18%] md:right-[24%] lg:bottom-50 lg:right-60',
+    size: 'h-[60px] w-[60px] sm:h-[75px] sm:w-[75px] md:h-[90px] md:w-[90px] lg:h-[100px] lg:w-[100px] -rotate-45 opacity-90',
+  },
+];
 
   return (
     <div className="flex items-center justify-center min-h-screen  p-4 relative bg-secondary-color overflow-hidden  text-black">
@@ -128,27 +128,20 @@ export default function LoginPage() {
         initial={{ y: '100vh' }}
         animate={{ y: 0 }}
         transition={{ duration: 2, ease: 'circOut' }}
-        className="absolute h-[95%] bottom-0 w-[95%] bg-main-blue rounded-t-full"
+        className="absolute h-[100%] sm:h-[90%] md:h-[100%] lg:h-[100%] w-[100%] sm:w-[94%] md:w-[100%] bottom-0 bg-main-blue lg:rounded-t-full "
       >
-        <motion.div
-          initial={{ y: '100vh' }}
-          animate={{ y: 0 }}
-          transition={{ duration: 2, ease: 'circOut' }}
-          className="absolute h-[95%] bottom-0 w-[95%] bg-main-blue rounded-t-full"
-        >
-          {boxes.map((box, index) => (
-            <motion.div
-              key={index}
-              variants={slideUp}
-              initial="initial"
-              animate="animate"
-              transition={floatingTransition(box.d)}
-              className={box.className}
-            >
-              <VectorBox className={box.size} />
-            </motion.div>
-          ))}
-        </motion.div>
+        {boxes.map((box, index) => (
+          <motion.div
+            key={index}
+            variants={slideUp}
+            initial="initial"
+            animate="animate"
+            transition={floatingTransition(box.d)}
+            className={box.className}
+          >
+            <VectorBox className={box.size} />
+          </motion.div>
+        ))}
       </motion.div>
 
       <motion.div
@@ -156,18 +149,17 @@ export default function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 1 }}
         className={cn(
-          "flex flex-col items-center",
-          "z-10 w-full max-w-md p-8",
-          "scale-90 rounded-2xl shadow-2xl",
-          "bg-white border border-gray-100")}
-
+          'flex flex-col items-center',
+          'z-10 w-full max-w-md p-8',
+          'scale-90 rounded-2xl shadow-2xl',
+          'bg-white border border-gray-100',
+        )}
       >
         <div className="flex flex-col items-center mb-8">
           <Logo />
         </div>
 
         <form onSubmit={handleLogin} className="w-full space-y-5 select-none">
-
           {success && <div className="bg-green-100 text-green-600 text-sm p-3 rounded-lg mb-4">{success}</div>}
           {error && <div className="bg-red-100 text-red-600 text-sm p-3 rounded-lg mb-4">{error}</div>}
 
@@ -183,18 +175,18 @@ export default function LoginPage() {
             }}
           />
 
-            <PasswordField
-              value={password}
-              placeholder="Kata Sandi"
-              showPassword={showPassword}
-              error={passwordError}
-              className={'input-form transition-all duration-200'}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setPasswordError('');
-              }}
-              onToggle={() => setShowPassword((prev) => !prev)}
-            />
+          <PasswordField
+            value={password}
+            placeholder="Kata Sandi"
+            showPassword={showPassword}
+            error={passwordError}
+            className={'input-form transition-all duration-200'}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setPasswordError('');
+            }}
+            onToggle={() => setShowPassword((prev) => !prev)}
+          />
 
           <div className="flex justify-end">
             <Link href="/lupa-password" className="text-sm font-medium hover:text-main-blue">
