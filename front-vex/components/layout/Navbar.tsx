@@ -183,7 +183,7 @@ const AuthDesktop = () => {
 
         {/* DRAWER */}
         <div
-          className={`fixed top-0 right-0 z-50
+          className={`fixed top-0 right-0 z-60
   h-screen w-[85%] max-w-[380px]
   bg-white shadow-2xl p-4
   transform transition-transform duration-300
