@@ -30,11 +30,11 @@ export default function Footer() {
         </div>
 
         {/* RIGHT - Links (atas di HP, kanan di desktop) */}
-        <div className="w-full lg:w-[55%] lg:bg-white bg-gray-100 text-gray-800 rounded-b-[20px] sm:rounded-t-none lg:rounded-t-none lg:rounded-tl-[60px] px-5 sm:px-8 lg:px-16 py-8 sm:py-10 flex flex-col shadow-2xl lg:mt-10 min-h-[280px] order-1 lg:order-2">
+        <div className="w-full border-t-[5px] border-gray-300 lg:border-none lg:w-[55%] lg:bg-white bg-gray-200 text-gray-800 rounded-b-[20px] sm:rounded-t-none lg:rounded-t-none lg:rounded-tl-[60px] px-5 sm:px-8 lg:px-16 py-8 sm:py-10 flex flex-col shadow-2xl lg:mt-10 min-h-[280px] order-1 lg:order-2">
           {/* links */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div>
-              <h3 className="font-extrabold text-main-blue mb-4 text-lg sm:text-xl tracking-wider">Solusi</h3>
+          <div className="grid mt-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div >
+              <h3 className="font-extrabold text-main-blue mb-3 text-lg sm:text-xl tracking-wider">Solusi</h3>
               <ul className="text-gray-500 space-y-2 text-sm sm:text-base">
                 <li>
                   <LinkAkses link={'/'} title={'Pameran'} />
@@ -86,7 +86,7 @@ export default function Footer() {
           </div>
 
           {/* social */}
-          <div className="mt-8 lg:mt-10 flex flex-wrap justify-center sm:justify-start lg:justify-end items-center gap-4 sm:gap-5 text-main-blue">
+          <div className=" mt-8 lg:mt-9 flex flex-wrap justify-center sm:justify-start lg:justify-start items-center  gap-4 sm:gap-5 text-main-blue">
             <LinkAksesEks link={'/'}>
               <FaLinkedin className="w-8 h-8 sm:w-10 sm:h-10 hover:scale-125 transition-all cursor-pointer" />
             </LinkAksesEks>
