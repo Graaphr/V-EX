@@ -86,7 +86,7 @@ export default function Footer() {
           </div>
 
           {/* social */}
-          <div className=" mt-8 lg:mt-9 flex flex-wrap justify-center sm:justify-start lg:justify-start items-center  gap-4 sm:gap-5 text-main-blue">
+          <div className=" mt-8 lg:mt-9 flex flex-wrap justify-center sm:justify-start lg:justify-end items-center  gap-4 sm:gap-5 text-main-blue">
             <LinkAksesEks link={'/'}>
               <FaLinkedin className="w-8 h-8 sm:w-10 sm:h-10 hover:scale-125 transition-all cursor-pointer" />
             </LinkAksesEks>
