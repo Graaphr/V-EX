@@ -402,11 +402,11 @@ export default function ExhibitionPage() {
 
       {/* EMBED VIDEO */}
       {embedOpen && (
-        <div className="fixed inset-0 z-[99999] bg-black/90 flex flex-col items-center justify-center">
-          <div className="relative w-full max-w-4xl aspect-video px-4">
+        <div className="fixed inset-0 z-[99999] bg-black/90 flex flex-col items-center justify-center px-4">
+          <div className="relative w-full max-w-4xl aspect-video max-h-[75vh] mx-auto">
             <button
               onClick={() => setEmbedOpen(false)}
-              className="absolute -top-10 right-4 text-white text-2xl font-bold"
+              className="absolute top-2 right-2 z-10 w-9 h-9 rounded-full bg-black/70 text-white text-lg font-bold flex items-center justify-center"
             >
               ✕
             </button>
@@ -646,10 +646,16 @@ function MobileHUD({
 }) {
   const moveBase = useRef<any>(null);
   const moveStick = useRef<any>(null);
-  const lookBase = useRef<any>(null);
-  const lookStick = useRef<any>(null);
   const moveTouchId = useRef<number | null>(null);
+
+  // Look: "floating joystick" — base-nya nggak digambar di posisi tetap,
+  // tapi muncul di titik pertama kali jari nyentuh layar (swipe di mana
+  // aja jadi bisa). Offset dari titik itu yang menentukan kecepatan &
+  // arah look — logikanya sama persis kayak joystick lama, cuma pusatnya
+  // dinamis. sawVisual dipakai buat kasih feedback visual halus doang.
   const lookTouchId = useRef<number | null>(null);
+  const lookBasePos = useRef({ x: 0, y: 0 });
+  const [lookVisual, setLookVisual] = useState<{ x: number; y: number; dx: number; dy: number } | null>(null);
 
   const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
@@ -664,13 +670,12 @@ function MobileHUD({
   };
 
   const updateLook = (touch: Touch) => {
-    const rect = lookBase.current.getBoundingClientRect();
-    const x = touch.clientX - rect.left - rect.width / 2;
-    const y = touch.clientY - rect.top - rect.height / 2;
+    const x = touch.clientX - lookBasePos.current.x;
+    const y = touch.clientY - lookBasePos.current.y;
     const dx = clamp(x, -35, 35);
     const dy = clamp(y, -35, 35);
-    lookStick.current.style.transform = `translate(${dx}px,${dy}px)`;
     lookDelta.current = { x: dx * 0.0015, y: dy * 0.0015 };
+    setLookVisual({ x: lookBasePos.current.x, y: lookBasePos.current.y, dx, dy });
   };
 
   const moveStart = (e: any) => { moveTouchId.current = e.changedTouches[0].identifier; updateMove(e.changedTouches[0]); };
@@ -685,19 +690,54 @@ function MobileHUD({
     }
   };
 
-  const lookStart = (e: any) => { lookTouchId.current = e.changedTouches[0].identifier; updateLook(e.changedTouches[0]); };
+  const lookStart = (e: any) => {
+    if (lookTouchId.current !== null) return; // udah ada jari lain yg lagi look
+    const t = e.changedTouches[0];
+    lookTouchId.current = t.identifier;
+    lookBasePos.current = { x: t.clientX, y: t.clientY };
+    updateLook(t);
+  };
   const lookMove = (e: any) => { for (const t of e.touches) if (t.identifier === lookTouchId.current) updateLook(t); };
-  const lookEnd = (e: any) => { for (const t of e.changedTouches) if (t.identifier === lookTouchId.current) { lookTouchId.current = null; lookStick.current.style.transform = "translate(0px,0px)"; lookDelta.current = { x: 0, y: 0 }; } };
+  const lookEnd = (e: any) => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === lookTouchId.current) {
+        lookTouchId.current = null;
+        lookDelta.current = { x: 0, y: 0 };
+        setLookVisual(null);
+      }
+    }
+  };
 
   return (
     <>
+      {/* LOOK ZONE — layar penuh. z-index sengaja lebih rendah dari tombol2
+          UI lain (map, floor switcher: z-[9999]) dan joystick gerak
+          (z-[99999]), jadi tombol2 itu tetap bisa ditekan normal, sisanya
+          layar dipakai buat usap-menoleh. */}
+      <div
+        onTouchStart={lookStart}
+        onTouchMove={lookMove}
+        onTouchEnd={lookEnd}
+        onTouchCancel={lookEnd}
+        className="fixed inset-0 z-[9997]"
+      />
+
+      {lookVisual && (
+        <div
+          className="fixed z-[9998] pointer-events-none"
+          style={{ left: lookVisual.x - 45, top: lookVisual.y - 45, width: 90, height: 90 }}
+        >
+          <div className="absolute inset-0 rounded-full bg-white/5 border border-white/15" />
+          <div
+            className="absolute left-1/2 top-1/2 w-10 h-10 -ml-5 -mt-5 rounded-full bg-white/40"
+            style={{ transform: `translate(${lookVisual.dx}px,${lookVisual.dy}px)` }}
+          />
+        </div>
+      )}
+
       <div ref={moveBase} onTouchStart={moveStart} onTouchMove={moveMove} onTouchEnd={moveEnd}
         className="fixed bottom-5 left-5 z-[99999] w-28 h-28 rounded-full bg-white/10 border border-white/20">
         <div ref={moveStick} className="absolute left-1/2 top-1/2 w-10 h-10 -ml-5 -mt-5 rounded-full bg-white/60" />
-      </div>
-      <div ref={lookBase} onTouchStart={lookStart} onTouchMove={lookMove} onTouchEnd={lookEnd}
-        className="fixed bottom-5 right-5 z-[99999] w-28 h-28 rounded-full bg-white/10 border border-white/20">
-        <div ref={lookStick} className="absolute left-1/2 top-1/2 w-10 h-10 -ml-5 -mt-5 rounded-full bg-white/60" />
       </div>
     </>
   );
