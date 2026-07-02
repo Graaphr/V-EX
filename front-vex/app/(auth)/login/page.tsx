@@ -58,6 +58,10 @@ export default function LoginPage() {
 
       login(token, user);
 
+      if (user?.nama) {
+        document.cookie = `username=${encodeURIComponent(user.nama)}; path=/; max-age=${60 * 60 * 24 * 7}`;
+      }
+
       setSuccess('Login Berhasil !');
 
       const direct = res['redirect_to'];

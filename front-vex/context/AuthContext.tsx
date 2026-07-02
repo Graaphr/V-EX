@@ -43,13 +43,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(userData);
 
       Cookies.set('role', userData.role);
-      
+      // Cookie 'username' dibaca oleh /api/player-name (server route) untuk
+      // menentukan nama player di pameran 3D. localStorage/context useAuth
+      // tidak terlihat oleh server route, jadi harus disinkronkan ke cookie
+      // di sini juga — bukan cuma di login() — karena fetchUser() ini yang
+      // jalan otomatis tiap kali app di-refresh selama token masih ada.
+      Cookies.set('username', userData.nama);
+
     } catch (error: any) {
       console.error('Fetch user gagal:', error);
 
       if (error?.response?.status === 401) {
         localStorage.removeItem('token');
-        Cookies.remove('role'); 
+        Cookies.remove('role');
+        Cookies.remove('username');
         setUser(null);
         window.location.href = '/';
         return;
@@ -68,6 +75,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = (token: string, userData: User) => {
     localStorage.setItem('token', token);
     Cookies.set('role', userData.role); // simpan role ke cookie
+    Cookies.set('username', userData.nama); // dipakai /api/player-name
     setUser(userData);
   };
 
@@ -79,6 +87,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       localStorage.removeItem('token');
       Cookies.remove('role');
+      Cookies.remove('username');
       setUser(null);
     }
   };
