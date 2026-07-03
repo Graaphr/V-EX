@@ -196,6 +196,8 @@ const boxes = [
               setNama(e.target.value);
               setNamaError('');
             }}
+            maxLength={80}
+            
           />
           <InputField
             type="text"
@@ -232,6 +234,7 @@ const boxes = [
               setPasswordConfirmationError('');
             }}
             onToggle={() => setShowConfirm((prev) => !prev)}
+            minLength={8}
           />
 
           <div className="w-full mt-8 border-b-2 border-gray-300 pb-8">

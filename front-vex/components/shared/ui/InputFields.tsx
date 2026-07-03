@@ -26,6 +26,7 @@ function ErrorMessage({ error }: { error?: string }) {
 }
 
 // ─── InputField ───────────────────────────────────────────
+
 interface InputFieldProps {
   type?: string;
   name?: string;
@@ -36,7 +37,9 @@ interface InputFieldProps {
   error?: string;
   disabled?: boolean;
   readOnly?: boolean;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  maxLength?: number;
+  minLength?: number; // ← tambahan, optional
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   className?: string;
 }
 
@@ -50,6 +53,8 @@ export function InputField({
   error,
   disabled = false,
   readOnly = false,
+  maxLength,
+  minLength,
   onChange,
   className,
 }: InputFieldProps) {
@@ -63,6 +68,8 @@ export function InputField({
         disabled={disabled}
         readOnly={readOnly}
         placeholder={placeholder}
+        maxLength={maxLength}
+        minLength={minLength}
         onChange={onChange}
         className={`
           ${baseClass}
@@ -75,7 +82,6 @@ export function InputField({
     </div>
   );
 }
-
 // ─── SelectField ──────────────────────────────────────────
 interface SelectFieldProps {
   name?: string;
@@ -181,6 +187,8 @@ interface PasswordFieldProps {
   placeholder?: string;
   label?: string;
   required?: boolean;
+  minLength?: number;
+  maxLength?: number;
   error?: string;
   showPassword: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -196,6 +204,8 @@ export function PasswordField({
   required,
   error,
   showPassword,
+  minLength,
+  maxLength,
   onChange,
   onToggle,
   className,
@@ -210,6 +220,8 @@ export function PasswordField({
           onChange={onChange}
           type={showPassword ? 'text' : 'password'}
           placeholder={placeholder}
+          minLength={minLength}
+          maxLength={maxLength}
           className={`
             ${baseClass}
             pr-10

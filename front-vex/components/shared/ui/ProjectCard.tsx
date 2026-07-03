@@ -33,9 +33,6 @@ export default function ProjectCard({ project, className }: ProjectData) {
   const endDate = new Date(project.stats?.endDate);
   endDate.setHours(23, 59, 59, 999);
   const isOpen = today >= startDate && today <= endDate;
-console.log(project);
-console.log(project.stats?.startDate);
-console.log(project.stats?.endDate);
   return (
     <div
       className={`relative overflow-hidden cursor-pointer ${className ?? ""}`}
@@ -53,9 +50,8 @@ console.log(project.stats?.endDate);
 
         {/* OVERLAY */}
         <div
-          className={`absolute inset-0 z-10 bg-gradient-to-t from-main-blue/90 via-white/30 to-transparent transition-opacity duration-300 flex flex-col justify-end p-3 ${
-            hovered ? "opacity-100" : "opacity-0"
-          }`}
+          className={`absolute inset-0 z-10 bg-gradient-to-t from-main-blue/90 via-white/30 to-transparent transition-opacity duration-300 flex flex-col justify-end p-3 ${hovered ? "opacity-100" : "opacity-0"
+            }`}
         >
           <div className="flex items-center justify-between text-white">
             <div className="flex items-center gap-2 bg-black/50 px-2 py-0.5 rounded-full backdrop-blur-sm">
@@ -64,12 +60,14 @@ console.log(project.stats?.endDate);
             </div>
 
             {isOpen ? (
-              <span className="flex items-center justify-center bg-green-500 w-6 h-6 rounded-full shadow-md">
-                <FaUnlock className="text-white text-[11px]" />
+              <span className="flex items-center gap-1.5 bg-green-500 px-2.5 py-1 rounded-full shadow-md text-white text-[11px] font-semibold">
+                <FaUnlock className="text-[11px]" />
+                Buka
               </span>
             ) : (
-              <span className="flex items-center justify-center bg-red-500 w-6 h-6 rounded-full shadow-md">
-                <FaLock className="text-white text-[11px]" />
+              <span className="flex items-center gap-1.5 bg-red-500 px-2.5 py-1 rounded-full shadow-md text-white text-[11px] font-semibold">
+                <FaLock className="text-[11px]" />
+                Tutup
               </span>
             )}
           </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   FaPlay, FaInstagram, FaYoutube,
-  FaFacebookSquare, FaRegCalendarAlt,
+  FaFacebookSquare, FaRegCalendarAlt, FaLock, FaLockOpen
 } from 'react-icons/fa';
 import { HiPencilAlt } from 'react-icons/hi';
 import { useParams } from 'next/navigation';
@@ -22,7 +22,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
 
   const [pameran, setPameran] = useState<Pameran | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // ─────────────────────────────────────────────────────────
   // Fetch detail pameran berdasarkan id dari URL
@@ -33,7 +33,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
 
     async function load() {
       try {
-        const data  = await GetDetailPameran(id);
+        const data = await GetDetailPameran(id);
 
         if (data.status !== 'success') throw new Error(data.message ?? 'Pameran tidak ditemukan');
 
@@ -69,10 +69,11 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
   const { title, subtitle, date, bannerImage, description, stats, institution } = pameran;
 
   // Laravel kirim YYYY-MM-DD → langsung pakai new Date(), tidak perlu convertDate
-  const today     = new Date();
-  const openDate  = new Date(stats.startDate);
+  const today = new Date();
+  const openDate = new Date(stats.startDate);
   const closeDate = new Date(stats.endDate);
-  const isOpen    = today >= openDate && today <= closeDate;
+  closeDate.setHours(23, 59, 59, 999);
+  const isOpen = today >= openDate && today <= closeDate;
 
   return (
     <div className="min-h-screen bg-gray-50 font-poppins text-gray-800 select-none">
@@ -98,10 +99,13 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
                   <HiPencilAlt size={18} />
                 </Link>
               )}
-              <h1 className="text-2xl font-bold uppercase leading-tight">{title}</h1>
+              <div className="flex items-center gap-4">
+                <h1 className="text-4xl font-extrabold uppercase">{title}</h1>
+                <StatusBadge isOpen={isOpen} />
+              </div>
               <p className="text-gray-500 text-sm mt-1">{subtitle}</p>
-              <div className="flex items-center gap-2 text-gray-600 mt-2 text-sm">
-                <FaRegCalendarAlt />
+              <div className="flex items-center gap-4 text-gray-600 mt-2 text-sm">
+                <FaRegCalendarAlt className="text-main-blue" />
                 <span>{date}</span>
               </div>
             </div>
@@ -130,11 +134,17 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
 
               {/* DESKTOP TITLE */}
               <div className="hidden md:block mb-6">
-                <h1 className="text-4xl font-extrabold uppercase">{title}</h1>
+                <div className="flex items-center gap-4">
+                  <h1 className="text-4xl font-extrabold uppercase">{title}</h1>
+                  <StatusBadge isOpen={isOpen} />
+                </div>
                 <p className="text-gray-500 mt-2">{subtitle}</p>
                 <div className="flex items-center gap-2 mt-3">
+
                   <FaRegCalendarAlt className="text-main-blue" />
                   <span>{date}</span>
+
+
                 </div>
               </div>
 
@@ -152,10 +162,6 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
                     <FaPlay />
                   </div>
                 )}
-
-                <div className={`w-full sm:w-auto min-w-[140px] py-4 px-10 rounded-md text-white font-bold text-center ${isOpen ? 'bg-green-500' : 'bg-red-500'}`}>
-                  {isOpen ? 'BUKA' : 'TUTUP'}
-                </div>
               </div>
             </div>
           </div>
@@ -183,25 +189,25 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
           <div className="mt-12 flex justify-end items-center gap-10">
             <p className="font-bold text-main-blue">{institution}</p>
             <div className="flex gap-4 text-main-blue text-2xl">
-              <FaInstagram href='#'/>
-              <FaYoutube href='#'/>
-              <FaFacebookSquare href='#'/>
+              <FaInstagram href='#' />
+              <FaYoutube href='#' />
+              <FaFacebookSquare href='#' />
             </div>
           </div>
 
           {/* STATS */}
           <div className="mt-8 py-4 border-y">
             <div className="hidden md:flex justify-between divide-x">
-              <Stat title="Total Suka"    value={stats.likes} />
-              <Stat title="Total Karya"   value={stats.karya} />
-              <Stat title="Tanggal Buka"  value={stats.startDate} />
+              <Stat title="Total Suka" value={stats.likes} />
+              <Stat title="Total Karya" value={stats.karya} />
+              <Stat title="Tanggal Buka" value={stats.startDate} />
               <Stat title="Tanggal Tutup" value={stats.endDate} />
               <Stat title="Program Studi" value={stats.studyLevel} />
             </div>
             <div className="md:hidden space-y-3">
-              <Row title="Total Suka"    value={stats.likes} />
-              <Row title="Total Karya"   value={stats.karya} />
-              <Row title="Tanggal Buka"  value={stats.startDate} />
+              <Row title="Total Suka" value={stats.likes} />
+              <Row title="Total Karya" value={stats.karya} />
+              <Row title="Tanggal Buka" value={stats.startDate} />
               <Row title="Tanggal Tutup" value={stats.endDate} />
               <Row title="Program Studi" value={stats.studyLevel} />
             </div>
@@ -226,6 +232,17 @@ function Row({ title, value }: { title: string; value: any }) {
     <div className="flex justify-between border-b pb-2">
       <span className="text-gray-500">{title}</span>
       <span className="font-bold">{value}</span>
+    </div>
+  );
+}
+
+function StatusBadge({ isOpen }: { isOpen: boolean }) {
+  return (
+    <div
+      className={`flex items-center gap-1.5 w-8 h-8 px-2.5 py-1 rounded-full text-white text-xs font-semibold ${isOpen ? 'bg-green-500' : 'bg-red-500'
+        }`}
+    >
+      {isOpen ? <FaLockOpen size={12} /> : <FaLock size={12} />}
     </div>
   );
 }
