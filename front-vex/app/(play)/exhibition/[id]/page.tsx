@@ -379,6 +379,7 @@ export default function ExhibitionPage() {
                 await fetch(`/api-internal/player?id=${playerId}`, { method: "DELETE" });
                 sessionStorage.removeItem("playerId");
                 sessionStorage.removeItem("playerName");
+                document.cookie = "username=; path=/; max-age=0"; // ← tambah ini
                 router.back();
               }}
               className="w-full h-12 rounded-xl bg-red-500 font-bold"
@@ -402,11 +403,17 @@ export default function ExhibitionPage() {
 
       {/* EMBED VIDEO */}
       {embedOpen && (
-        <div className="fixed inset-0 z-[99999] bg-black/90 flex flex-col items-center justify-center">
-          <div className="relative w-full max-w-4xl aspect-video px-4">
+        <div className="fixed inset-0 z-[99999] bg-black/90 flex flex-col items-center justify-center px-4">
+          <div
+            className="relative mx-auto"
+            style={{
+              aspectRatio: "16 / 9",
+              width: "min(100%, calc(75vh * 16 / 9))",
+            }}
+          >
             <button
               onClick={() => setEmbedOpen(false)}
-              className="absolute -top-10 right-4 text-white text-2xl font-bold"
+              className="absolute top-2 right-2 z-10 w-9 h-9 rounded-full bg-black/70 text-white text-lg font-bold flex items-center justify-center"
             >
               ✕
             </button>
@@ -646,10 +653,17 @@ function MobileHUD({
 }) {
   const moveBase = useRef<any>(null);
   const moveStick = useRef<any>(null);
-  const lookBase = useRef<any>(null);
-  const lookStick = useRef<any>(null);
   const moveTouchId = useRef<number | null>(null);
+
+  const lookZone = useRef<HTMLDivElement>(null);
   const lookTouchId = useRef<number | null>(null);
+  const lookBasePos = useRef({ x: 0, y: 0 });
+
+  // Buat bedain tap (klik poster/booth) vs swipe (look-around).
+  const lookStartTime = useRef(0);
+  const lookMoved = useRef(false);
+  const TAP_MOVE_THRESHOLD = 10; // px
+  const TAP_TIME_THRESHOLD = 300; // ms
 
   const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
@@ -664,13 +678,32 @@ function MobileHUD({
   };
 
   const updateLook = (touch: Touch) => {
-    const rect = lookBase.current.getBoundingClientRect();
-    const x = touch.clientX - rect.left - rect.width / 2;
-    const y = touch.clientY - rect.top - rect.height / 2;
+    const x = touch.clientX - lookBasePos.current.x;
+    const y = touch.clientY - lookBasePos.current.y;
+    if (Math.abs(x) > TAP_MOVE_THRESHOLD || Math.abs(y) > TAP_MOVE_THRESHOLD) {
+      lookMoved.current = true;
+    }
     const dx = clamp(x, -35, 35);
     const dy = clamp(y, -35, 35);
-    lookStick.current.style.transform = `translate(${dx}px,${dy}px)`;
     lookDelta.current = { x: dx * 0.0015, y: dy * 0.0015 };
+  };
+
+  // Tap terdeteksi → lepas pointer-events dari overlay sesaat, terus
+  // "teruskan" urutan event pointerdown/pointerup/click ke elemen asli di
+  // bawahnya (canvas Three.js), supaya sistem klik bawaan R3F (dipakai
+  // Booth buat openPoster/openTautan) tetap jalan normal.
+  const forwardTap = (x: number, y: number) => {
+    const zone = lookZone.current;
+    if (!zone) return;
+    zone.style.pointerEvents = "none";
+    const target = document.elementFromPoint(x, y) as HTMLElement | null;
+    zone.style.pointerEvents = "auto";
+    if (!target) return;
+
+    const base = { clientX: x, clientY: y, bubbles: true, cancelable: true, view: window };
+    target.dispatchEvent(new PointerEvent("pointerdown", { ...base, pointerId: 1, pointerType: "touch", isPrimary: true }));
+    target.dispatchEvent(new PointerEvent("pointerup", { ...base, pointerId: 1, pointerType: "touch", isPrimary: true }));
+    target.dispatchEvent(new MouseEvent("click", base));
   };
 
   const moveStart = (e: any) => { moveTouchId.current = e.changedTouches[0].identifier; updateMove(e.changedTouches[0]); };
@@ -685,19 +718,50 @@ function MobileHUD({
     }
   };
 
-  const lookStart = (e: any) => { lookTouchId.current = e.changedTouches[0].identifier; updateLook(e.changedTouches[0]); };
-  const lookMove = (e: any) => { for (const t of e.touches) if (t.identifier === lookTouchId.current) updateLook(t); };
-  const lookEnd = (e: any) => { for (const t of e.changedTouches) if (t.identifier === lookTouchId.current) { lookTouchId.current = null; lookStick.current.style.transform = "translate(0px,0px)"; lookDelta.current = { x: 0, y: 0 }; } };
+  const lookStart = (e: any) => {
+    e.preventDefault();
+    if (lookTouchId.current !== null) return;
+    const t = e.changedTouches[0];
+    lookTouchId.current = t.identifier;
+    lookBasePos.current = { x: t.clientX, y: t.clientY };
+    lookStartTime.current = Date.now();
+    lookMoved.current = false;
+    updateLook(t);
+  };
+
+  const lookMove = (e: any) => {
+    e.preventDefault();
+    for (const t of e.touches) if (t.identifier === lookTouchId.current) updateLook(t);
+  };
+
+  const lookEnd = (e: any) => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === lookTouchId.current) {
+        const wasTap = !lookMoved.current && Date.now() - lookStartTime.current < TAP_TIME_THRESHOLD;
+        const { x, y } = lookBasePos.current;
+        lookTouchId.current = null;
+        lookDelta.current = { x: 0, y: 0 };
+        if (wasTap) forwardTap(x, y);
+      }
+    }
+  };
 
   return (
     <>
+      <div
+        ref={lookZone}
+        onTouchStart={lookStart}
+        onTouchMove={lookMove}
+        onTouchEnd={lookEnd}
+        onTouchCancel={lookEnd}
+        style={{ touchAction: "none" }}
+        className="fixed inset-0 z-[9997]"
+      />
+
       <div ref={moveBase} onTouchStart={moveStart} onTouchMove={moveMove} onTouchEnd={moveEnd}
+        style={{ touchAction: "none" }}
         className="fixed bottom-5 left-5 z-[99999] w-28 h-28 rounded-full bg-white/10 border border-white/20">
         <div ref={moveStick} className="absolute left-1/2 top-1/2 w-10 h-10 -ml-5 -mt-5 rounded-full bg-white/60" />
-      </div>
-      <div ref={lookBase} onTouchStart={lookStart} onTouchMove={lookMove} onTouchEnd={lookEnd}
-        className="fixed bottom-5 right-5 z-[99999] w-28 h-28 rounded-full bg-white/10 border border-white/20">
-        <div ref={lookStick} className="absolute left-1/2 top-1/2 w-10 h-10 -ml-5 -mt-5 rounded-full bg-white/60" />
       </div>
     </>
   );

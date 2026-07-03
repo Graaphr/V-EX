@@ -58,7 +58,11 @@ export default function LoginPage() {
       login(token, user);
       setSuccess(res?.message);
 
-      router.push(res.redirect);
+      if (user?.nama) {
+        document.cookie = `username=${encodeURIComponent(user.nama)}; path=/; max-age=${60 * 60 * 24 * 7}`;
+      }
+
+      setSuccess('Login Berhasil !');
 
     } catch (error) {
       let message = 'Email atau Kata Sandi salah';
