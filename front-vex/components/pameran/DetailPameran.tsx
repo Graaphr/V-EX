@@ -99,14 +99,14 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
                   <HiPencilAlt size={18} />
                 </Link>
               )}
-              <h1 className="text-2xl font-bold uppercase leading-tight">{title}</h1>
-              <p className="text-gray-500 text-sm mt-1">{subtitle}</p>
-              <div className="flex items-center gap-2 text-gray-600 mt-2 text-sm">
-                <div className="flex items-center gap-2 text-gray-600 text-sm">
-                  <FaRegCalendarAlt className="text-main-blue" />
-                  <span>{date}</span>
-                </div>
+              <div className="flex items-center gap-4">
+                <h1 className="text-4xl font-extrabold uppercase">{title}</h1>
                 <StatusBadge isOpen={isOpen} />
+              </div>
+              <p className="text-gray-500 text-sm mt-1">{subtitle}</p>
+              <div className="flex items-center gap-4 text-gray-600 mt-2 text-sm">
+                <FaRegCalendarAlt className="text-main-blue" />
+                <span>{date}</span>
               </div>
             </div>
 
@@ -132,84 +132,87 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
                 </Link>
               )}
 
-                {/* DESKTOP TITLE */}
-                <div className="hidden md:block mb-6">
+              {/* DESKTOP TITLE */}
+              <div className="hidden md:block mb-6">
+                <div className="flex items-center gap-4">
                   <h1 className="text-4xl font-extrabold uppercase">{title}</h1>
-                  <p className="text-gray-500 mt-2">{subtitle}</p>
-                  <div className="flex items-center gap-10 mt-3">
-                    <div className="flex items-center gap-2 text-gray-600 text-sm">
-                      <FaRegCalendarAlt className="text-main-blue" />
-                      <span>{date}</span>
-                    </div>
-                    <StatusBadge isOpen={isOpen} />
-                  </div>
+                  <StatusBadge isOpen={isOpen} />
                 </div>
+                <p className="text-gray-500 mt-2">{subtitle}</p>
+                <div className="flex items-center gap-2 mt-3">
 
-                {/* BUTTON */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                  {isOpen ? (
-                    <Button
-                      link={`/exhibition/${id}`}
-                      className="w-full sm:w-auto min-w-[140px] py-5 px-38 flex items-center justify-center rounded-md"
-                    >
-                      <FaPlay />
-                    </Button>
-                  ) : (
-                    <div className="w-full sm:w-auto min-w-[140px] py-5 px-38 bg-gray-300 text-gray-500 rounded-md flex justify-center items-center">
-                      <FaPlay />
-                    </div>
-                  )}
+                  <FaRegCalendarAlt className="text-main-blue" />
+                  <span>{date}</span>
+
+
                 </div>
               </div>
-            </div>
 
-            {/* DESCRIPTION */}
-            <div className="mt-10">
-              <div className="space-y-6 text-gray-600 leading-relaxed">
-                {description.map((section: any, index: number) => (
-                  <div key={index}>
-                    <h3 className="font-semibold text-gray-800 mb-1">{section.title}</h3>
-                    {section.content && <p>{section.content}</p>}
-                    {section.list && (
-                      <ul className="list-disc pl-5 space-y-1">
-                        {section.list.map((item: string, idx: number) => (
-                          <li key={idx}>{item}</li>
-                        ))}
-                      </ul>
-                    )}
+              {/* BUTTON */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                {isOpen ? (
+                  <Button
+                    link={`/exhibition/${id}`}
+                    className="w-full sm:w-auto min-w-[140px] py-5 px-38 flex items-center justify-center rounded-md"
+                  >
+                    <FaPlay />
+                  </Button>
+                ) : (
+                  <div className="w-full sm:w-auto min-w-[140px] py-5 px-38 bg-gray-300 text-gray-500 rounded-md flex justify-center items-center">
+                    <FaPlay />
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* SOCIAL */}
-            <div className="mt-12 flex justify-end items-center gap-10">
-              <p className="font-bold text-main-blue">{institution}</p>
-              <div className="flex gap-4 text-main-blue text-2xl">
-                <FaInstagram href='#' />
-                <FaYoutube href='#' />
-                <FaFacebookSquare href='#' />
-              </div>
-            </div>
-
-            {/* STATS */}
-            <div className="mt-8 py-4 border-y">
-              <div className="hidden md:flex justify-between divide-x">
-                <Stat title="Total Suka" value={stats.likes} />
-                <Stat title="Total Karya" value={stats.karya} />
-                <Stat title="Tanggal Buka" value={stats.startDate} />
-                <Stat title="Tanggal Tutup" value={stats.endDate} />
-                <Stat title="Program Studi" value={stats.studyLevel} />
-              </div>
-              <div className="md:hidden space-y-3">
-                <Row title="Total Suka" value={stats.likes} />
-                <Row title="Total Karya" value={stats.karya} />
-                <Row title="Tanggal Buka" value={stats.startDate} />
-                <Row title="Tanggal Tutup" value={stats.endDate} />
-                <Row title="Program Studi" value={stats.studyLevel} />
+                )}
               </div>
             </div>
           </div>
+
+          {/* DESCRIPTION */}
+          <div className="mt-10">
+            <div className="space-y-6 text-gray-600 leading-relaxed">
+              {description.map((section: any, index: number) => (
+                <div key={index}>
+                  <h3 className="font-semibold text-gray-800 mb-1">{section.title}</h3>
+                  {section.content && <p>{section.content}</p>}
+                  {section.list && (
+                    <ul className="list-disc pl-5 space-y-1">
+                      {section.list.map((item: string, idx: number) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* SOCIAL */}
+          <div className="mt-12 flex justify-end items-center gap-10">
+            <p className="font-bold text-main-blue">{institution}</p>
+            <div className="flex gap-4 text-main-blue text-2xl">
+              <FaInstagram href='#' />
+              <FaYoutube href='#' />
+              <FaFacebookSquare href='#' />
+            </div>
+          </div>
+
+          {/* STATS */}
+          <div className="mt-8 py-4 border-y">
+            <div className="hidden md:flex justify-between divide-x">
+              <Stat title="Total Suka" value={stats.likes} />
+              <Stat title="Total Karya" value={stats.karya} />
+              <Stat title="Tanggal Buka" value={stats.startDate} />
+              <Stat title="Tanggal Tutup" value={stats.endDate} />
+              <Stat title="Program Studi" value={stats.studyLevel} />
+            </div>
+            <div className="md:hidden space-y-3">
+              <Row title="Total Suka" value={stats.likes} />
+              <Row title="Total Karya" value={stats.karya} />
+              <Row title="Tanggal Buka" value={stats.startDate} />
+              <Row title="Tanggal Tutup" value={stats.endDate} />
+              <Row title="Program Studi" value={stats.studyLevel} />
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );
@@ -236,11 +239,10 @@ function Row({ title, value }: { title: string; value: any }) {
 function StatusBadge({ isOpen }: { isOpen: boolean }) {
   return (
     <div
-      className={`flex items-center gap-1.5 w-fit px-2.5 py-1 rounded-full text-white text-xs font-semibold ${isOpen ? 'bg-green-500' : 'bg-red-500'
+      className={`flex items-center gap-1.5 w-8 h-8 px-2.5 py-1 rounded-full text-white text-xs font-semibold ${isOpen ? 'bg-green-500' : 'bg-red-500'
         }`}
     >
-      {isOpen ? <FaLockOpen size={11} /> : <FaLock size={11} />}
-      <span>{isOpen ? 'Buka' : 'Tutup'}</span>
+      {isOpen ? <FaLockOpen size={12} /> : <FaLock size={12} />}
     </div>
   );
 }
