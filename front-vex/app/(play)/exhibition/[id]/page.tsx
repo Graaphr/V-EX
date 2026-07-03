@@ -620,6 +620,19 @@ function LoaderWatcher({
 }
 
 /* ======================= */
+/* NAME HELPER             */
+/* Ambil kata pertama saja dari nama lengkap, buat ditampilkan di list    */
+/* komentar (privasi + tampilan lebih ringkas).                          */
+/* ======================= */
+
+function firstName(nama: string | null | undefined): string {
+  if (!nama) return "Anonim";
+  const trimmed = nama.trim();
+  if (!trimmed) return "Anonim";
+  return trimmed.split(/\s+/)[0];
+}
+
+/* ======================= */
 /* YOUTUBE EMBED HELPER    */
 /* ======================= */
 
@@ -1202,7 +1215,7 @@ function PosterViewer({
               )}
               {info.komentar.map((item, i) => (
                 <div key={i} className="bg-white/5 rounded-[6px] p-3">
-                  <p className="text-xs font-bold mb-1">{item.nama}</p>
+                  <p className="text-xs font-bold mb-1">{firstName(item.nama)}</p>
                   <p className="text-sm text-white/70">{item.isi}</p>
                 </div>
               ))}

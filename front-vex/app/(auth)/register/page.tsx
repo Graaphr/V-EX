@@ -196,6 +196,8 @@ export default function RegisterPage() {
               setNama(e.target.value);
               setNamaError('');
             }}
+            maxLength={30}
+            
           />
           <InputField
             type="text"
@@ -232,6 +234,7 @@ export default function RegisterPage() {
               setPasswordConfirmationError('');
             }}
             onToggle={() => setShowConfirm((prev) => !prev)}
+            minLength={8}
           />
 
           <div className="w-full mt-8 border-b-2 border-gray-300 pb-8">
