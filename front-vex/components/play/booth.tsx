@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useCallback } from "react";
 import { useGLTF } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { sharedTextureLoader } from "@/components/shared/ui/LoadingManager";
 
@@ -111,8 +112,65 @@ export default function Booth({
     };
   }, [sampul, scene]);
 
+  /* ===================== */
+  /* CLICK RANGE / OCCLUSION */
+  /* r3f pointer raycasting skips invisible meshes — dan collider dinding    */
+  /* memang di-set visible=false — jadi klik panel bawaan r3f TIDAK          */
+  /* terpengaruh tembok maupun jarak sama sekali. Di sini kita lempar ray    */
+  /* kedua secara manual dari kamera ke titik klik, khusus buat cek jarak    */
+  /* dan apakah ada collider (userData.collider) yang menghalangi.          */
+  /* ===================== */
+
+  const { camera, scene: world } = useThree();
+  const occlusionRay = useRef(new THREE.Raycaster());
+
+  const MAX_INTERACT_DISTANCE = 8;
+
+  // Cek apakah `obj` adalah bagian dari (descendant) `root`. Dipakai buat
+  // membedakan collider "milik sendiri" (rangka/pedestal booth ini, yang
+  // memang menempel/berhimpit dengan panelnya sendiri) dari collider
+  // eksternal (dinding hall, booth lain) yang benar-benar harus menghalangi.
+  const isDescendantOf = (obj: THREE.Object3D, root: THREE.Object3D) => {
+    let cur: THREE.Object3D | null = obj;
+    while (cur) {
+      if (cur === root) return true;
+      cur = cur.parent;
+    }
+    return false;
+  };
+
+  const isBlocked = useCallback(
+    (point: THREE.Vector3, distance: number) => {
+      if (distance > MAX_INTERACT_DISTANCE) return true;
+
+      const dir = point.clone().sub(camera.position).normalize();
+      occlusionRay.current.set(camera.position, dir);
+      // Berhenti sedikit sebelum titik klik supaya panel yang diklik sendiri
+      // tidak dihitung sebagai "penghalang" dirinya sendiri.
+      occlusionRay.current.far = Math.max(distance - 0.1, 0);
+      occlusionRay.current.near = 0;
+
+      const hits = occlusionRay.current
+        .intersectObjects(world.children, true)
+        .filter((h: any) => h.object?.userData?.collider && !isDescendantOf(h.object, scene));
+
+      return hits.length > 0;
+    },
+    [camera, world, scene]
+  );
+
   const handleClick = (e: any) => {
     const clicked = e?.object?.name;
+    if (clicked !== "PanelPoster" && clicked !== "PanelVideo") return;
+
+    // Begitu ray kena salah satu panel yang relevan, stop di sini — jangan
+    // biarkan event nembus/lanjut ke intersection lain di belakangnya.
+    // Ini yang bikin klik poster kadang malah ke-trigger sebagai klik video
+    // (dan sebaliknya) saat kedua panel berhimpit di ray yang sama.
+    e.stopPropagation();
+
+    if (isBlocked(e.point, e.distance)) return;
+
     if (clicked === "PanelPoster" && poster) openPoster(poster, boothName);
     if (clicked === "PanelVideo" && tautan) openTautan(tautan, boothName);
   };

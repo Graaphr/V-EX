@@ -160,7 +160,10 @@ export default function ExhibitionPage() {
     const initPlayerName = async () => {
       try {
         const name = await getPlayerName();
-        setPlayerName(name);
+        // Cuma ambil nama depan — dipakai buat label di atas kepala player
+        // (multiplayer) dan dikirim ke /api/player, jadi cukup di-set sekali
+        // di sini supaya konsisten di semua tempat yang memakai playerName.
+        setPlayerName(firstName(name));
       } catch {
         setPlayerName(generateGuestName());
       }
@@ -177,6 +180,48 @@ export default function ExhibitionPage() {
   // Player reads mobileMoveRef.current directly inside its useFrame loop.
   const mobileMoveRef = useRef({ w: false, a: false, s: false, d: false });
   const lookDelta = useRef({ x: 0, y: 0 });
+
+  // Ref ke elemen <canvas> Three.js — dipakai buat manual re-lock pointer
+  // setelah modal (poster/video/menu) ditutup, karena exitPointerLock()
+  // saat modal dibuka tidak otomatis di-lock lagi begitu modal ditutup.
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const relockRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const relockPointer = useCallback(() => {
+    if (relockRetryTimer.current) {
+      clearTimeout(relockRetryTimer.current);
+      relockRetryTimer.current = null;
+    }
+
+    const tryLock = () => {
+      const canvas = canvasRef.current;
+      if (!canvas?.requestPointerLock) return;
+
+      // requestPointerLock() balikin Promise di browser modern. Kalau
+      // rejected, hampir selalu karena cooldown wajib browser (Chromium
+      // butuh ±1.1–1.3 detik setelah pointer lock terakhir dilepas sebelum
+      // mau mengunci lagi — ini pembatasan keamanan bawaan, bukan sesuatu
+      // yang bisa dilewati dari kode). Tangkap errornya biar tidak
+      // melempar SecurityError yang tidak tertangani, lalu coba sekali lagi
+      // setelah cooldown biasanya sudah lewat — supaya user biasanya tidak
+      // perlu klik manual lagi.
+      const result = canvas.requestPointerLock() as unknown;
+      if (result && typeof (result as Promise<void>).catch === "function") {
+        (result as Promise<void>).catch(() => {
+          relockRetryTimer.current = setTimeout(tryLock, 1300);
+        });
+      }
+    };
+
+    tryLock();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (relockRetryTimer.current) clearTimeout(relockRetryTimer.current);
+    };
+  }, []);
 
   /* ====================== */
   /* DETECT MOBILE          */
@@ -280,7 +325,7 @@ export default function ExhibitionPage() {
       {(!isMobile || !isPortrait) && (
         <>
           {playerName && (
-            <Canvas camera={{ position: [0, 2, 5], fov: 75 }}>
+            <Canvas ref={canvasRef} camera={{ position: [0, 2, 5], fov: 75 }} gl={{ preserveDrawingBuffer: true }}>
               <LoaderWatcher dataReady={dataReady} onProgress={setAssetProgress} onLoaded={handleAssetsLoaded} />
               <Suspense fallback={null}>
                 <Experience
@@ -301,7 +346,7 @@ export default function ExhibitionPage() {
             </Canvas>
           )}
 
-          {!isMobile && controlsLocked && <Crosshair />}
+          {!isMobile && controlsLocked && <Crosshair canvasRef={canvasRef} />}
 
           {isMobile && controlsLocked && (
             <MobileHUD mobileMoveRef={mobileMoveRef} lookDelta={lookDelta} />
@@ -369,7 +414,10 @@ export default function ExhibitionPage() {
               Sound : {soundOn ? " ON" : " OFF"}
             </button>
             <button
-              onClick={() => setMenuOpen(false)}
+              onClick={() => {
+                setMenuOpen(false);
+                relockPointer();
+              }}
               className="w-full h-12 rounded-xl bg-green-500 font-bold"
             >
               Lanjut
@@ -396,7 +444,10 @@ export default function ExhibitionPage() {
           id={id}
           src={posterData.src}
           booth={posterData.booth}
-          onClose={() => setPosterOpen(false)}
+          onClose={() => {
+            setPosterOpen(false);
+            relockPointer();
+          }}
           onOpenTautan={openEmbedFromPoster}
         />
       )}
@@ -412,7 +463,10 @@ export default function ExhibitionPage() {
             }}
           >
             <button
-              onClick={() => setEmbedOpen(false)}
+              onClick={() => {
+                setEmbedOpen(false);
+                relockPointer();
+              }}
               className="absolute top-2 right-2 z-10 w-9 h-9 rounded-full bg-black/70 text-white text-lg font-bold flex items-center justify-center"
             >
               ✕
@@ -438,7 +492,10 @@ export default function ExhibitionPage() {
             setMapOpen(false);
             openPoster(src, booth);
           }}
-          onClose={() => setMapOpen(false)}
+          onClose={() => {
+            setMapOpen(false);
+            relockPointer();
+          }}
         />
       )}
 
@@ -507,7 +564,10 @@ export default function ExhibitionPage() {
 
             <div className="flex gap-3">
               <button
-                onClick={() => setIntroStep(null)}
+                onClick={() => {
+                  setIntroStep(null);
+                  relockPointer();
+                }}
                 className="flex-1 h-11 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 font-medium text-sm transition-colors"
               >
                 Lewati
@@ -532,7 +592,10 @@ export default function ExhibitionPage() {
               Jelajahi pameran virtual ini, kunjungi setiap booth, dan nikmati karya-karya terbaik yang telah dipersembahkan.
             </p>
             <button
-              onClick={() => setIntroStep(null)}
+              onClick={() => {
+                setIntroStep(null);
+                relockPointer();
+              }}
               className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-lg transition-colors"
             >
               Mulai Jelajahi
