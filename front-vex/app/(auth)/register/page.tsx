@@ -196,7 +196,7 @@ export default function RegisterPage() {
               setNama(e.target.value);
               setNamaError('');
             }}
-            maxLength={30}
+            maxLength={80}
             
           />
           <InputField
