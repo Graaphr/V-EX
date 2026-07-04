@@ -3,14 +3,46 @@
 namespace App\Http\Controllers;
 
 use App\Models\Karya;
+use App\Models\Pameran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Models\ModelPameran; // ← tambah ini di bagian atas use
-use App\Models\Stan;         // ← pastikan ini juga ada
-use Illuminate\Support\Facades\DB; // ← pastikan ini juga ada
+use App\Models\ModelPameran;
+use App\Models\Stan;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class KaryaController extends Controller
 {
+    // =============================
+    // HELPER: Cek status edit karya berdasarkan tanggal pameran
+    // =============================
+    private function getPameranEditStatus(?Pameran $pameran): array
+    {
+        // Data pameran/tanggal tidak lengkap → fallback izinkan edit
+        if (!$pameran || !$pameran->tanggal_mulai) {
+            return ['can_edit' => true, 'message' => null];
+        }
+
+        $now = Carbon::now();
+        $tanggalMulai = Carbon::parse($pameran->tanggal_mulai)->startOfDay();
+
+        // Pameran belum dibuka → boleh edit
+        if ($now->lessThan($tanggalMulai)) {
+            return ['can_edit' => true, 'message' => null];
+        }
+
+        // Sudah mulai (berlangsung ATAU sudah lewat) → tidak boleh edit
+        $tanggalAkhir = $pameran->tanggal_akhir
+            ? Carbon::parse($pameran->tanggal_akhir)->endOfDay()
+            : null;
+
+        $message = ($tanggalAkhir && $now->greaterThan($tanggalAkhir))
+            ? 'Karya tidak dapat diedit karena pameran sudah selesai.'
+            : 'Karya tidak dapat diedit karena pameran sedang berlangsung.';
+
+        return ['can_edit' => false, 'message' => $message];
+    }
+
     // =============================
     // DAFTAR KARYA MILIK KETUA PBL
     // =============================
@@ -21,27 +53,33 @@ class KaryaController extends Controller
         $karya = Karya::where('id_pengguna', $user->id)
             ->with(['stan', 'pameran'])
             ->get()
-            ->map(fn($item) => [
-                'id' => $item->id_karya,
-                'title' => $item->judul,
-                'category' => $item->pameran?->kategori ?? '',
-                'image' => $item->gambar_poster
-                    ? asset("http://localhost:8000/storage/{$item->gambar_poster}")
-                    : '',
-                'thumbnail' => $item->gambar_sampul
-                    ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
-                    : '',
-                'link' => $item->tautan,
-                'description' => $item->deskripsi,
-                'booth' => $item->id_stan ? (string) $item->id_stan : '',
-                'pameranId' => $item->id_pameran,
-                'pameranTitle' => $item->pameran?->judul ?? '',
-                'year' => $item->pameran?->tanggal_mulai
-                    ? date('Y', strtotime($item->pameran->tanggal_mulai))
-                    : '',
-                'semester' => '',
-                'isTerbaik' => $item->is_terbaik,   // expose ke frontend
-            ]);
+            ->map(function ($item) {
+                $editStatus = $this->getPameranEditStatus($item->pameran);
+
+                return [
+                    'id' => $item->id_karya,
+                    'title' => $item->judul,
+                    'category' => $item->pameran?->kategori ?? '',
+                    'image' => $item->gambar_poster
+                        ? asset("http://localhost:8000/storage/{$item->gambar_poster}")
+                        : '',
+                    'thumbnail' => $item->gambar_sampul
+                        ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
+                        : '',
+                    'link' => $item->tautan,
+                    'description' => $item->deskripsi,
+                    'booth' => $item->id_stan ? (string) $item->id_stan : '',
+                    'pameranId' => $item->id_pameran,
+                    'pameranTitle' => $item->pameran?->judul ?? '',
+                    'year' => $item->pameran?->tanggal_mulai
+                        ? date('Y', strtotime($item->pameran->tanggal_mulai))
+                        : '',
+                    'semester' => '',
+                    'isTerbaik' => $item->is_terbaik,
+                    'canEdit' => $editStatus['can_edit'],
+                    'editMessage' => $editStatus['message'],
+                ];
+            });
 
         return response()->json([
             'status' => 'success',
@@ -63,15 +101,15 @@ class KaryaController extends Controller
     }
 
     // =============================
-// TAMBAH KARYA (store yang dibenahi)
-// =============================
+    // TAMBAH KARYA
+    // =============================
     public function store(Request $request)
     {
         $user = $request->user();
 
         $request->validate([
             'id_pameran' => 'required|exists:pameran,id_pameran',
-            'id_model' => 'required|exists:model,id_model',   // ← ganti dari id_stan
+            'id_model' => 'required|exists:model,id_model',
             'judul' => 'required|string|max:255',
             'deskripsi' => 'required|string',
             'tautan' => 'required|url',
@@ -107,9 +145,7 @@ class KaryaController extends Controller
                 'id_pameran' => $idPameran,
                 'model_stan' => $request->id_model,
             ]);
-            // =============================
-            // BARU BUAT KARYA DENGAN id_stan HASIL INSERT
-            // =============================
+
             $karya = Karya::create([
                 'id_pengguna' => $user->id,
                 'id_pameran' => $idPameran,
@@ -123,8 +159,12 @@ class KaryaController extends Controller
             ]);
         });
 
+        $idKarya = $karya->id_karya;
+
+        Storage::disk('public')->makeDirectory("pameran/{$idPameran}/{$idKarya}/poster");
+        Storage::disk('public')->makeDirectory("pameran/{$idPameran}/{$idKarya}/sampul");
         // =============================
-        // BUAT FOLDER
+        // UPLOAD FILE
         // =============================
         $idKarya = $karya->id_karya;
 
@@ -133,7 +173,6 @@ class KaryaController extends Controller
 
         Storage::disk('public')
             ->makeDirectory("pameran/{$idPameran}/{$idKarya}/sampul");
-
         // =============================
         // UPLOAD FILE
         // =============================
@@ -165,7 +204,7 @@ class KaryaController extends Controller
     public function update(Request $request, $id)
     {
         $user = $request->user();
-        $karya = Karya::find($id);
+        $karya = Karya::with('pameran')->find($id);
 
         if (!$karya) {
             return response()->json([
@@ -178,6 +217,16 @@ class KaryaController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Akses ditolak. Anda hanya dapat mengedit karya milik Anda sendiri.',
+            ], 403);
+        }
+
+        // Validasi status pameran — HARUS sebelum validasi field lain
+        $editStatus = $this->getPameranEditStatus($karya->pameran);
+
+        if (!$editStatus['can_edit']) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $editStatus['message'],
             ], 403);
         }
 
@@ -254,7 +303,7 @@ class KaryaController extends Controller
 
         $today = now()->toDateString();
 
-        $pameran = \App\Models\Pameran::with('prodi')
+        $pameran = Pameran::with('prodi')
             ->where('kategori', $prodi)
             ->where('tanggal_mulai_persiapan', '<=', $today)
             ->where('tanggal_akhir_persiapan', '>=', $today)
@@ -275,7 +324,7 @@ class KaryaController extends Controller
     // =============================
     public function stanTersedia(Request $request, $id_pameran)
     {
-        $stan = \App\Models\Stan::where('id_pameran', $id_pameran)
+        $stan = Stan::where('id_pameran', $id_pameran)
             ->with('model3d')
             ->get()
             ->map(fn($item) => [
@@ -327,13 +376,13 @@ class KaryaController extends Controller
     }
 
     // =============================
-// KARYA TERBAIK (PAMERAN AKTIF)
-// =============================
+    // KARYA TERBAIK (PAMERAN AKTIF)
+    // =============================
     public function karyaTerbaikAktif()
     {
         $today = now()->toDateString();
 
-        $pameranAktifIds = \App\Models\Pameran::where('tanggal_mulai', '<=', $today)
+        $pameranAktifIds = Pameran::where('tanggal_mulai', '<=', $today)
             ->where('tanggal_akhir', '>=', $today)
             ->pluck('id_pameran');
 
@@ -362,26 +411,25 @@ class KaryaController extends Controller
     }
 
     // =============================
-// KARYA FAVORIT (ALL PAMERAN)
-// Berdasarkan jumlah suka terbanyak
-// =============================
+    // KARYA FAVORIT (ALL PAMERAN)
+    // =============================
     public function karyaFavoritAktif()
-{
-    $karya = Karya::withCount('suka')
-        ->orderByDesc('suka_count')
-        ->take(1)
-        ->get()
-        ->map(fn($item) => [
-            'id' => $item->id_karya,
-            'title' => $item->judul,
-            'banner' => $item->gambar_sampul
-                ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
-                : '',
-        ]);
+    {
+        $karya = Karya::withCount('suka')
+            ->orderByDesc('suka_count')
+            ->take(1)
+            ->get()
+            ->map(fn($item) => [
+                'id' => $item->id_karya,
+                'title' => $item->judul,
+                'banner' => $item->gambar_sampul
+                    ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
+                    : '',
+            ]);
 
-    return response()->json([
-        'status' => 'success',
-        'karya' => $karya,
-    ]);
-}
+        return response()->json([
+            'status' => 'success',
+            'karya' => $karya,
+        ]);
+    }
 }

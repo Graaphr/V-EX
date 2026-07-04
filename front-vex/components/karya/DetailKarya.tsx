@@ -99,6 +99,9 @@ export default function DetailKarya({ id }: Props) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // HANYA berlaku untuk Ketua PBL
+  const isPameranLocked = isKetuaPbl && form?.canEdit === false;
+
   const [currentPameran, setCurrentPameran] = useState<{
     id: number;
     title: string;
@@ -227,6 +230,13 @@ export default function DetailKarya({ id }: Props) {
   // Hanya Ketua PBL
   const handleSave = async () => {
     if (!form || isReadOnly) return;
+    if (form.canEdit === false) {
+      showToast(
+        form.editMessage || "Karya tidak dapat diedit saat ini.",
+        "warning",
+      );
+      return;
+    }
 
     const validationErrors = validate(form, thumbnailFile, posterFile, true);
     if (Object.keys(validationErrors).length > 0) {
@@ -496,10 +506,34 @@ export default function DetailKarya({ id }: Props) {
             </div>
           )}
 
+          {isPameranLocked && (
+            <div className="mb-6 flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 shrink-0 text-red-500"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <p className="text-xs text-red-700">
+                {form.editMessage || "Karya tidak dapat diedit saat ini."}
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
             {/* Gambar — read-only untuk Admin & KPS */}
             <div
-              className={`space-y-3 ${isReadOnly ? "pointer-events-none opacity-75" : ""}`}
+              className={`space-y-3 ${
+                isReadOnly || isPameranLocked
+                  ? "pointer-events-none opacity-75"
+                  : ""
+              }`}
             >
               <DetailThumbnail
                 preview={thumbnailPreview}
@@ -510,25 +544,31 @@ export default function DetailKarya({ id }: Props) {
                 preview={posterPreview}
                 onUpload={(e) => handleImageUpload(e, "poster")}
                 error={errors.poster}
-                readOnly={isReadOnly}
+                readOnly={isReadOnly || isPameranLocked}
               />
             </div>
 
             {/* Form — read-only untuk Admin & KPS */}
-            <div className={isReadOnly ? "pointer-events-none opacity-75" : ""}>
+            <div
+              className={
+                isReadOnly || isPameranLocked
+                  ? "pointer-events-none opacity-75"
+                  : ""
+              }
+            >
               <DetailPreview
                 booth={form.booth ?? ""}
                 pameranId={form.pameranId}
                 onChange={(value) => handleChange("booth", value)}
                 error={errors.booth}
-                readOnly={isReadOnly}
+                readOnly={isReadOnly || isPameranLocked}
               />
               <DetailForm
                 form={form}
                 onChange={handleChange}
                 currentPameran={currentPameran}
                 errors={errors}
-                readOnly={isReadOnly}
+                readOnly={isReadOnly || isPameranLocked}
               />
             </div>
           </div>
@@ -538,7 +578,7 @@ export default function DetailKarya({ id }: Props) {
             // Admin
             onDelete={isAdmin ? () => setShowConfirm(true) : undefined}
             // Ketua PBL
-            onSave={isKetuaPbl ? handleSave : undefined}
+            onSave={isKetuaPbl && !isPameranLocked ? handleSave : undefined}
             // KPS
             onPilihTerbaik={isKps ? handlePilihTerbaik : undefined}
             onBatalkanTerbaik={isKps ? handleBatalkanTerbaik : undefined}
