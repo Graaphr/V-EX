@@ -52,17 +52,17 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
-    try {
+   try {
       const res = await Login({ email, password });
       const { token, user } = res;
       login(token, user);
-      setSuccess(res?.message);
-
+      
       if (user?.nama) {
         document.cookie = `username=${encodeURIComponent(user.nama)}; path=/; max-age=${60 * 60 * 24 * 7}`;
       }
+      setSuccess(res?.message);
 
-      setSuccess('Login Berhasil !');
+      router.push(res.redirect);
 
     } catch (error) {
       let message = 'Email atau Kata Sandi salah';

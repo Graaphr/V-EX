@@ -15,9 +15,9 @@ class GameAssetController extends Controller
     public function index()
     {
         return response()->json([
-            'bgm' => asset('storage/audio/bgm.mp3'),
-            'footstep' => asset('storage/audio/footstep.mp3'),
-            'jump' => asset('storage/audio/jump.mp3'),
+            'bgm' => asset('storage/audio/bgm.mp3', true),
+            'footstep' => asset('storage/audio/footstep.mp3', true),
+            'jump' => asset('storage/audio/jump.mp3', true),
         ]);
     }
 
