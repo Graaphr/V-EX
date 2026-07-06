@@ -15,10 +15,6 @@ Route::get('/', function () {
         'message' => 'Backend is ready to connect with Next.js'
     ]);
 });
-// Route::post('/register', [PenggunaController::class, 'register']);
-// Route::post('/verify-otp', [PenggunaController::class, 'verifyOtp']);
-// Route::post('/resend-otp', [PenggunaController::class, 'resendOtp']);
-// Route::post('/login', [PenggunaController::class, 'login']);
 
 // Tambahkan rute fallback ini di paling bawah file web.php
 // Gunanya: Jika Anda akses URL yang salah, tetap muncul JSON (bagus untuk debugging)

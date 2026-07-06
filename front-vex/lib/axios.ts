@@ -5,7 +5,7 @@ const url = axios.create({
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
-  },
+  }, withCredentials: true,
 });
 
 url.interceptors.request.use((config) => {
