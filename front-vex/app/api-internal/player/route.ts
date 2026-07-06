@@ -59,7 +59,7 @@ export async function POST(
       `player:${body.id}`,
       JSON.stringify(playerData),
       "EX",
-      5
+      50
     );
 
     return NextResponse.json({

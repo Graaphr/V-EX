@@ -231,7 +231,9 @@ function ExperienceInner({
         if (cancelled) return;
 
         const now = Date.now();
-        const filtered = data.filter((p) => p.id !== playerId && now - p.updatedAt < 999999);
+        // const STALE_THRESHOLD_MS = 100000;
+        // const filtered = data.filter((p) => p.id !== playerId && now - p.updatedAt < STALE_THRESHOLD_MS);
+        const filtered = data.filter((p) => p.id !== playerId);
 
         setRemotePlayers((prev) => {
           if (prev.length !== filtered.length) return filtered;
