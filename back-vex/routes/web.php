@@ -22,9 +22,20 @@ Route::get('/', function () {
 
 // Tambahkan rute fallback ini di paling bawah file web.php
 // Gunanya: Jika Anda akses URL yang salah, tetap muncul JSON (bagus untuk debugging)
+// Route::fallback(function () {
+//     return response()->json([
+//         'message' => 'Route tidak ditemukan. Pastikan URL benar.',
+//         'help' => 'Cek /api/... untuk endpoint data atau /sanctum/csrf-cookie untuk session.'
+//     ], 404);
+// });
+
+
 Route::fallback(function () {
-    return response()->json([
-        'message' => 'Route tidak ditemukan. Pastikan URL benar.',
-        'help' => 'Cek /api/... untuk endpoint data atau /sanctum/csrf-cookie untuk session.'
-    ], 404);
+
+    if (request()->is('api/*')) {
+
+        return view('error-api');
+    }
+
+    abort(404);
 });

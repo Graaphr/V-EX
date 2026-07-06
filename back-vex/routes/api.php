@@ -14,6 +14,10 @@ use App\Http\Controllers\KpsController;
 // =============================
 // PUBLIC ROUTES
 // =============================
+Route::get('/', function () {
+    return view('error-api');
+});
+
 Route::prefix('auth')->group(function () {
     Route::post('/register', [PenggunaController::class, 'register']);
     Route::post('/verify-otp', [PenggunaController::class, 'verifyOtp']);
