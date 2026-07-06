@@ -184,7 +184,7 @@ export default function ExhibitionPage() {
   // Ref ke elemen <canvas> Three.js — dipakai buat manual re-lock pointer
   // setelah modal (poster/video/menu) ditutup, karena exitPointerLock()
   // saat modal dibuka tidak otomatis di-lock lagi begitu modal ditutup.
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const relockRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
