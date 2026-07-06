@@ -200,7 +200,7 @@ const boxes = [
             
           />
           <InputField
-            type="text"
+            type="email"
             value={email}
             placeholder="Masukkan Email"
             error={emailError}
