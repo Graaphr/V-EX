@@ -33,7 +33,7 @@ export default function PosterCard({ karya, pameranList }: PosterCardProps) {
 
         {/* ✅ Badge terbaik — hanya muncul jika isTerbaik true */}
         {(karya as any).isTerbaik && (
-          <div className="">
+          <div className="z-90 absolute top-2 right-2">
             <img
               src="/icon/Medalion.svg"
               alt="Medali Terbaik"
