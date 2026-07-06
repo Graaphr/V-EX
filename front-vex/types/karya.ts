@@ -12,6 +12,8 @@ export interface KaryaItem {
   pameranId?: number;
   pameranTitle?: string; // ✅ tambah
   isTerbaik?: boolean;   // ✅ tambah untuk KPS
+  canEdit?: boolean;       // ← BARU
+  editMessage?: string | null; // ← BARU
 }
 
 export interface PameranItem {

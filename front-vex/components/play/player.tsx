@@ -253,6 +253,14 @@ const HEARTBEAT_INTERVAL = 3;
   /* POINTER UNLOCK */
   /* ===================== */
 
+  // Dipakai di onLock (lihat return JSX) supaya callback-nya selalu baca
+  // nilai controlsLocked terbaru, bukan closure lama dari saat pertama
+  // <PointerLockControls> di-mount.
+  const controlsLockedRef = useRef(controlsLocked);
+  useEffect(() => {
+    controlsLockedRef.current = controlsLocked;
+  }, [controlsLocked]);
+
   useEffect(() => {
     if (!controlsLocked) {
       pointerRef.current?.unlock?.();
@@ -472,8 +480,21 @@ if (saveTimer.current >= 0.2 && playerName !== "Loading...") {
 
   return (
     <>
-      {!isMobile && mode === "first" && controlsLocked && (
-        <PointerLockControls ref={pointerRef} />
+      {!isMobile && mode === "first" && (
+        <PointerLockControls
+          ref={pointerRef}
+          onLock={() => {
+            // Listener klik bawaan PointerLockControls selalu aktif
+            // (komponennya selalu ter-mount), jadi bisa saja ke-trigger
+            // walau menu/poster/video sedang terbuka. Kalau itu terjadi,
+            // langsung batalkan lagi — TIDAK BOLEH lock selama
+            // controlsLocked masih false (mis. menu ESC sedang tampil).
+            if (!controlsLockedRef.current) {
+              pointerRef.current?.unlock?.();
+              document.exitPointerLock?.();
+            }
+          }}
+        />
       )}
 
       {mode === "third" && (

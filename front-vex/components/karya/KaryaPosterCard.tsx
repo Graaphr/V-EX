@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { KaryaItem, PameranItem } from '../../types/karya';
-import { PRODI_OPTIONS } from '@/types/pameran';
+import Image from "next/image";
+import { KaryaItem, PameranItem } from "../../types/karya";
+import { PRODI_OPTIONS } from "@/types/pameran";
 
 interface PosterCardProps {
   karya: KaryaItem;
@@ -33,8 +33,12 @@ export default function PosterCard({ karya, pameranList }: PosterCardProps) {
 
         {/* ✅ Badge terbaik — hanya muncul jika isTerbaik true */}
         {(karya as any).isTerbaik && (
-          <div className="absolute top-2 left-2 bg-yellow-400 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full shadow">
-            ⭐ Terbaik
+          <div className="">
+            <img
+              src="/icon/Medalion.svg"
+              alt="Medali Terbaik"
+              className="w-14 h-14"
+            />
           </div>
         )}
       </div>
@@ -45,7 +49,9 @@ export default function PosterCard({ karya, pameranList }: PosterCardProps) {
 
         {pameran && (
           <span className="mt-1 inline-flex w-fit items-center rounded-full bg-blue-300/40 px-3 py-1">
-            <p className="font-poppins text-xs font-medium text-main-blue leading-none">{pameran.title}</p>
+            <p className="font-poppins text-xs font-medium text-main-blue leading-none">
+              {pameran.title}
+            </p>
           </span>
         )}
       </div>
