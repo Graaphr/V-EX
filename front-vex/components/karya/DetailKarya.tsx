@@ -493,7 +493,7 @@ export default function DetailKarya({ id }: Props) {
                 />
               </svg>
               <p className="text-xs text-amber-700">
-                Mode{" "}
+                {" "}
                 <span className="font-semibold">
                   {isAdmin ? "Admin" : "KPS"}
                 </span>{" "}
