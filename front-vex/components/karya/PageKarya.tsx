@@ -50,38 +50,35 @@ export default function PageKarya({ href }: Props) {
             : await GetKarya();
 
         // ← Tambah mapper ini khusus KPS
-        const raw = res.karya ?? [];
-        const data: KaryaItem[] = isKps
-          ? raw.map((item: any) => {
-              const tanggalMulai = item.stan?.pameran?.tanggal_mulai ?? "";
-              const bulan = tanggalMulai
-                ? new Date(tanggalMulai).getMonth() + 1
-                : 0;
-              const semester =
-                bulan >= 8 || bulan <= 2 ? "Ganjil" : bulan >= 3 ? "Genap" : "";
+        const mapKaryaItem = (item: any): KaryaItem => {
+        const tanggalMulai = item.stan?.pameran?.tanggal_mulai ?? "";
+        const bulan = tanggalMulai ? new Date(tanggalMulai).getMonth() + 1 : 0;
+        const semester = bulan >= 8 || bulan <= 2 ? "Ganjil" : bulan >= 3 ? "Genap" : "";
 
-              return {
-                id: item.id_karya,
-                title: item.judul,
-                description: item.deskripsi,
-                category: item.stan?.pameran?.kategori ?? "",
-                image: item.gambar_poster
-                  ? `https://vex.terpalb25.web.id/storage/${item.gambar_poster}`
-                  : "",
-                thumbnail: item.gambar_sampul
-                  ? `https://vex.terpalb25.web.id/storage/${item.gambar_sampul}`
-                  : "",
-                link: item.tautan ?? "",
-                year: tanggalMulai.slice(0, 4),
-                semester, // ← sekarang terisi "Ganjil" / "Genap"
-                booth: String(item.id_stan ?? ""),
-                pameranId: item.id_pameran,
-                pameranTitle:
-                  item.stan?.pameran?.judul ?? `Pameran #${item.id_pameran}`,
-                isTerbaik: item.is_terbaik ?? false,
-              };
-            })
-          : raw;
+        return {
+          id: item.id_karya,
+          title: item.judul,
+          description: item.deskripsi,
+          category: item.stan?.pameran?.kategori ?? "",
+          image: item.gambar_poster
+            ? `https://vex.terpalb25.web.id/storage/${item.gambar_poster}`
+            : "",
+          thumbnail: item.gambar_sampul
+            ? `https://vex.terpalb25.web.id/storage/${item.gambar_sampul}`
+            : "",
+          link: item.tautan ?? "",
+          year: tanggalMulai.slice(0, 4),
+          semester,
+          booth: String(item.id_stan ?? ""),
+          pameranId: item.id_pameran,
+          pameranTitle: item.stan?.pameran?.judul ?? `Pameran #${item.id_pameran}`,
+          isTerbaik: item.is_terbaik ?? false,
+        };
+      };
+        const raw = res.karya ?? [];
+        const data: KaryaItem[] = (isKps || isAdmin)
+          ? raw.map(mapKaryaItem)
+          : raw ;
 
         setKaryaList(data);
 

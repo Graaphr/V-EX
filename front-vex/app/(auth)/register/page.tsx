@@ -28,6 +28,7 @@ export default function RegisterPage() {
   const [password_confirmation, setPasswordConfirmation] = useState('');
 
   const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
   const [namaError, setNamaError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -88,7 +89,8 @@ export default function RegisterPage() {
       router.push('/verifikasi');
 
     } catch (error: any) {
-      const response = error.response?.data;
+      const response = error.response?.data?.message;
+      setError(response || 'Terjadi kesalahan saat mendaftar');
 
       if (response?.errors) {
         setNamaError(response.errors.nama?.[0] || '');
@@ -186,6 +188,7 @@ const boxes = [
 
         <form onSubmit={handleRegister} className="w-full space-y-4 mt-6 select-none">
           {success && <div className="bg-green-50 text-green-600 text-sm p-3 rounded-lg mb-4">{success}</div>}
+          {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-4">{error}</div>}
           <InputField
             type="text"
             value={nama}

@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { Button, ButtonPutih } from '@/components/shared/ui/Button';
 import { InputField } from '@/components/shared/ui/InputFields';
 import { ForgotPassword, ResendEmail } from './apiLupaPassword';
+import { useRouter } from 'next/dist/client/components/navigation';
 
 export default function LupaPasswordPage() {
+  const router = useRouter();
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [success, setSuccess] = useState('');
@@ -124,6 +126,10 @@ export default function LupaPasswordPage() {
 
             <ButtonPutih type="button" onClick={handleChangeEmail} className="w-full py-3 rounded-lg">
               Ubah email
+            </ButtonPutih>
+            <hr />
+            <ButtonPutih type="button" onClick={() => router.push('/login')} className="w-full py-3 mt-5 rounded-lg">
+              Login
             </ButtonPutih>
           </div>
         )}

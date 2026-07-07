@@ -64,7 +64,8 @@ export function useChangeEmail() {
       setSuccess(res.message || 'Kode verifikasi telah dikirim');
       setStep(2);
     } catch (err: any) {
-      setGlobalError(err?.response?.data?.message || 'Gagal mengirim kode verifikasi');
+      // console.log(err?.response?.data?.errors?.new_email);
+      setGlobalError(err?.response?.data?.errors || 'Gagal mengirim kode verifikasi');
     } finally {
       setIsLoading(false);
     }

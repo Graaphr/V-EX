@@ -87,6 +87,20 @@ class KaryaController extends Controller
         ]);
     }
 
+    public function indexAdmin(Request $request)
+    {
+
+        // Ambil karya berdasarkan prodi KPS
+        $karya = Karya::with(['stan.pameran', 'pengguna:id,nama'])
+            ->withCount('suka')->get();
+
+        return response()->json([
+            'status' => 'success',
+            'total' => $karya->count(),
+            'karya' => $karya,
+        ]);
+    }
+
     // =============================
     // AMBIL MODEL STAN (jenis = 'stan')
     // =============================

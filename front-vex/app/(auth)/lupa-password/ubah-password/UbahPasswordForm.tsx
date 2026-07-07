@@ -35,8 +35,8 @@ export default function UbahPasswordForm() {
     if (!password.trim()) {
       setPasswordError('Kata sandi wajib diisi');
       hasError = true;
-    } else if (password.length < 6) {
-      setPasswordError('Password minimal 6 karakter');
+    } else if (password.length < 8) {
+      setPasswordError('Password minimal 8 karakter');
       hasError = true;
     }
 

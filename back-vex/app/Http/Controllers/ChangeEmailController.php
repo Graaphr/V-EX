@@ -29,7 +29,7 @@ class ChangeEmailController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors()->first()
             ], 422);
         }
 

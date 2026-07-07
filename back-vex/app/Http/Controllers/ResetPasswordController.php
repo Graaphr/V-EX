@@ -192,11 +192,11 @@ class ResetPasswordController extends Controller
                 'message' => 'Kata sandi berhasil diubah. Silakan login.',
             ]);
 
-        } catch (ValidationException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validasi gagal.',
-            ], 422);
+        // } catch (ValidationException $e) {
+        //     return response()->json([
+        //         'status' => 'error',
+        //         'message' => 'Validasi gagal.',
+        //     ], 422);
 
         } catch (\Throwable $e) {
             return response()->json([

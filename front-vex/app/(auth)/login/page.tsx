@@ -63,10 +63,11 @@ export default function LoginPage() {
       setSuccess(res?.message);
 
       router.push(res.redirect);
-
-    } catch (error) {
-      let message = 'Email atau Kata Sandi salah';
-      setError(message);
+      
+    } catch (error: any) {
+      const response = error.response?.data?.message;
+      setError(response || 'Terjadi kesalahan saat masuk');
+      
     } finally {
       setIsLoading(false);
     }
