@@ -168,9 +168,23 @@ export default function DetailForm({
       {/* Deskripsi */}
       <div>
         <Label text="Deskripsi Karya" required />
-        <p className="text-xs text-gray-400 mt-1">
-          Sertakan deskripsi, nama tim PBL dan nama manager proyek.
-        </p>
+        <div className="text-xs text-gray-400 mt-1">
+          <p>Deskripsi harus berisi:</p>
+          <ol className="list-decimal list-inside mt-1 space-y-0.5">
+            <li>
+              <span className="font-medium text-gray-400">Latar Belakang</span>{" "}
+              — alasan/permasalahan yang mendasari karya ini.
+            </li>
+            <li>
+              <span className="font-medium text-gray-400">Gagasan</span> — ide
+              atau solusi yang ditawarkan.
+            </li>
+            <li>
+              <span className="font-medium text-gray-400">Team PBL</span> — kode
+              team, nama anggota team, dan nama manager proyek.
+            </li>
+          </ol>
+        </div>
         {readOnly ? (
           <div
             className={`${inputClass} border-gray-200 bg-gray-50 text-gray-700 h-[420px] overflow-y-auto whitespace-pre-wrap`}

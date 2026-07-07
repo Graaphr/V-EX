@@ -225,7 +225,7 @@ export default function RegisterPage() {
           />
           <PasswordField
             value={password_confirmation}
-            placeholder="Kata Sandi"
+            placeholder="Konfirmasi Kata Sandi"
             showPassword={showConfirm}
             error={passwordConfirmationError}
             className={'input-form transition-all duration-200'}

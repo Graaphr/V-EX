@@ -323,18 +323,64 @@ class KaryaController extends Controller
     // STAN TERSEDIA BERDASARKAN PAMERAN
     // =============================
     public function stanTersedia(Request $request, $id_pameran)
-    {
-        $stan = Stan::where('id_pameran', $id_pameran)
-            ->with('model3d')
-            ->get()
-            ->map(fn($item) => [
-                'id' => $item->id_stan,
+{
+    $stan = Stan::where('id_pameran', $id_pameran)
+        ->with('model3d')
+        ->orderBy('id_stan')
+        ->get()
+        ->values()
+        ->map(function ($item, $index) {
+            return [
+                'id' => $item->id_stan,           // tetap id asli, dipakai untuk value form
+                'nomor' => $index + 1,             // urutan 1, 2, 3 per pameran
                 'model_stan' => $item->model3d?->nama_model ?? $item->model_stan,
-            ]);
+            ];
+        });
+
+    return response()->json([
+        'status' => 'success',
+        'stan' => $stan,
+    ]);
+}
+
+    // =============================
+    // DAFTAR SEMUA KARYA (ADMIN)
+    // =============================
+    public function indexAdmin(Request $request)
+    {
+        $karya = Karya::with(['stan', 'pameran'])
+            ->get()
+            ->map(function ($item) {
+                $editStatus = $this->getPameranEditStatus($item->pameran);
+
+                return [
+                    'id' => $item->id_karya,
+                    'title' => $item->judul,
+                    'category' => $item->pameran?->kategori ?? '',
+                    'image' => $item->gambar_poster
+                        ? asset("http://localhost:8000/storage/{$item->gambar_poster}")
+                        : '',
+                    'thumbnail' => $item->gambar_sampul
+                        ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
+                        : '',
+                    'link' => $item->tautan,
+                    'description' => $item->deskripsi,
+                    'booth' => $item->id_stan ? (string) $item->id_stan : '',
+                    'pameranId' => $item->id_pameran,
+                    'pameranTitle' => $item->pameran?->judul ?? '',
+                    'year' => $item->pameran?->tanggal_mulai
+                        ? date('Y', strtotime($item->pameran->tanggal_mulai))
+                        : '',
+                    'semester' => '',
+                    'isTerbaik' => $item->is_terbaik,
+                    'canEdit' => $editStatus['can_edit'],
+                    'editMessage' => $editStatus['message'],
+                ];
+            });
 
         return response()->json([
             'status' => 'success',
-            'stan' => $stan,
+            'karya' => $karya,
         ]);
     }
 

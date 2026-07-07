@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GetModelStan } from "@/components/karya/apiKarya"; // ← ganti import
+import { GetModelStan, GetStanTersedia } from "@/components/karya/apiKarya"; // ← tambah GetStanTersedia
 
 interface StanOption {
-  id_model: number; // ← ganti dari id ke id_model
-  nama_model: string; // ← ganti dari model_stan ke nama_model
+  id_model: number;
+  nama_model: string;
 }
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
   booth: string;
   onChange: (value: string) => void;
   error?: string;
-  readOnly?: boolean; // ← tambah
+  readOnly?: boolean;
 }
 
 const inputClass =
@@ -37,8 +37,12 @@ export default function DetailPreview({
   const [modelList, setModelList] = useState<StanOption[]>([]);
   const [loadingModel, setLoadingModel] = useState(false);
 
+  // ← BARU: nomor urut stan (1, 2, 3...) khusus untuk tampilan readOnly
+  const [stanNomor, setStanNomor] = useState<number | null>(null);
+  const [loadingNomor, setLoadingNomor] = useState(false);
+
   useEffect(() => {
-    if (readOnly) return; // ← skip fetch kalau KPS/Admin
+    if (readOnly) return; // skip fetch model catalog kalau KPS/Admin/locked
 
     const fetchModel = async () => {
       setLoadingModel(true);
@@ -53,7 +57,32 @@ export default function DetailPreview({
     };
 
     fetchModel();
-  }, [readOnly]); // ← kosong, fetch sekali saat mount
+  }, [readOnly]);
+
+  // ← BARU: khusus readOnly, cari nomor urut stan berdasarkan pameranId + booth
+  useEffect(() => {
+    if (!readOnly || !pameranId || !booth) {
+      setStanNomor(null);
+      return;
+    }
+
+    const fetchStanNomor = async () => {
+      setLoadingNomor(true);
+      try {
+        const res = await GetStanTersedia(pameranId);
+        const list: { id: number; nomor: number }[] = res.stan ?? [];
+        const found = list.find((s) => String(s.id) === String(booth));
+        setStanNomor(found ? found.nomor : null);
+      } catch (err) {
+        console.error("Gagal memuat nomor stan:", err);
+        setStanNomor(null);
+      } finally {
+        setLoadingNomor(false);
+      }
+    };
+
+    fetchStanNomor();
+  }, [readOnly, pameranId, booth]);
 
   const selectedModel = modelList.find(
     (m) => String(m.id_model) === String(booth),
@@ -90,7 +119,11 @@ export default function DetailPreview({
           <div
             className={`${inputClass} border-gray-200 bg-gray-50 text-gray-700`}
           >
-            {booth ? `Stan #${booth}` : "-"}
+            {loadingNomor
+              ? "Memuat..."
+              : booth
+                ? `Stan #${stanNomor ?? booth}`
+                : "-"}
           </div>
         ) : loadingModel ? (
           <div className="mt-1.5 h-10 animate-pulse rounded-lg bg-gray-100" />
