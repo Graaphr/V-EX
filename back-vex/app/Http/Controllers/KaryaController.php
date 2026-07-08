@@ -87,19 +87,7 @@ class KaryaController extends Controller
         ]);
     }
 
-    public function indexAdmin(Request $request)
-    {
 
-        // Ambil karya berdasarkan prodi KPS
-        $karya = Karya::with(['stan.pameran', 'pengguna:id,nama'])
-            ->withCount('suka')->get();
-
-        return response()->json([
-            'status' => 'success',
-            'total' => $karya->count(),
-            'karya' => $karya,
-        ]);
-    }
 
     // =============================
     // AMBIL MODEL STAN (jenis = 'stan')
@@ -372,10 +360,10 @@ class KaryaController extends Controller
                     'title' => $item->judul,
                     'category' => $item->pameran?->kategori ?? '',
                     'image' => $item->gambar_poster
-                        ? asset("http://localhost:8000/storage/{$item->gambar_poster}")
+                        ? asset("https://vex.terpalb25.web.id/storage/{$item->gambar_poster}")
                         : '',
                     'thumbnail' => $item->gambar_sampul
-                        ? asset("http://localhost:8000/storage/{$item->gambar_sampul}")
+                        ? asset("https://vex.terpalb25.web.id/storage/{$item->gambar_sampul}")
                         : '',
                     'link' => $item->tautan,
                     'description' => $item->deskripsi,
