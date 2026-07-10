@@ -72,6 +72,9 @@ export type Pameran = {
   category: string;
   date: string;
   bannerImage: string;
+  bannerLarge: string;
+  bannerMedium: string;
+  bannerSmall: string;
   likes: number;
   karya: number;
   description: PameranDescription[];

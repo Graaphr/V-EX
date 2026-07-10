@@ -1,17 +1,22 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
-  FaPlay, FaInstagram, FaYoutube,
-  FaFacebookSquare, FaRegCalendarAlt, FaLock, FaLockOpen
-} from 'react-icons/fa';
-import { HiPencilAlt } from 'react-icons/hi';
-import { useParams } from 'next/navigation';
+  FaPlay,
+  FaInstagram,
+  FaYoutube,
+  FaFacebookSquare,
+  FaRegCalendarAlt,
+  FaLock,
+  FaLockOpen,
+} from "react-icons/fa";
+import { HiPencilAlt } from "react-icons/hi";
+import { useParams } from "next/navigation";
 
-import { Button } from '../shared/ui/Button';
-import { Pameran } from '@/types/pameran';
-import { GetDetailPameran } from './apiPameran';
+import { Button } from "../shared/ui/Button";
+import { Pameran } from "@/types/pameran";
+import { GetDetailPameran } from "./apiPameran";
 interface Status {
   isLogin?: boolean;
 }
@@ -35,7 +40,8 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
       try {
         const data = await GetDetailPameran(id);
 
-        if (data.status !== 'success') throw new Error(data.message ?? 'Pameran tidak ditemukan');
+        if (data.status !== "success")
+          throw new Error(data.message ?? "Pameran tidak ditemukan");
 
         setPameran(data.pameran);
       } catch (err: any) {
@@ -61,12 +67,22 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
   if (error || !pameran) {
     return (
       <div className="min-h-screen flex items-center justify-center text-red-500">
-        {error ?? 'Pameran tidak ditemukan.'}
+        {error ?? "Pameran tidak ditemukan."}
       </div>
     );
   }
 
-  const { title, subtitle, date, bannerImage, description, stats, institution } = pameran;
+  const {
+    title,
+    subtitle,
+    date,
+    bannerImage,
+    bannerLarge,
+    bannerMedium,
+    description,
+    stats,
+    institution,
+  } = pameran;
 
   // Laravel kirim YYYY-MM-DD → langsung pakai new Date(), tidak perlu convertDate
   const today = new Date();
@@ -78,17 +94,19 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
   return (
     <div className="min-h-screen bg-gray-50 font-poppins text-gray-800 select-none">
       <main className="relative pb-16 bg-white">
-
         {/* BANNER */}
         <div className="hidden md:block relative w-full h-[60vh] overflow-hidden">
-          <img src={bannerImage} alt="Banner" className="w-full h-full object-cover object-center opacity-80" />
+          <img
+            src={bannerLarge || bannerImage}
+            alt="Banner"
+            className="w-full h-full object-cover object-center opacity-80"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
         </div>
 
         {/* CONTENT */}
         <div className="autoMid relative z-10 py-6 md:py-8">
           <div className="flex flex-col md:flex-row gap-8 relative">
-
             {/* MOBILE TITLE + EDIT */}
             <div className="md:hidden relative pr-14">
               {isLogin && (
@@ -113,7 +131,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
             {/* POSTER */}
             <div className="w-full md:w-[55%] lg:w-[100%]">
               <img
-                src={bannerImage}
+                src={bannerMedium || bannerImage}
                 alt={title}
                 className="w-full h-full max-h-[200px] md:max-h-[280px] lg:max-h-[340px] object-cover rounded-lg shadow-lg/40"
               />
@@ -121,7 +139,6 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
 
             {/* RIGHT */}
             <div className="w-full flex flex-col justify-between relative">
-
               {/* DESKTOP EDIT */}
               {isLogin && (
                 <Link
@@ -140,11 +157,8 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
                 </div>
                 <p className="text-gray-500 mt-2">{subtitle}</p>
                 <div className="flex items-center gap-2 mt-3">
-
                   <FaRegCalendarAlt className="text-main-blue" />
                   <span>{date}</span>
-
-
                 </div>
               </div>
 
@@ -171,7 +185,9 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
             <div className="space-y-6 text-gray-600 leading-relaxed">
               {description.map((section: any, index: number) => (
                 <div key={index}>
-                  <h3 className="font-semibold text-gray-800 mb-1">{section.title}</h3>
+                  <h3 className="font-semibold text-gray-800 mb-1">
+                    {section.title}
+                  </h3>
                   {section.content && <p>{section.content}</p>}
                   {section.list && (
                     <ul className="list-disc pl-5 space-y-1">
@@ -189,9 +205,9 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
           <div className="mt-12 flex justify-end items-center gap-10">
             <p className="font-bold text-main-blue">{institution}</p>
             <div className="flex gap-4 text-main-blue text-2xl">
-              <FaInstagram href='#' />
-              <FaYoutube href='#' />
-              <FaFacebookSquare href='#' />
+              <FaInstagram href="#" />
+              <FaYoutube href="#" />
+              <FaFacebookSquare href="#" />
             </div>
           </div>
 
@@ -239,8 +255,9 @@ function Row({ title, value }: { title: string; value: any }) {
 function StatusBadge({ isOpen }: { isOpen: boolean }) {
   return (
     <div
-      className={`flex items-center gap-1.5 w-8 h-8 px-2.5 py-1 rounded-full text-white text-xs font-semibold ${isOpen ? 'bg-green-500' : 'bg-red-500'
-        }`}
+      className={`flex items-center gap-1.5 w-8 h-8 px-2.5 py-1 rounded-full text-white text-xs font-semibold ${
+        isOpen ? "bg-green-500" : "bg-red-500"
+      }`}
     >
       {isOpen ? <FaLockOpen size={12} /> : <FaLock size={12} />}
     </div>
