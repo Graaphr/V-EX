@@ -111,7 +111,7 @@ export default function DetailKarya({ id }: Props) {
   useEffect(() => {
     if (authLoading) return;
     if (!isAdmin && !isKps && !isKetuaPbl) {
-      router.replace("/unauthorized");
+      router.replace("/");
     }
   }, [authLoading, isAdmin, isKps, isKetuaPbl, router]);
 

@@ -97,20 +97,18 @@ export const AuthProvider = ({
   };
 
   const logout = async () => {
-    // Clear dulu biar UI langsung responsif
-    clearSession();
-  localStorage.removeItem('token');
-  // localStorage.removeItem('user');
-    router.replace('/');
 
     try {
       await url.post('/api/logout');
+      clearSession();
+      localStorage.removeItem('token');
     } catch (error) {
       console.warn('Logout request failed, clearing local session anyway.');
     } finally {
       localStorage.removeItem('token');
       Cookies.remove('role');
       Cookies.remove('username');
+      router.replace('/');
       setUser(null);
     }
   };

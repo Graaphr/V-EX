@@ -13,7 +13,6 @@ import { InputField, PasswordField } from '@/components/shared/ui/InputFields';
 import { Login } from './apiLogin';
 import { cn } from '@/lib/utils';
 
-
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
@@ -133,7 +132,7 @@ const boxes = [
         initial={{ y: '100vh' }}
         animate={{ y: 0 }}
         transition={{ duration: 2, ease: 'circOut' }}
-        className="absolute h-[100%] sm:h-[90%] md:h-[100%] lg:h-[100%] w-[100%] sm:w-[94%] md:w-[100%] bottom-0 bg-main-blue lg:rounded-t-full "
+        className="absolute h-[100%] sm:h-[100%] md:h-[100%] lg:h-[100%] w-[100%] sm:w-[100%] md:w-[100%] bottom-0 bg-main-blue lg:rounded-t-full "
       >
         {boxes.map((box, index) => (
           <motion.div
