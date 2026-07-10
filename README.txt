@@ -200,3 +200,12 @@ NOTE:
 
 ================================================================================
 ================================================================================
+
+
+CARA Ekstract Watermark dalam FOTO
+
+php artisan thinker
+$steganography = new \App\Services\Steganography();\
+$path = storage_path('app/public/pameran/4/4/poster/original.png');\
+$result = $steganography->extract($path);\
+dd($result);
