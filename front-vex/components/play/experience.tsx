@@ -1,6 +1,6 @@
 "use client";
 
-import { useGLTF, Text } from "@react-three/drei";
+import { useGLTF, Text, Billboard } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
@@ -624,14 +624,24 @@ function RemotePlayerMesh({ player, modelUrl }: { player: RemotePlayer; modelUrl
         // Fallback capsule kalau URL model belum siap / gagal load. Tetap
         // ditandai isPlayer supaya tidak ikut dianggap collider/lantai oleh
         // player.tsx (jadi tetap bisa saling tembus walau fallback).
-        <mesh position={[0, -1, 0]} userData={{ isPlayer: true }}>
+        // Offset -1.5 disamakan dengan badan player sendiri di player.tsx
+        // (lihat playerMesh.position.y -= 1.5 di sana) — sebelumnya beda
+        // (-1 di sini vs -1.5 di badan sendiri), jadi tinggi karakter yang
+        // sama keliatan beda antara di layar sendiri vs di layar teman.
+        <mesh position={[0, -1.5, 0]} userData={{ isPlayer: true }}>
           <capsuleGeometry args={[0.8, 1.8, 4, 8]} />
           <meshStandardMaterial color="cyan" transparent opacity={0.7} />
         </mesh>
       )}
-      <Text position={[0, 1, 0]} fontSize={0.28} color="black" anchorX="center" anchorY="middle">
-        {player.name}
-      </Text>
+      {/* Billboard supaya nametag SELALU menghadap kamera, lepas dari
+          rotation.y group di atas (yang ngikutin arah hadap karakter).
+          Sebelumnya Text ikut muter bareng badan, jadi kelihatan kepotong/
+          kebalik pas karakter nengok ke arah tertentu. */}
+      <Billboard position={[0, 1, 0]}>
+        <Text fontSize={0.28} color="black" anchorX="center" anchorY="middle">
+          {player.name}
+        </Text>
+      </Billboard>
     </group>
   );
 }
@@ -655,5 +665,7 @@ function RemotePlayerModel({ url }: { url: string }) {
     return clone;
   }, [scene]);
 
-  return <primitive object={cloned} position={[0, -1, 0]} />;
+  // Offset -1.5 (bukan -1) supaya konsisten dengan badan player sendiri di
+  // player.tsx (playerMesh.position.y -= 1.5) — lihat catatan di atas.
+  return <primitive object={cloned} position={[0, -1.5, 0]} />;
 }
