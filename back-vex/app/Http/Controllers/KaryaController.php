@@ -45,6 +45,19 @@ class KaryaController extends Controller
         return ['can_edit' => false, 'message' => $message];
     }
 
+    private function resolveSizePath(?string $originalPath, string $size): ?string
+    {
+        if (!$originalPath) {
+            return null;
+        }
+
+        if ($size === 'original') {
+            return $originalPath;
+        }
+
+        // Ganti segmen folder "/original/" jadi "/{size}/"
+        return preg_replace('#/original/#', "/{$size}/", $originalPath, 1);
+    }
     // =============================
     // HELPER: Generate original + 3 ukuran (75%, 50%, 25%), semua di-watermark LSB
     // Output SELALU .png (wajib, agar watermark tidak rusak oleh kompresi JPEG)
@@ -52,8 +65,6 @@ class KaryaController extends Controller
     // =============================
     private function generateWatermarkedVersions($file, string $folder, string $watermarkMessage): array
     {
-        Storage::disk('public')->makeDirectory($folder);
-
         $manager = ImageManager::usingDriver(Driver::class);
         $steganography = new Steganography();
 
@@ -64,10 +75,15 @@ class KaryaController extends Controller
             'small' => 0.25,
         ];
 
+        // nama file tetap sama di semua ukuran, cuma folder ukurannya beda
+        $filename = uniqid() . '.png';
+
         $paths = [];
 
         foreach ($sizes as $label => $ratio) {
-            // baca ulang dari file asli tiap iterasi supaya resize dihitung dari sumber, bukan hasil sebelumnya
+            $sizeFolder = "{$folder}/{$label}";
+            Storage::disk('public')->makeDirectory($sizeFolder);
+
             $image = $manager->decodeSplFileInfo($file);
 
             if ($ratio < 1.0) {
@@ -75,28 +91,30 @@ class KaryaController extends Controller
                 $image->scale(width: $targetWidth);
             }
 
-            $filename = "{$folder}/{$label}.png";
-            $fullPath = Storage::disk('public')->path($filename);
+            $relativePath = "{$sizeFolder}/{$filename}";
+            $fullPath = Storage::disk('public')->path($relativePath);
 
             $image->save($fullPath);
-
-            // Sisipkan watermark LSB, timpa file yang baru disimpan
             $steganography->embed($fullPath, $fullPath, $watermarkMessage);
 
-            $paths[$label] = $filename;
+            $paths[$label] = $relativePath;
         }
 
-        return $paths;
+        return $paths; // ambil $paths['original'] buat disimpan ke DB
     }
 
     // =============================
     // HELPER: Hapus semua versi file (original + large/medium/small)
     // =============================
-    private function deleteAllVersions(?string $original, ?string $large, ?string $medium, ?string $small): void
+    private function deleteAllVersions(?string $originalPath): void
     {
-        foreach ([$original, $large, $medium, $small] as $path) {
-            if ($path)
-                Storage::disk('public')->delete($path);
+        if (!$originalPath) {
+            return;
+        }
+
+        foreach (['original', 'large', 'medium', 'small'] as $size) {
+            $path = $this->resolveSizePath($originalPath, $size);
+            Storage::disk('public')->delete($path);
         }
     }
 
@@ -107,18 +125,15 @@ class KaryaController extends Controller
     {
         $base = self::STORAGE_BASE_URL;
 
+        $poster = $item->gambar_poster;
+        $sampul = $item->gambar_sampul;
+
         return [
-            'image' => $item->gambar_poster ? asset($base . $item->gambar_poster) : '',
-            'imageLarge' => $item->gambar_poster_large
-                ? asset($base . $item->gambar_poster_large)
-                : ($item->gambar_poster ? asset($base . $item->gambar_poster) : ''),
-            'imageSmall' => $item->gambar_poster_small
-                ? asset($base . $item->gambar_poster_small)
-                : ($item->gambar_poster ? asset($base . $item->gambar_poster) : ''),
-            'thumbnail' => $item->gambar_sampul ? asset($base . $item->gambar_sampul) : '',
-            'thumbnailMedium' => $item->gambar_sampul_medium
-                ? asset($base . $item->gambar_sampul_medium)
-                : ($item->gambar_sampul ? asset($base . $item->gambar_sampul) : ''),
+            'image' => $poster ? asset($base . $poster) : '',
+            'imageLarge' => $poster ? asset($base . $this->resolveSizePath($poster, 'large')) : '',
+            'imageSmall' => $poster ? asset($base . $this->resolveSizePath($poster, 'small')) : '',
+            'thumbnail' => $sampul ? asset($base . $sampul) : '',
+            'thumbnailMedium' => $sampul ? asset($base . $this->resolveSizePath($sampul, 'medium')) : '',
         ];
     }
 
@@ -251,13 +266,7 @@ class KaryaController extends Controller
 
         $karya->update([
             'gambar_poster' => $posterPaths['original'],
-            'gambar_poster_large' => $posterPaths['large'],
-            'gambar_poster_medium' => $posterPaths['medium'],
-            'gambar_poster_small' => $posterPaths['small'],
             'gambar_sampul' => $sampulPaths['original'],
-            'gambar_sampul_large' => $sampulPaths['large'],
-            'gambar_sampul_medium' => $sampulPaths['medium'],
-            'gambar_sampul_small' => $sampulPaths['small'],
         ]);
 
         return response()->json([
@@ -332,39 +341,23 @@ class KaryaController extends Controller
         if ($request->hasFile('gambar_poster')) {
             $posterFolder = "pameran/{$idPameran}/{$idKarya}/poster";
 
-            $this->deleteAllVersions(
-                $karya->gambar_poster,
-                $karya->gambar_poster_large,
-                $karya->gambar_poster_medium,
-                $karya->gambar_poster_small,
-            );
+            $this->deleteAllVersions($karya->gambar_poster);
 
             $watermarkPoster = "karya:{$idKarya}|user:{$user->id}|type:poster";
             $posterPaths = $this->generateWatermarkedVersions($request->file('gambar_poster'), $posterFolder, $watermarkPoster);
 
             $karya->gambar_poster = $posterPaths['original'];
-            $karya->gambar_poster_large = $posterPaths['large'];
-            $karya->gambar_poster_medium = $posterPaths['medium'];
-            $karya->gambar_poster_small = $posterPaths['small'];
         }
 
         if ($request->hasFile('gambar_sampul')) {
             $sampulFolder = "pameran/{$idPameran}/{$idKarya}/sampul";
 
-            $this->deleteAllVersions(
-                $karya->gambar_sampul,
-                $karya->gambar_sampul_large,
-                $karya->gambar_sampul_medium,
-                $karya->gambar_sampul_small,
-            );
+            $this->deleteAllVersions($karya->gambar_sampul);
 
             $watermarkSampul = "karya:{$idKarya}|user:{$user->id}|type:sampul";
             $sampulPaths = $this->generateWatermarkedVersions($request->file('gambar_sampul'), $sampulFolder, $watermarkSampul);
 
             $karya->gambar_sampul = $sampulPaths['original'];
-            $karya->gambar_sampul_large = $sampulPaths['large'];
-            $karya->gambar_sampul_medium = $sampulPaths['medium'];
-            $karya->gambar_sampul_small = $sampulPaths['small'];
         }
 
         if ($request->filled('id_pameran'))
@@ -525,18 +518,8 @@ class KaryaController extends Controller
             ], 403);
         }
 
-        $this->deleteAllVersions(
-            $karya->gambar_poster,
-            $karya->gambar_poster_large,
-            $karya->gambar_poster_medium,
-            $karya->gambar_poster_small,
-        );
-        $this->deleteAllVersions(
-            $karya->gambar_sampul,
-            $karya->gambar_sampul_large,
-            $karya->gambar_sampul_medium,
-            $karya->gambar_sampul_small,
-        );
+        $this->deleteAllVersions($karya->gambar_poster);
+        $this->deleteAllVersions($karya->gambar_sampul);
 
         $karya->delete();
 
@@ -571,13 +554,13 @@ class KaryaController extends Controller
                 'id' => $item->id_karya,
                 'title' => $item->judul,
                 'banner' => $item->gambar_sampul ? asset(self::STORAGE_BASE_URL . $item->gambar_sampul) : '',
-                'bannerLarge' => $item->gambar_sampul_large
-                    ? asset(self::STORAGE_BASE_URL . $item->gambar_sampul_large)
-                    : ($item->gambar_sampul ? asset(self::STORAGE_BASE_URL . $item->gambar_sampul) : ''),
+                'bannerLarge' => $item->gambar_sampul
+                    ? asset(self::STORAGE_BASE_URL . $this->resolveSizePath($item->gambar_sampul, 'large'))
+                    : '',
                 'poster' => $item->gambar_poster ? asset(self::STORAGE_BASE_URL . $item->gambar_poster) : '',
-                'posterMedium' => $item->gambar_poster_medium
-                    ? asset(self::STORAGE_BASE_URL . $item->gambar_poster_medium)
-                    : ($item->gambar_poster ? asset(self::STORAGE_BASE_URL . $item->gambar_poster) : ''),
+                'posterMedium' => $item->gambar_poster
+                    ? asset(self::STORAGE_BASE_URL . $this->resolveSizePath($item->gambar_poster, 'medium'))
+                    : '',
             ]);
 
         return response()->json([
@@ -599,13 +582,13 @@ class KaryaController extends Controller
                 'id' => $item->id_karya,
                 'title' => $item->judul,
                 'banner' => $item->gambar_sampul ? asset(self::STORAGE_BASE_URL . $item->gambar_sampul) : '',
-                'bannerLarge' => $item->gambar_sampul_large
-                    ? asset(self::STORAGE_BASE_URL . $item->gambar_sampul_large)
-                    : ($item->gambar_sampul ? asset(self::STORAGE_BASE_URL . $item->gambar_sampul) : ''),
+                'bannerLarge' => $item->gambar_sampul
+                    ? asset(self::STORAGE_BASE_URL . $this->resolveSizePath($item->gambar_sampul, 'large'))
+                    : '',
                 'poster' => $item->gambar_poster ? asset(self::STORAGE_BASE_URL . $item->gambar_poster) : '',
-                'posterMedium' => $item->gambar_poster_medium
-                    ? asset(self::STORAGE_BASE_URL . $item->gambar_poster_medium)
-                    : ($item->gambar_poster ? asset(self::STORAGE_BASE_URL . $item->gambar_poster) : ''),
+                'posterMedium' => $item->gambar_poster
+                    ? asset(self::STORAGE_BASE_URL . $this->resolveSizePath($item->gambar_poster, 'medium'))
+                    : '',
             ]);
 
         return response()->json([
