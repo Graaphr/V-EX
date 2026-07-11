@@ -95,7 +95,8 @@ class KaryaController extends Controller
     private function deleteAllVersions(?string $original, ?string $large, ?string $medium, ?string $small): void
     {
         foreach ([$original, $large, $medium, $small] as $path) {
-            if ($path) Storage::disk('public')->delete($path);
+            if ($path)
+                Storage::disk('public')->delete($path);
         }
     }
 
@@ -243,7 +244,7 @@ class KaryaController extends Controller
         $steganography = new Steganography();
 
         $namaAuthor = $steganography->getUsernameById($user->id) ?? 'unknown';
-        
+
         $watermarkPoster = "nama: $namaAuthor, judul: {$request->judul}, " . now()->format('Y-m-d H:i:s');
         $watermarkSampul = "nama: $namaAuthor, judul: {$request->judul}, " . now()->format('Y-m-d H:i:s');
 
@@ -269,8 +270,8 @@ class KaryaController extends Controller
     }
 
     // =============================
-    // EDIT KARYA PBL
-    // =============================
+// EDIT KARYA PBL
+// =============================
     public function update(Request $request, $id)
     {
         $user = $request->user();
@@ -301,7 +302,7 @@ class KaryaController extends Controller
 
         $request->validate([
             'id_pameran' => 'sometimes|exists:pameran,id_pameran',
-            'id_stan' => 'sometimes|exists:stan,id_stan',
+            'model_stan' => 'sometimes|exists:model,id_model',
             'judul' => 'sometimes|string|max:255',
             'deskripsi' => 'sometimes|string',
             'tautan' => 'sometimes|url',
@@ -311,6 +312,24 @@ class KaryaController extends Controller
 
         $idPameran = $request->filled('id_pameran') ? $request->id_pameran : $karya->id_pameran;
         $idKarya = $karya->id_karya;
+
+        // =============================
+        // RESOLVE id_stan DARI model_stan
+        // =============================
+        if ($request->filled('model_stan')) {
+            $stan = Stan::where('id_pameran', $idPameran)
+                ->where('model_stan', $request->model_stan)
+                ->first();
+
+            if (!$stan) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Stan dengan model tersebut tidak tersedia untuk pameran ini.',
+                ], 404);
+            }
+
+            $karya->id_stan = $stan->id_stan;
+        }
 
         if ($request->hasFile('gambar_poster')) {
             $posterFolder = "pameran/{$idPameran}/{$idKarya}/poster";
@@ -352,8 +371,6 @@ class KaryaController extends Controller
 
         if ($request->filled('id_pameran'))
             $karya->id_pameran = $request->id_pameran;
-        if ($request->filled('id_stan'))
-            $karya->id_stan = $request->id_stan;
         if ($request->filled('judul'))
             $karya->judul = $request->judul;
         if ($request->filled('deskripsi'))

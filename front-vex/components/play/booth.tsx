@@ -47,6 +47,12 @@ type BoothProps = {
   sampul: string;
   tautan?: string;
   modelPath: string;
+  // Mode kamera player saat ini & apakah lagi di HP — dipakai buat
+  // nge-skip klik langsung pas desktop third-person (lihat handleClick),
+  // karena di situ interaksi udah dipindah ke tombol E (ThirdPersonInteract
+  // di experience.tsx). Mobile third-person tetap pakai tap seperti biasa.
+  cameraMode: "first" | "third";
+  mobile: boolean;
   openPoster: (src: string, booth: string) => void;
   openTautan: (url: string, booth: string) => void;
 };
@@ -55,6 +61,7 @@ export default function Booth({
   position = [0, 0, 0],
   quaternion = [0, 0, 0, 1],
   boothName, poster, sampul, tautan, modelPath,
+  cameraMode, mobile,
   openPoster, openTautan,
 }: BoothProps) {
   const gltf = useGLTF(modelPath);
@@ -75,10 +82,26 @@ export default function Booth({
     posterMesh.current = scene.getObjectByName("PanelPoster") as THREE.Mesh;
     sampulMesh.current = scene.getObjectByName("PanelVideo") as THREE.Mesh;
 
+    // Tag kedua panel dengan userData.interact — dipakai oleh
+    // ThirdPersonInteract (lihat experience.tsx) buat fitur "tekan E untuk
+    // berinteraksi" pas mode third-person. Raycast generik dari kamera jadi
+    // langsung tahu ini panel apa & booth mana, tanpa perlu balik lagi ke
+    // closure Booth ini.
+    if (posterMesh.current) {
+      posterMesh.current.userData.interact = poster
+        ? { type: "poster", src: poster, boothName }
+        : null;
+    }
+    if (sampulMesh.current) {
+      sampulMesh.current.userData.interact = tautan
+        ? { type: "video", url: tautan, boothName }
+        : null;
+    }
+
     // Note: textures themselves are not disposed here since they're shared
     // via textureCache and may be referenced by other booths/panels.
     // Only the per-mesh material instance is disposed, in the effects below.
-  }, [scene]);
+  }, [scene, poster, tautan, boothName]);
 
   useEffect(() => {
     if (!poster || !posterMesh.current) return;
@@ -168,6 +191,12 @@ export default function Booth({
     // Ini yang bikin klik poster kadang malah ke-trigger sebagai klik video
     // (dan sebaliknya) saat kedua panel berhimpit di ray yang sama.
     e.stopPropagation();
+
+    // Di desktop third-person, interaksi udah dipindah ke tombol E (nggak
+    // ada crosshair buat nunjuk lagi, mouse dipakai buat nengok terus) —
+    // klik langsung di-skip di sini. Mobile third-person tetap pakai tap
+    // seperti biasa karena nggak ada tombol E di HP.
+    if (cameraMode === "third" && !mobile) return;
 
     if (isBlocked(e.point, e.distance)) return;
 
