@@ -645,7 +645,7 @@ if (saveTimer.current >= 0.2 && playerName !== "Loading...") {
           {/* pun, nametag-nya tetap menghadap kamera mereka (bukan ikut    */}
           {/* muter sesuai rotation.y group ini).                          */}
           <Billboard position={[0, 2.5, 0]}>
-            <Text fontSize={0.28} color="black" anchorX="center" anchorY="middle">
+            <Text fontSize={0.28} color="yellow" anchorX="center" anchorY="middle">
               {playerName}
             </Text>
           </Billboard>
