@@ -175,6 +175,12 @@ function ExperienceInner({
   const [jumping, setJumping] = useState(false);
   const [remotePlayers, setRemotePlayers] = useState<RemotePlayer[]>([]);
 
+  // Posisi player saat ini (di-update tiap frame dari Player lewat prop
+  // setPosition), dipakai ThirdPersonInteract buat cek jarak ke panel —
+  // pakai ref (bukan state) supaya update per-frame nggak nge-trigger
+  // re-render ExperienceInner.
+  const playerPositionRef = useRef(new THREE.Vector3());
+
   const isViewingMedia = !controlsLocked;
 
   const bgmRef = useRef<HTMLAudioElement | null>(null);
@@ -436,6 +442,7 @@ function ExperienceInner({
           untuk kombinasi yang sama). */}
       <ThirdPersonInteract
         active={!mobile && cameraMode === "third" && controlsLocked}
+        playerPosition={playerPositionRef}
         openPoster={openPoster}
         openTautan={openTautan}
         onHintChange={onInteractHint}
@@ -451,6 +458,7 @@ function ExperienceInner({
         playerId={playerId}
         playerName={playerName}
         playerModelUrl={playerModelUrl}
+        setPosition={(pos) => playerPositionRef.current.set(pos.x, pos.y, pos.z)}
       />
     </>
   );
@@ -459,56 +467,98 @@ function ExperienceInner({
 /* ===================== */
 /* THIRD-PERSON INTERACT */
 /* Ganti klik jadi tombol E khusus desktop third-person — di sana nggak ada */
-/* crosshair/reticle buat nunjuk, dan mouse dipakai buat nengok terus       */
-/* (pointer tetap lock), jadi interaksi booth dipindah ke proximity +       */
-/* tombol E. Raycast-nya dari kamera lurus ke tengah layar — sama seperti   */
-/* raycast klik r3f biasa — tapi lewatin dulu mesh badan player sendiri     */
-/* (userData.isPlayer) karena kamera third-person "menembus" badan player   */
-/* buat sampai ke arah hadapnya.                                            */
+/* crosshair/reticle buat nunjuk, dan mouse dipakai buat nengok terus.      */
+/*                                                                          */
+/* Sebelumnya ini raycast dari kamera lurus ke tengah layar (kayak         */
+/* crosshair FPS) — makanya hint "Tekan E" nggak pernah muncul walau udah  */
+/* deket panel: kamera third-person harus PERSIS ngarah ke panel dulu,     */
+/* padahal nggak ada reticle buat bantu nunjuk ke situ. Sekarang diganti   */
+/* jadi murni PROXIMITY: tiap panel/objek ber-tag userData.interact di-cek */
+/* jaraknya ke posisi player (bukan ke kamera), yang terdekat dalam radius */
+/* INTERACT_RANGE itu yang jadi target — jadi beneran "muncul kalau        */
+/* deket", bukan "muncul kalau pas nunjuk".                                */
+/*                                                                          */
+/* Catatan: pengecekan occlusion (collider dinding) sengaja tidak dipakai  */
+/* lagi di sini — collider di-set visible=false, dan sejak three.js r72    */
+/* Raycaster memang men-skip objek invisible sama sekali (bukan cuma di    */
+/* renderer), jadi cek `userData.collider` di raycast versi lama itu tidak */
+/* pernah kena apa pun. Radius proximity yang kecil (INTERACT_RANGE)       */
+/* sudah cukup mencegah hint muncul dari booth tetangga di seberang        */
+/* tembok pada praktiknya.                                                 */
 /* ===================== */
 
-const INTERACT_MAX_DISTANCE = 8;
+const INTERACT_RANGE = 3.5; // meter — seberapa "deket" baru dianggap dalam jangkauan
 
 function ThirdPersonInteract({
   active,
+  playerPosition,
   openPoster,
   openTautan,
   onHintChange,
 }: {
   active: boolean;
+  playerPosition: React.MutableRefObject<THREE.Vector3>;
   openPoster: (src: string, booth: string) => void;
   openTautan: (url: string, booth: string) => void;
   onHintChange?: (hint: { label: string } | null) => void;
 }) {
-  const { camera, scene: world } = useThree();
-  const raycaster = useRef(new THREE.Raycaster());
-  const ndcCenter = useRef(new THREE.Vector2(0, 0));
+  const { scene: world } = useThree();
+
+  // Daftar semua object ber-tag userData.interact di scene, di-scan ulang
+  // secara periodik (bukan tiap frame — traverse seluruh scene itu relatif
+  // berat) supaya booth yang baru mount (mis. setelah ganti lantai) ikut
+  // kedeteksi tanpa perlu prop tambahan dari luar.
+  const interactables = useRef<THREE.Object3D[]>([]);
   const lastHintRef = useRef<string | null>(null);
+  const currentTargetRef = useRef<{ data: any } | null>(null);
   const checkTimer = useRef(0);
+  const worldPosScratch = useRef(new THREE.Vector3());
+
+  useEffect(() => {
+    const scan = () => {
+      const found: THREE.Object3D[] = [];
+      world.traverse((obj: any) => {
+        if (obj?.userData?.interact) found.push(obj);
+      });
+      interactables.current = found;
+    };
+
+    scan();
+    const iv = setInterval(scan, 1500);
+    return () => clearInterval(iv);
+  }, [world]);
 
   const findTarget = useCallback(() => {
-    raycaster.current.setFromCamera(ndcCenter.current, camera);
-    const hits = raycaster.current.intersectObjects(world.children, true);
+    const playerPos = playerPosition.current;
+    let nearestObj: THREE.Object3D | null = null;
+    let nearestDist = INTERACT_RANGE;
 
-    for (const hit of hits as any[]) {
-      const obj = hit.object;
-      if (obj?.userData?.isPlayer) continue; // tembus badan sendiri
-      if (hit.distance > INTERACT_MAX_DISTANCE) return null;
-      if (obj?.userData?.collider) return null; // kehalang tembok/objek lain
-      if (obj?.userData?.interact) return { data: obj.userData.interact };
+    for (const obj of interactables.current) {
+      obj.getWorldPosition(worldPosScratch.current);
+      const dist = worldPosScratch.current.distanceTo(playerPos);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearestObj = obj;
+      }
     }
-    return null;
-  }, [camera, world]);
 
-  // Update hint teks "Tekan E" tiap ~120ms, bukan tiap frame — raycast
-  // buat sekadar nampilin label UI nggak perlu presisi per-frame.
+    return nearestObj ? { data: (nearestObj as any).userData.interact } : null;
+  }, [playerPosition]);
+
+  // Update hint teks "Tekan E" tiap ~120ms, bukan tiap frame.
   useFrame((_, delta) => {
-    if (!active || !onHintChange) return;
+    if (!active) {
+      currentTargetRef.current = null;
+      return;
+    }
     checkTimer.current += delta;
     if (checkTimer.current < 0.12) return;
     checkTimer.current = 0;
 
     const target = findTarget();
+    currentTargetRef.current = target;
+
+    if (!onHintChange) return;
     const label = target
       ? target.data.type === "video"
         ? `Tonton video — ${target.data.boothName}`
@@ -532,7 +582,7 @@ function ThirdPersonInteract({
 
     const onKey = (e: KeyboardEvent) => {
       if (e.code !== "KeyE") return;
-      const target = findTarget();
+      const target = currentTargetRef.current;
       if (!target) return;
       if (target.data.type === "poster") openPoster(target.data.src, target.data.boothName);
       if (target.data.type === "video") openTautan(target.data.url, target.data.boothName);
@@ -541,7 +591,7 @@ function ThirdPersonInteract({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, findTarget, openPoster, openTautan]);
+  }, [active, openPoster, openTautan]);
 
   return null;
 }

@@ -281,11 +281,15 @@ const HEARTBEAT_INTERVAL = 3;
   }, [controlsLocked]);
 
   useEffect(() => {
+    // Di HP nggak pernah ada Pointer Lock beneran (<PointerLockControls> di
+    // bawah cuma di-mount kalau !isMobile) — jadi "melepas lock" di sini
+    // nggak ada gunanya, skip aja.
+    if (isMobile) return;
     if (!controlsLocked) {
       pointerRef.current?.unlock?.();
       document.exitPointerLock?.();
     }
-  }, [controlsLocked]);
+  }, [controlsLocked, isMobile]);
 
   /* ===================== */
   /* CAMERA MODE SWITCH    */
