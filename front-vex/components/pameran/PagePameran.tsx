@@ -196,7 +196,7 @@ if (loading) {
                 .map((project) => (
                   <Link
                     key={project.id}
-                    href={`${href}${project.id}`}
+                    href={`${href}${project.slug}`}
                     className="group block"
                   >
                     <ProjectCard project={project} />

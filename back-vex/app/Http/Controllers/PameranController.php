@@ -6,9 +6,61 @@ use App\Models\Pameran;
 use App\Models\ModelPameran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class PameranController extends Controller
 {
+    private const STORAGE_BASE_URL = 'http://localhost:8000/storage/';
+
+    // =============================
+    // HELPER: URL banner (dengan fallback ke original)
+    // =============================
+    private function buildBannerUrls(Pameran $item): array
+    {
+        $base = self::STORAGE_BASE_URL;
+
+        return [
+            'bannerImage' => $base . $item->banner,
+            'bannerLarge' => $item->banner_large ? $base . $item->banner_large : $base . $item->banner,
+            'bannerMedium' => $item->banner_medium ? $base . $item->banner_medium : $base . $item->banner,
+            'bannerSmall' => $item->banner_small ? $base . $item->banner_small : $base . $item->banner,
+        ];
+    }
+
+    // =============================
+    // HELPER: Generate 3 ukuran (75%, 50%, 25%) dari file banner
+    // =============================
+    private function generateBannerSizes($file, string $folder): array
+    {
+        $manager = ImageManager::usingDriver(Driver::class);
+        $ext = $file->getClientOriginalExtension();
+
+        $sizes = [
+            'banner_large' => 0.75,
+            'banner_medium' => 0.50,
+            'banner_small' => 0.25,
+        ];
+
+        $resizedPaths = [];
+
+        foreach ($sizes as $column => $ratio) {
+            $image = $manager->decodeSplFileInfo($file);
+
+            $targetWidth = (int) round($image->width() * $ratio);
+            $image->scale(width: $targetWidth);
+
+            $filename = "{$folder}/{$column}.{$ext}";
+            $fullPath = Storage::disk('public')->path($filename);
+
+            $image->save($fullPath);
+
+            $resizedPaths[$column] = $filename;
+        }
+
+        return $resizedPaths;
+    }
+
     // =============================
     // LIHAT SEMUA PAMERAN
     // =============================
@@ -20,12 +72,13 @@ class PameranController extends Controller
 
         $transformed = $pameran->map(fn($item) => [
             'id' => $item->id_pameran,
+            'slug' => $item->slug,
             'title' => $item->judul,
             'subtitle' => $item->prodi?->nama_prodi ?? $item->kategori,
             'category' => $item->prodi?->nama_prodi ?? $item->kategori,
             'kode_prodi' => $item->kategori,
             'date' => $item->tanggal_mulai,
-            'bannerImage' => "http://localhost:8000/storage/{$item->banner}",
+            ...$this->buildBannerUrls($item),
             'likes' => $item->suka_count,
             'karya' => $item->karya_count,
             'description' => [
@@ -60,13 +113,15 @@ class PameranController extends Controller
     }
 
     // =============================
-    // DETAIL PAMERAN
-    // =============================
-    public function show($id)
+// DETAIL PAMERAN (bisa lewat slug ATAU id)
+// =============================
+    public function show($identifier)
     {
         $pameran = Pameran::with(['model3d', 'prodi'])
             ->withCount(['karya', 'suka'])
-            ->find($id);
+            ->where('slug', $identifier)
+            ->orWhere('id_pameran', $identifier)
+            ->first();
 
         if (!$pameran) {
             return response()->json([
@@ -77,12 +132,13 @@ class PameranController extends Controller
 
         $transformed = [
             'id' => $pameran->id_pameran,
+            'slug' => $pameran->slug,
             'title' => $pameran->judul,
             'subtitle' => $pameran->prodi?->nama_prodi ?? $pameran->kategori,
             'kode_prodi' => $pameran->kategori,
             'category' => $pameran->prodi?->nama_prodi ?? $pameran->kategori,
             'date' => $pameran->tanggal_mulai,
-            'bannerImage' => "http://localhost:8000/storage/{$pameran->banner}",
+            ...$this->buildBannerUrls($pameran),
             'likes' => $pameran->suka_count,
             'karya' => $pameran->karya_count,
             'description' => [
@@ -136,7 +192,6 @@ class PameranController extends Controller
             ], 404);
         }
 
-        // Upload banner ke folder banner seperti biasa
         $bannerPath = $request->file('banner')->store('banner', 'public');
 
         $pameran = Pameran::create([
@@ -152,13 +207,16 @@ class PameranController extends Controller
             'tanggal_akhir_persiapan' => $request->prepare_end,
         ]);
 
-        // Buat folder pameran/{id} di storage
-        Storage::disk('public')->makeDirectory("pameran/{$pameran->id_pameran}");
+        $folder = "pameran/{$pameran->id_pameran}";
+        Storage::disk('public')->makeDirectory($folder);
+
+        $resizedPaths = $this->generateBannerSizes($request->file('banner'), $folder);
+        $pameran->update($resizedPaths);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Pameran berhasil ditambahkan.',
-            'pameran' => $pameran,
+            'pameran' => $pameran->fresh(),
         ], 201);
     }
 
@@ -189,8 +247,24 @@ class PameranController extends Controller
         ]);
 
         if ($request->hasFile('banner')) {
+            // Hapus banner lama (original + 3 ukuran) sebelum simpan yang baru
             Storage::disk('public')->delete($pameran->banner);
+            if ($pameran->banner_large)
+                Storage::disk('public')->delete($pameran->banner_large);
+            if ($pameran->banner_medium)
+                Storage::disk('public')->delete($pameran->banner_medium);
+            if ($pameran->banner_small)
+                Storage::disk('public')->delete($pameran->banner_small);
+
             $pameran->banner = $request->file('banner')->store('banner', 'public');
+
+            $folder = "pameran/{$pameran->id_pameran}";
+            Storage::disk('public')->makeDirectory($folder);
+
+            $resizedPaths = $this->generateBannerSizes($request->file('banner'), $folder);
+            $pameran->banner_large = $resizedPaths['banner_large'];
+            $pameran->banner_medium = $resizedPaths['banner_medium'];
+            $pameran->banner_small = $resizedPaths['banner_small'];
         }
 
         if ($request->filled('judul'))
