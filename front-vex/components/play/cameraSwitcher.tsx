@@ -12,6 +12,7 @@ type Props = {
 };
 
 export default function CameraSwitcher({
+    disabled,
     setMode,
 }: Props) {
     useEffect(() => {
@@ -20,6 +21,12 @@ export default function CameraSwitcher({
         ) => {
             if (e.code === "KeyC") {
                 e.preventDefault();
+
+                // Sebelumnya `disabled` tidak pernah dibaca di sini, jadi
+                // switch kamera tetap bisa ke-trigger walau seharusnya
+                // dikunci (mis. sedang lihat poster/video, atau menu ESC
+                // sedang terbuka). Sekarang benar-benar diperiksa.
+                if (disabled) return;
 
                 setMode((prev) =>
                     prev === "first"
@@ -39,7 +46,7 @@ export default function CameraSwitcher({
                 "keyup",
                 handleKey
             );
-    }, [setMode]);
+    }, [disabled, setMode]);
 
     return null;
 }

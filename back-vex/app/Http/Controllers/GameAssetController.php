@@ -18,6 +18,7 @@ class GameAssetController extends Controller
             'bgm' => asset('storage/audio/bgm.mp3'),
             'footstep' => asset('storage/audio/footstep.mp3'),
             'jump' => asset('storage/audio/jump.mp3'),
+            'player' => asset('storage/models/player.glb'),
         ]);
     }
 
@@ -27,6 +28,24 @@ class GameAssetController extends Controller
     public function serveBoothModel($filename)
     {
         $path = storage_path('app/public/models/' . $filename);
+
+        if (!file_exists($path)) {
+            return response()->json(['error' => 'File tidak ditemukan'], 404);
+        }
+
+        return response()->file($path, [
+            'Content-Type' => 'model/gltf-binary',
+            'Access-Control-Allow-Origin' => 'http://localhost:3000',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
+    }
+
+    // ====================
+    // SERVE PLAYER GLB FILE
+    // ====================
+    public function servePlayerModel()
+    {
+        $path = storage_path('app/public/models/player.glb');
 
         if (!file_exists($path)) {
             return response()->json(['error' => 'File tidak ditemukan'], 404);

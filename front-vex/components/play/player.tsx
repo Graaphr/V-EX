@@ -3,6 +3,7 @@
 import {
   OrbitControls,
   PointerLockControls,
+  useGLTF,
 } from "@react-three/drei";
 
 import {
@@ -12,6 +13,7 @@ import {
 
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -53,6 +55,10 @@ type Props = {
     x: number;
     y: number;
   }>;
+
+  // URL model player.glb (dari getPlayerModelUrl() di apiPlay.ts). Kalau
+  // belum ada (masih fetching / gagal), fallback ke capsule seperti semula.
+  playerModelUrl?: string | null;
 };
 
 export default function Player({
@@ -67,12 +73,15 @@ export default function Player({
   playerName,
 
   setPosition,
+  playerModelUrl,
 }: Props) {
   const { camera, scene: world } = useThree();
 
   const orbitRef = useRef<any>(null);
   const pointerRef = useRef<any>(null);
-  const playerMesh = useRef<THREE.Mesh>(null!);
+  // Sekarang jadi <group>, bukan lagi <mesh>, karena isinya bisa berupa
+  // model GLB (primitive) atau capsule fallback.
+  const playerMesh = useRef<THREE.Group>(null!);
 
   const raycaster = useRef(new THREE.Raycaster());
 
@@ -169,6 +178,12 @@ export default function Player({
 
       world.traverse((obj: any) => {
         if (!obj.isMesh) return;
+
+        // Mesh milik player (badan player sendiri di mode third-person,
+        // ATAU badan remote player lain) TIDAK pernah dianggap collider
+        // maupun floor. Ini yang bikin antar player saling tembus — cuma
+        // objek ber-tag "collider" dari hall/booth yang tetap menghalangi.
+        if (obj.userData?.isPlayer) return;
 
         if (obj.userData?.collider) {
           colliderArr.push(obj);
@@ -267,6 +282,40 @@ export default function Player({
   }, [controlsLocked]);
 
   /* ===================== */
+  /* CAMERA MODE SWITCH    */
+  /* ===================== */
+
+  useEffect(() => {
+    // Pindah mode (biasanya lewat tombol C di <CameraSwitcher>). Kalau
+    // keluar dari first-person, lepas pointer lock — kalau tidak, cursor
+    // masih "terkunci" walau PointerLockControls sudah unmount.
+    if (mode !== "first") {
+      pointerRef.current?.unlock?.();
+      document.exitPointerLock?.();
+    }
+
+    if (mode === "third") {
+      // Begitu masuk third-person, camera.position masih peninggalan
+      // first-person (persis di posisi mata / position.current), jadi
+      // offset kamera→target hampir 0. OrbitControls.update() menghitung
+      // ulang arah kamera dari offset ini tiap frame — kalau offset ~0,
+      // arahnya jadi tidak terdefinisi dan kamera bisa "patah"/nyelonong ke
+      // sudut aneh begitu di-clamp ke minDistance. Set posisi awal kamera
+      // di belakang & agak di atas player dulu supaya transisinya mulus.
+      const backOffset = new THREE.Vector3();
+      camera.getWorldDirection(backOffset);
+      backOffset.multiplyScalar(-6); // di antara minDistance(4) & maxDistance(8)
+
+      camera.position.copy(position.current).add(backOffset);
+      camera.position.y += 2;
+
+      orbitRef.current?.target.copy(position.current);
+      orbitRef.current?.update();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  /* ===================== */
   /* FRAME */
   /* ===================== */
 
@@ -337,6 +386,11 @@ export default function Player({
     /* ===================== */
     /* WALL COLLISION */
     /* ===================== */
+    // Note: colliders.current hanya berisi objek ber-tag "collider" (hall,
+    // booth, dst). Mesh player lain sudah dikeluarkan sejak proses scan di
+    // atas, jadi raycast ini TIDAK PERNAH menabrak player lain — antar
+    // player otomatis saling tembus, sementara tembok/objek collider tetap
+    // menghalangi seperti biasa.
 
     moveDirVec.current.copy(nextVec.current).sub(position.current);
 
@@ -499,12 +553,43 @@ export default function Player({
             maxDistance={8}
           />
 
-          <mesh ref={playerMesh}>
-            <capsuleGeometry args={[0.5, 1.2, 4, 8]} />
-            <meshStandardMaterial color="lime" transparent opacity={0.35} />
-          </mesh>
+          <group ref={playerMesh}>
+            {playerModelUrl ? (
+              <PlayerBodyModel url={playerModelUrl} />
+            ) : (
+              // Fallback capsule kalau URL model belum siap / gagal load.
+              // Tetap ditandai isPlayer supaya tidak ikut collider/floor scan.
+              <mesh userData={{ isPlayer: true }}>
+                <capsuleGeometry args={[0.5, 1.2, 4, 8]} />
+                <meshStandardMaterial color="lime" transparent opacity={0.35} />
+              </mesh>
+            )}
+          </group>
         </>
       )}
     </>
   );
+}
+
+/* ===================== */
+/* PLAYER BODY MODEL (player.glb) */
+/* ===================== */
+
+// Di-clone per-instance (bukan pakai scene hasil useGLTF langsung) karena
+// useGLTF men-cache & mengembalikan objek scene YANG SAMA untuk URL yang
+// sama — kalau dipakai langsung, semua instance player akan berbagi satu
+// object3D dan saling "rebutan" transform (posisi/rotasi ikut yang
+// terakhir mount).
+function PlayerBodyModel({ url }: { url: string }) {
+  const { scene } = useGLTF(url);
+
+  const cloned = useMemo(() => {
+    const clone = scene.clone(true);
+    clone.traverse((obj: any) => {
+      obj.userData.isPlayer = true;
+    });
+    return clone;
+  }, [scene]);
+
+  return <primitive object={cloned} />;
 }

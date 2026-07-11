@@ -33,6 +33,12 @@ export async function getGameAssets() {
     const res = await url.get("/api/experience/game-assets")
     return res.data
 }
+export function getPlayerModelUrl(gameAssets?: { player?: string }) {
+    if (gameAssets?.player) return gameAssets.player
+
+    const base = (url.defaults.baseURL ?? "").replace(/\/api\/?$/, "")
+    return `${base}/storage/models/player.glb`
+}
 
 // ── page.tsx (ExhibitionPage) ──
 export async function getPlayerName() {
