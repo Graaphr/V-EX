@@ -14,10 +14,9 @@ class GameAssetController extends Controller
     // =============================
     private function resolvePameran(string $identifier): ?Pameran
     {
-        return Pameran::with('model3d')
-            ->where('slug', $identifier)
-            ->orWhere('id_pameran', $identifier)
-            ->first();
+            return Pameran::with('model3d')
+                ->where('slug', $identifier) 
+                ->first();
     }
 
     // ==============

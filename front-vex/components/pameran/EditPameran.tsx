@@ -12,7 +12,8 @@ type FormErrors = Partial<Record<keyof PameranForm | 'image', string>>;
 export default function EditPameran() {
   const params = useParams();
   const router = useRouter();
-  const slug = Array.isArray(params?.id) ? params.id[0] : params?.id;
+  // Cek folder untuk halaman edit juga — kalau namanya [slug], ganti jadi:
+const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);

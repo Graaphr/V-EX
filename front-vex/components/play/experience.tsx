@@ -39,6 +39,12 @@ type Props = {
   // ini sebagai fase pertama dari total progress loading (lihat ringkasan
   // pembagian fase di ExhibitionPage).
   onDataReady?: () => void;
+  // Dipanggil kalau fetch data awal (hall model / karya list) gagal —
+  // termasuk kasus 404 karena pameran tidak ditemukan (misal akses pakai
+  // id numerik langsung, padahal backend sekarang strict slug-only).
+  // ExhibitionPage pakai ini buat redirect ke halaman 404, supaya user
+  // tidak stuck di layar hitam selamanya.
+  onError?: () => void;
 };
 
 /* ===================== */
@@ -89,17 +95,25 @@ export default function Experience(props: Props) {
   const [hallModel, setHallModel] = useState<string | null>(null);
   const [karyaList, setKaryaList] = useState<any[]>([]);
   const [folder, setFolder] = useState<string | null>(null); // ← null dulu
+  const [failed, setFailed] = useState(false);
 
   const notifiedRef = useRef(false);
+  const errorNotifiedRef = useRef(false);
 
   useEffect(() => {
     getHallModel(props.exhibitionId)
       .then(setHallModel)
-      .catch((err) => console.error("Failed to load hall model", err));
+      .catch((err) => {
+        console.error("Failed to load hall model", err);
+        setFailed(true);
+      });
 
     getKaryaList(props.exhibitionId)
       .then(({ karya }) => setKaryaList(karya))  // ← ambil .karya saja
-      .catch((err) => console.error("Failed to load karya list", err));
+      .catch((err) => {
+        console.error("Failed to load karya list", err);
+        setFailed(true);
+      });
 
     getPameranFolder(props.exhibitionId)
       .then(setFolder)
@@ -123,6 +137,16 @@ export default function Experience(props: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
 
+  // Lapor sekali kalau fetch data gagal, supaya parent bisa redirect
+  // ke halaman 404 alih-alih membiarkan user stuck di layar hitam.
+  useEffect(() => {
+    if (!failed || errorNotifiedRef.current) return;
+    errorNotifiedRef.current = true;
+    props.onError?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [failed]);
+
+  if (failed) return null;
   if (!ready) return null;
 
   return (

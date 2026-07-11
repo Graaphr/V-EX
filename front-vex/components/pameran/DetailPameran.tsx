@@ -22,8 +22,9 @@ interface Status {
 }
 
 export default function PageDetailPameran({ isLogin = false }: Status) {
-  const params = useParams();
-  const slug = Array.isArray(params?.id) ? params.id[0] : params?.id;
+// SESUDAH (sesuai nama folder [slug] yang sebenarnya)
+const params = useParams();
+const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug; 
 
   const [pameran, setPameran] = useState<Pameran | null>(null);
   const [loading, setLoading] = useState(true);

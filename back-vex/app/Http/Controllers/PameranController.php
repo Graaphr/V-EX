@@ -120,7 +120,6 @@ class PameranController extends Controller
         $pameran = Pameran::with(['model3d', 'prodi'])
             ->withCount(['karya', 'suka'])
             ->where('slug', $identifier)
-            ->orWhere('id_pameran', $identifier)
             ->first();
 
         if (!$pameran) {
