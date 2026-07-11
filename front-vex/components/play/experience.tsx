@@ -1,496 +1,657 @@
 "use client";
 
-import { useGLTF, Text } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import {
+  PointerLockControls,
+  Text,
+  useGLTF,
+} from "@react-three/drei";
+
+import {
+  useFrame,
+  useThree,
+} from "@react-three/fiber";
+
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
 import * as THREE from "three";
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-
-import Booth from "./booth";
-import Player from "./player";
-import CameraSwitcher from "./cameraSwitcher";
-import { sharedTextureLoader } from "@/components/shared/ui/LoadingManager";
-
-import { getHallModel, getKaryaList, getPameranFolder, getGameAssets, getPlayerModelUrl } from "@/components/play/apiPlay";
-
-type RemotePlayer = {
-  id: string;
-  name: string;
-  x: number;
-  y: number;
-  z: number;
-  rotation: number;
-  updatedAt: number;
-};
 
 type Props = {
-  exhibitionId: string;
-  mobile: boolean;
+  mode: "first" | "third";
+
+  controlsLocked: boolean;
+
   playerId: string;
   playerName: string;
-  openPoster: (src: string, booth: string) => void;
-  openTautan: (url: string, booth: string) => void;
-  controlsLocked: boolean;
-  soundOn: boolean;
-  currentFloor: number;
-  mobileMove?: React.MutableRefObject<{ w: boolean; a: boolean; s: boolean; d: boolean }>;
-  lookDelta?: React.MutableRefObject<{ x: number; y: number }>;
-  // Dipanggil sekali, saat fetch data awal (hall model, karya list, folder)
-  // selesai dan ExperienceInner siap mulai dirender. ExhibitionPage memakai
-  // ini sebagai fase pertama dari total progress loading (lihat ringkasan
-  // pembagian fase di ExhibitionPage).
-  onDataReady?: () => void;
+
+  setPosition?: (
+    pos: {
+      x: number;
+      y: number;
+      z: number;
+    }
+  ) => void;
+
+  setWalking?: (
+    value: boolean
+  ) => void;
+
+  setJumping?: (
+    value: boolean
+  ) => void;
+
+  mobileMove?: React.MutableRefObject<{
+    w: boolean;
+    a: boolean;
+    s: boolean;
+    d: boolean;
+  }>;
+
+  lookDelta?: React.MutableRefObject<{
+    x: number;
+    y: number;
+  }>;
+
+  // URL model player.glb (dari getPlayerModelUrl() di apiPlay.ts). Kalau
+  // belum ada (masih fetching / gagal), fallback ke capsule seperti semula.
+  playerModelUrl?: string | null;
 };
 
-/* ===================== */
-/* SHARED TEXTURE CACHE  */
-/* Avoids re-downloading/re-decoding the same texture URL    */
-/* across booths, panels, and floor switches.                */
-/* ===================== */
-
-const textureCache = new Map<string, THREE.Texture>();
-
-function loadCachedTexture(
-  loader: THREE.TextureLoader,
-  path: string,
-  onLoad: (tex: THREE.Texture) => void,
-  flipY = false
-) {
-  const cached = textureCache.get(path);
-  if (cached) {
-    onLoad(cached);
-    return;
-  }
-  loader.load(
-    path,
-    (tex) => {
-      tex.flipY = flipY;
-      tex.colorSpace = THREE.SRGBColorSpace;
-      textureCache.set(path, tex);
-      onLoad(tex);
-    },
-    undefined,
-    () => {}
-  );
-}
-
-function disposeMaterial(obj: any) {
-  const mat = obj.material as THREE.MeshBasicMaterial | undefined;
-  if (!mat) return;
-  // Note: we intentionally do NOT dispose mat.map here, since textures are
-  // shared via textureCache and may still be referenced by other meshes.
-  mat.dispose?.();
-}
-
-/* ===================== */
-/* WRAPPER — fetch dulu  */
-/* ===================== */
-
-export default function Experience(props: Props) {
-  const [hallModel, setHallModel] = useState<string | null>(null);
-  const [karyaList, setKaryaList] = useState<any[]>([]);
-  const [folder, setFolder] = useState<string | null>(null); // ← null dulu
-
-  const notifiedRef = useRef(false);
-
-  useEffect(() => {
-    getHallModel(props.exhibitionId)
-      .then(setHallModel)
-      .catch((err) => console.error("Failed to load hall model", err));
-
-    getKaryaList(props.exhibitionId)
-      .then(({ karya }) => setKaryaList(karya))  // ← ambil .karya saja
-      .catch((err) => console.error("Failed to load karya list", err));
-
-    getPameranFolder(props.exhibitionId)
-      .then(setFolder)
-      .catch(() => setFolder("default"));
-  }, [props.exhibitionId]);
-
-  // ← tunggu keduanya sebelum render
-  const ready = !!hallModel && !!folder;
-
-  // Lapor ke ExhibitionPage bahwa fase fetch data sudah selesai, supaya
-  // progress bar bisa lanjut ke fase loading GLTF + texture.
-  // Dipanggil di useEffect (bukan di body render) karena onDataReady
-  // memicu setState di komponen lain (ExhibitionPage) — melakukannya
-  // langsung di body render melanggar aturan React ("cannot update a
-  // component while rendering a different component") dan bisa
-  // mengganggu commit React lain yang sedang berjalan (mis. LoaderWatcher).
-  useEffect(() => {
-    if (!ready || notifiedRef.current) return;
-    notifiedRef.current = true;
-    props.onDataReady?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready]);
-
-  if (!ready) return null;
-
-  return (
-    <ExperienceInner
-      {...props}
-      hallModel={hallModel}
-      karyaList={karyaList}
-      folder={folder}
-    />
-  );
-}
-
-/* ===================== */
-/* INNER                 */
-/* ===================== */
-
-function ExperienceInner({
-  exhibitionId,
-  playerId,
-  playerName,
-  openPoster,
-  openTautan,
+export default function Player({
+  mode,
   controlsLocked,
-  soundOn,
-  currentFloor,
+  setWalking,
+  setJumping,
   mobileMove,
   lookDelta,
-  hallModel,
-  karyaList,
-  folder,
-}: Props & { hallModel: string; karyaList: any[]; folder: string }) {
-  const [audioUrls, setAudioUrls] = useState({ bgm: "", footstep: "", jump: "" });
-  const [playerModelUrl, setPlayerModelUrl] = useState<string | null>(null);
-  const [walking, setWalking] = useState(false);
-  const [jumping, setJumping] = useState(false);
-  const [remotePlayers, setRemotePlayers] = useState<RemotePlayer[]>([]);
-  // Mode kamera player sendiri (first/third person), di-toggle lewat tombol
-  // C via <CameraSwitcher>. Sebelumnya <Player mode="first" .../> di-hardcode
-  // jadi CameraSwitcher walau ada tidak pernah benar-benar mengubah apa-apa.
-  const [cameraMode, setCameraMode] = useState<"first" | "third">("first");
 
-  const isViewingMedia = !controlsLocked;
+  playerId,
+  playerName,
 
-  const bgmRef = useRef<HTMLAudioElement | null>(null);
-  const footRef = useRef<HTMLAudioElement | null>(null);
-  const jumpRef = useRef<HTMLAudioElement | null>(null);
-  // Pakai sharedTextureLoader (lihat loadingManager.ts) supaya texture panel
-  // display & panel poster di hall ikut terhitung di useProgress() drei,
-  // sama seperti texture poster/sampul booth di booth.tsx.
-  const loader = useRef(sharedTextureLoader);
+  setPosition,
+  playerModelUrl,
+}: Props) {
+  const { camera, scene: world, gl } = useThree();
 
-  const { scene } = useGLTF(hallModel);
+  const pointerRef = useRef<any>(null);
+  // Sekarang jadi <group>, bukan lagi <mesh>, karena isinya bisa berupa
+  // model GLB (primitive) atau capsule fallback.
+  const playerMesh = useRef<THREE.Group>(null!);
+
+  const raycaster = useRef(new THREE.Raycaster());
 
   /* ===================== */
-  /* AUDIO + PLAYER MODEL  */
+  /* PLAYER */
+  /* ===================== */
+
+  const position = useRef(new THREE.Vector3(0, 20, -8));
+  const velocityY = useRef(0);
+  const grounded = useRef(false);
+
+  /* ===================== */
+  /* SETTINGS */
+  /* ===================== */
+
+  const MOVE_SPEED = 6;
+  const GRAVITY = 24;
+  const JUMP_FORCE = 10;
+  const PLAYER_HEIGHT = 3;
+  const COLLISION_DISTANCE = 0.7;
+
+  /* ===================== */
+  /* INPUT */
+  /* ===================== */
+
+  const keys = useRef({
+    w: false,
+    a: false,
+    s: false,
+    d: false,
+    space: false,
+  });
+
+  /* ===================== */
+  /* COLLIDERS / FLOOR CACHE */
+  /* ===================== */
+
+  // Walls/obstacles, flagged via userData.collider
+  const colliders = useRef<THREE.Object3D[]>([]);
+  // Walkable meshes used for floor raycasting (cached instead of
+  // re-scanning world.children every frame)
+  const floorMeshes = useRef<THREE.Object3D[]>([]);
+
+  /* ===================== */
+  /* MOBILE */
+  /* ===================== */
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  /* ===================== */
+  /* LOOK */
+  /* ===================== */
+
+  const yaw = useRef(0);
+  const pitch = useRef(0);
+  // Jarak kamera ke player pas third-person, bisa di-scroll (zoom) — gantiin
+  // minDistance/maxDistance punya OrbitControls yang lama.
+  const thirdPersonDistance = useRef(6);
+
+  /* ===================== */
+  /* MULTIPLAYER SAVE */
+  /* ===================== */
+
+  const saveTimer = useRef(0);
+  const rotationY = useRef(0);
+  const lastSent = useRef({ x: Infinity, y: Infinity, z: Infinity, rotation: Infinity });
+
+  /* ===================== */
+  /* REUSABLE SCRATCH OBJECTS (avoid per-frame GC pressure) */
+  /* ===================== */
+
+  const forwardVec = useRef(new THREE.Vector3());
+  const rightVec = useRef(new THREE.Vector3());
+  const nextVec = useRef(new THREE.Vector3());
+  const moveDirVec = useRef(new THREE.Vector3());
+  const originVec = useRef(new THREE.Vector3());
+  const floorOriginVec = useRef(new THREE.Vector3());
+  const downVec = useRef(new THREE.Vector3(0, -1, 0));
+  const eulerRef = useRef(new THREE.Euler(0, 0, 0, "YXZ"));
+  const camDirVec = useRef(new THREE.Vector3());
+  const lookTargetVec = useRef(new THREE.Vector3());
+
+  /* ===================== */
+  /* MOBILE DETECT */
   /* ===================== */
 
   useEffect(() => {
-    getGameAssets()
-      .then((data) => {
-        setAudioUrls({ bgm: data.bgm, footstep: data.footstep, jump: data.jump });
-        // Model badan player (player.glb). Lihat getPlayerModelUrl() di
-        // apiPlay.ts: pakai field `player` dari response ini kalau ada,
-        // atau fallback ke path storage default.
-        setPlayerModelUrl(getPlayerModelUrl(data));
-      })
-      .catch(() => { });
+    setIsMobile(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
   }, []);
 
-  useEffect(() => {
-    if (!audioUrls.bgm || !audioUrls.footstep || !audioUrls.jump) return;
-    bgmRef.current = Object.assign(new Audio(audioUrls.bgm), { loop: true, volume: 0.35 });
-    footRef.current = Object.assign(new Audio(audioUrls.footstep), { loop: true, volume: 0.55 });
-    jumpRef.current = Object.assign(new Audio(audioUrls.jump), { volume: 0.75 });
-    return () => { bgmRef.current?.pause(); footRef.current?.pause(); jumpRef.current?.pause(); };
-  }, [audioUrls]);
-
-  useEffect(() => {
-    if (!bgmRef.current) return;
-    if (soundOn) {
-      bgmRef.current.volume = isViewingMedia ? 0.08 : 0.35;
-      bgmRef.current.play().catch(() => { });
-    } else {
-      bgmRef.current.pause();
-      footRef.current?.pause();
-    }
-  }, [soundOn, isViewingMedia]);
-
-  useEffect(() => {
-    if (!footRef.current) return;
-    if (soundOn && walking && controlsLocked && !jumping) {
-      footRef.current.play().catch(() => { });
-    } else {
-      footRef.current.pause();
-      footRef.current.currentTime = 0;
-    }
-  }, [soundOn, walking, controlsLocked, jumping]);
-
-  useEffect(() => {
-    if (!jumpRef.current || !soundOn || !jumping) return;
-    footRef.current?.pause();
-    if (footRef.current) footRef.current.currentTime = 0;
-    jumpRef.current.currentTime = 0;
-    jumpRef.current.play().catch(() => { });
-  }, [jumping, soundOn]);
-
   /* ===================== */
-  /* MULTIPLAYER           */
+  /* COLLIDER + FLOOR SCAN */
   /* ===================== */
 
   useEffect(() => {
-    let cancelled = false;
+    const scan = () => {
+      const colliderArr: THREE.Object3D[] = [];
+      const floorArr: THREE.Object3D[] = [];
 
-    const load = async () => {
-      try {
-        const res = await fetch("/api/player");
-        const data: RemotePlayer[] = await res.json();
-        if (cancelled) return;
+      world.traverse((obj: any) => {
+        if (!obj.isMesh) return;
 
-        const now = Date.now();
-        const filtered = data.filter((p) => p.id !== playerId && now - p.updatedAt < 999999);
+        // Mesh milik player (badan player sendiri di mode third-person,
+        // ATAU badan remote player lain) TIDAK pernah dianggap collider
+        // maupun floor. Ini yang bikin antar player saling tembus — cuma
+        // objek ber-tag "collider" dari hall/booth yang tetap menghalangi.
+        if (obj.userData?.isPlayer) return;
 
-        setRemotePlayers((prev) => {
-          if (prev.length !== filtered.length) return filtered;
-          for (let i = 0; i < filtered.length; i++) {
-            const a = prev[i];
-            const b = filtered[i];
-            if (
-              !a ||
-              a.id !== b.id ||
-              a.x !== b.x ||
-              a.y !== b.y ||
-              a.z !== b.z ||
-              a.rotation !== b.rotation
-            ) {
-              return filtered;
-            }
-          }
-          return prev;
-        });
-      } catch { }
+        if (obj.userData?.collider) {
+          colliderArr.push(obj);
+          obj.visible = false;
+        } else {
+          // Anything mesh-like that isn't a collider is a floor candidate.
+          floorArr.push(obj);
+        }
+      });
+
+      colliders.current = colliderArr;
+      floorMeshes.current = floorArr;
+
+      console.log("colliders:", colliderArr.length, "floor candidates:", floorArr.length);
     };
 
-    load();
-    const iv = setInterval(load, 200);
-    return () => { cancelled = true; clearInterval(iv); };
+    const t1 = setTimeout(scan, 300);
+    const t2 = setTimeout(scan, 1000);
+    const t3 = setTimeout(scan, 2000);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [world]);
+
+  /* ===================== */
+  /* KEYBOARD */
+  /* ===================== */
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (!controlsLocked) return;
+
+      if (e.code === "KeyW") keys.current.w = true;
+      if (e.code === "KeyA") keys.current.a = true;
+      if (e.code === "KeyS") keys.current.s = true;
+      if (e.code === "KeyD") keys.current.d = true;
+      if (e.code === "Space") keys.current.space = true;
+    };
+
+    const up = (e: KeyboardEvent) => {
+      if (e.code === "KeyW") keys.current.w = false;
+      if (e.code === "KeyA") keys.current.a = false;
+      if (e.code === "KeyS") keys.current.s = false;
+      if (e.code === "KeyD") keys.current.d = false;
+      if (e.code === "Space") keys.current.space = false;
+    };
+
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+    };
+  }, [controlsLocked]);
+
+  /* ===================== */
+  /* REMOVE PLAYER */
+  /* ===================== */
+
+  useEffect(() => {
+    const removePlayer = () => {
+      fetch(`/api/player?id=${playerId}`, {
+        method: "DELETE",
+      }).catch(() => {});
+    };
+
+    window.addEventListener("beforeunload", removePlayer);
+
+    return () => {
+      removePlayer();
+      window.removeEventListener("beforeunload", removePlayer);
+    };
   }, [playerId]);
 
   /* ===================== */
-  /* TEXTURE HELPER        */
+  /* POINTER UNLOCK */
   /* ===================== */
 
-  const loadTextureSafe = useCallback((path: string, onLoad: (tex: THREE.Texture) => void, flipY = false) => {
-    loadCachedTexture(loader.current, path, onLoad, flipY);
-  }, []);
+  // Dipakai di onLock (lihat return JSX) supaya callback-nya selalu baca
+  // nilai controlsLocked terbaru, bukan closure lama dari saat pertama
+  // <PointerLockControls> di-mount.
+  const controlsLockedRef = useRef(controlsLocked);
+  useEffect(() => {
+    controlsLockedRef.current = controlsLocked;
+  }, [controlsLocked]);
+
+  useEffect(() => {
+    if (!controlsLocked) {
+      pointerRef.current?.unlock?.();
+      document.exitPointerLock?.();
+    }
+  }, [controlsLocked]);
 
   /* ===================== */
-  /* DISPLAY TEXTURES      */
+  /* CAMERA MODE SWITCH    */
   /* ===================== */
 
   useEffect(() => {
-    scene.traverse((obj: any) => {
-      if (!obj.isMesh) return;
-      const name = obj.name?.toLowerCase() || "";
-      if (name.startsWith("paneldisplay")) {
-        const num = parseInt(name.replace("paneldisplay", "")[1]);
-        if (!isNaN(num)) loadTextureSafe(`/prodi/${folder}/${num}.png`, (tex) => {
-          disposeMaterial(obj);
-          obj.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
-        });
+    // Pindah mode (biasanya lewat tombol C di <CameraSwitcher>, atau tombol
+    // "ganti sudut pandang" di HUD mobile). Pointer TIDAK di-unlock lagi di
+    // sini — third-person sekarang tetap pakai pointer lock (mouse dipakai
+    // buat nengok terus, bukan drag-orbit kayak sebelumnya), jadi cursor
+    // harus tetap ke-hide baik di first maupun third person.
+    if (mode === "third") {
+      // Derive yaw/pitch awal dari arah kamera saat ini (peninggalan
+      // first-person) supaya transisi ke belakang-badan player mulus,
+      // nggak "patah" ke sudut acak begitu kamera dipindah ke belakang.
+      const dir = new THREE.Vector3();
+      camera.getWorldDirection(dir);
+      yaw.current = Math.atan2(dir.x, dir.z);
+      pitch.current = Math.asin(THREE.MathUtils.clamp(dir.y, -1, 1));
+      thirdPersonDistance.current = 6;
+
+      // <PointerLockControls> (pemilik lock selama first-person) baru saja
+      // unmount begitu mode berubah. Elemen yang terkunci sebenarnya tetap
+      // canvas yang sama, jadi lock browser biasanya nggak ikut terlepas —
+      // ini cuma jaring pengaman: kalau ternyata sempat lepas, dan kita
+      // memang berhak mengunci lagi (controlsLocked, bukan mobile), minta
+      // lock ulang langsung ke canvas milik r3f.
+      if (!isMobile && controlsLockedRef.current && document.pointerLockElement !== gl.domElement) {
+        gl.domElement.requestPointerLock?.();
       }
-      if (name === "panel") {
-        loadTextureSafe(`/prodi/${folder}/${folder}.png`, (tex) => {
-          disposeMaterial(obj);
-          obj.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
-        });
-      }
-      if (name.startsWith("panelposter")) {
-        const rest = name.replace("panelposter", "");
-        const zone = rest[0];
-        const slot = parseInt(rest.slice(1));
-        const slotIndex = (slot - 1) % 6;
-
-        const karyaInZone = karyaList
-          .filter((k) => (k.kelas ?? "").toLowerCase() === zone)
-          .sort((a, b) => a.id_karya - b.id_karya);
-
-        const floorOffset = (currentFloor - 1) * 6;
-        const karya = karyaInZone[floorOffset + slotIndex] ?? null;
-
-        if (karya?.poster) {
-          loadTextureSafe(karya.poster, (tex) => {
-            disposeMaterial(obj);
-            obj.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
-          }, true);
-        }
-      }
-
-    });
-  }, [scene, folder, loadTextureSafe, karyaList, currentFloor]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   /* ===================== */
-  /* BOOTH POINTS          */
+  /* THIRD-PERSON LOOK (desktop) */
+  /* Third-person sekarang juga pointer-lock: gerakan mouse (movementX/Y)   */
+  /* update yaw/pitch terus-menerus, persis first-person — cuma kameranya   */
+  /* diposisikan di belakang badan player, bukan pas di posisi mata. Mode   */
+  /* first-person tetap dipegang penuh oleh <PointerLockControls> seperti   */
+  /* semula — effect ini sengaja no-op selama mode === "first".            */
   /* ===================== */
 
-  const boothPoints = useMemo(() => {
-    const result: any[] = [];
-    scene.updateMatrixWorld(true);
-    scene.traverse((obj: any) => {
-      const lower = obj.name?.toLowerCase() || "";
-      if (lower.startsWith("booth")) {
-        const pos = new THREE.Vector3();
-        const quat = new THREE.Quaternion();
-        obj.getWorldPosition(pos);
-        obj.getWorldQuaternion(quat);
-        result.push({ name: obj.name, position: [pos.x, pos.y, pos.z], quaternion: [quat.x, quat.y, quat.z, quat.w] });
-        obj.visible = false;
-        obj.raycast = () => null;
-      }
-      if (lower.includes("collider")) {
-        obj.visible = false;
-        obj.traverse((child: any) => { child.visible = false; if (child.isMesh) child.userData.collider = true; });
-      }
-    });
-    return result;
-  }, [scene]);
-
-  /* ===================== */
-  /* BOOTH MATCHING        */
-  /* Zone: kelas A=zone a, B=zone b, etc.
-     Slot: ordered by id_karya within zone, 6 per floor
-  /* ===================== */
-
-  const visibleBooths = useMemo(() => {
-    return boothPoints.map((item) => {
-      const nameLower = item.name.toLowerCase(); // "bootha1"
-      const zone = nameLower.replace("booth", "")[0];     // "a"
-      const slot = parseInt(nameLower.replace("booth", "").slice(1)); // 1-6
-
-      // Filter karya by zone (kelas field from pengguna)
-      const karyaInZone = karyaList
-        .filter((k) => (k.kelas ?? "").toLowerCase() === zone)
-        .sort((a, b) => a.id_karya - b.id_karya);
-
-      // Slot index within this floor
-      const floorOffset = (currentFloor - 1) * 6;
-      const targetIndex = floorOffset + (slot - 1);
-      const karya = karyaInZone[targetIndex] ?? null;
-
-      return { item, karya };
-    }).filter(({ karya }) => karya && karya.model_path);
-  }, [boothPoints, karyaList, currentFloor]);
-
-  // Preload booth GLTF models as soon as we know which ones are needed,
-  // so switching floors doesn't stall on model parsing.
   useEffect(() => {
-    visibleBooths.forEach(({ karya }) => {
-      if (karya?.model_path) {
-        useGLTF.preload(karya.model_path);
+    if (isMobile) return; // mobile pakai lookDelta dari joystick kanan
+
+    const LOOK_SPEED = 0.0025;
+    const PITCH_LIMIT = 1.2;
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (mode !== "third") return;
+      if (document.pointerLockElement !== gl.domElement) return;
+
+      yaw.current -= e.movementX * LOOK_SPEED;
+      pitch.current -= e.movementY * LOOK_SPEED;
+      pitch.current = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, pitch.current));
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      if (mode !== "third") return;
+      thirdPersonDistance.current = Math.max(
+        4,
+        Math.min(8, thirdPersonDistance.current + e.deltaY * 0.01)
+      );
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("wheel", onWheel, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("wheel", onWheel);
+    };
+  }, [mode, isMobile, gl]);
+
+  /* ===================== */
+  /* FRAME */
+  /* ===================== */
+
+  useFrame((_, delta) => {
+    const dt = Math.min(delta, 0.1);
+
+    /* ===================== */
+    /* MOBILE LOOK */
+    /* ===================== */
+
+    if (isMobile && lookDelta) {
+      yaw.current -= lookDelta.current.x;
+      pitch.current -= lookDelta.current.y;
+      pitch.current = Math.max(-1.2, Math.min(1.2, pitch.current));
+
+      // Third-person nge-set orientasi kamera sendiri di bagian CAMERA di
+      // bawah (lewat lookAt) — di sini cukup update yaw/pitch-nya aja.
+      if (mode === "first") {
+        eulerRef.current.set(pitch.current, yaw.current, 0, "YXZ");
+        camera.quaternion.setFromEuler(eulerRef.current);
       }
+    }
+
+    /* ===================== */
+    /* MOVE DIR */
+    /* ===================== */
+
+    camera.getWorldDirection(forwardVec.current);
+
+    rotationY.current = Math.atan2(forwardVec.current.x, forwardVec.current.z);
+
+    forwardVec.current.y = 0;
+    forwardVec.current.normalize();
+
+    rightVec.current.crossVectors(forwardVec.current, camera.up).normalize();
+
+    nextVec.current.copy(position.current);
+
+    let moving = false;
+
+    const moveAmount = MOVE_SPEED * dt;
+
+    const W = keys.current.w || mobileMove?.current.w;
+    const A = keys.current.a || mobileMove?.current.a;
+    const S = keys.current.s || mobileMove?.current.s;
+    const D = keys.current.d || mobileMove?.current.d;
+
+    if (controlsLocked) {
+      if (W) {
+        nextVec.current.addScaledVector(forwardVec.current, moveAmount);
+        moving = true;
+      }
+
+      if (S) {
+        nextVec.current.addScaledVector(forwardVec.current, -moveAmount);
+        moving = true;
+      }
+
+      if (A) {
+        nextVec.current.addScaledVector(rightVec.current, -moveAmount);
+        moving = true;
+      }
+
+      if (D) {
+        nextVec.current.addScaledVector(rightVec.current, moveAmount);
+        moving = true;
+      }
+    }
+
+    setWalking?.(moving && grounded.current);
+
+    /* ===================== */
+    /* WALL COLLISION */
+    /* ===================== */
+    // Note: colliders.current hanya berisi objek ber-tag "collider" (hall,
+    // booth, dst). Mesh player lain sudah dikeluarkan sejak proses scan di
+    // atas, jadi raycast ini TIDAK PERNAH menabrak player lain — antar
+    // player otomatis saling tembus, sementara tembok/objek collider tetap
+    // menghalangi seperti biasa.
+
+    moveDirVec.current.copy(nextVec.current).sub(position.current);
+
+    if (moveDirVec.current.length() > 0) {
+      moveDirVec.current.normalize();
+
+      originVec.current.copy(position.current);
+      originVec.current.y -= 1;
+
+      raycaster.current.set(originVec.current, moveDirVec.current);
+      raycaster.current.far = COLLISION_DISTANCE;
+
+      const hits = raycaster.current.intersectObjects(colliders.current, true);
+
+      if (hits.length === 0) {
+        position.current.copy(nextVec.current);
+      }
+    }
+
+    /* ===================== */
+    /* FLOOR CHECK (cached floor meshes — no full-scene raycast) */
+    /* ===================== */
+
+    grounded.current = false;
+
+    floorOriginVec.current.copy(position.current);
+    floorOriginVec.current.y += 0.2;
+
+    raycaster.current.set(floorOriginVec.current, downVec.current);
+    raycaster.current.far = 50;
+
+    const floorHits = raycaster.current
+      .intersectObjects(floorMeshes.current, true)
+      .filter((hit: any) => hit.object.isMesh && !hit.object.userData?.collider)
+      .sort((a, b) => a.distance - b.distance);
+
+    if (floorHits.length > 0) {
+      const floorY = floorHits[0].point.y;
+      const targetY = floorY + PLAYER_HEIGHT;
+
+      if (velocityY.current <= 0 && position.current.y <= targetY + 0.2) {
+        grounded.current = true;
+        velocityY.current = 0;
+        setJumping?.(false);
+        position.current.y = targetY;
+      }
+    }
+
+    /* ===================== */
+    /* JUMP */
+    /* ===================== */
+
+    if (grounded.current && keys.current.space) {
+      velocityY.current = JUMP_FORCE;
+      grounded.current = false;
+      setJumping?.(true);
+    }
+
+    /* ===================== */
+    /* GRAVITY */
+    /* ===================== */
+
+    if (!grounded.current) {
+      velocityY.current -= GRAVITY * dt;
+      position.current.y += velocityY.current * dt;
+    }
+
+    /* ===================== */
+    /* CAMERA */
+    /* ===================== */
+
+    if (mode === "first") {
+      camera.position.copy(position.current);
+    }
+
+    if (mode === "third") {
+      // Koordinat bola dari yaw/pitch (di-update dari mouse/joystick di
+      // atas) — bukan drag OrbitControls lagi. Kamera "menembus" badan
+      // player buat lihat ke arah hadapnya, jadi getWorldDirection (dipakai
+      // buat gerakan WASD di atas) otomatis tetap konsisten dengan arah
+      // badan player menghadap.
+      camDirVec.current.set(
+        Math.sin(yaw.current) * Math.cos(pitch.current),
+        Math.sin(pitch.current),
+        Math.cos(yaw.current) * Math.cos(pitch.current)
+      );
+
+      lookTargetVec.current.copy(position.current);
+      lookTargetVec.current.y += 1.2;
+
+      camera.position
+        .copy(lookTargetVec.current)
+        .addScaledVector(camDirVec.current, -thirdPersonDistance.current);
+      camera.lookAt(lookTargetVec.current);
+    }
+
+    /* ===================== */
+    /* SAVE PLAYER */
+    /* ===================== */
+
+    setPosition?.({
+      x: position.current.x,
+      y: position.current.y,
+      z: position.current.z,
     });
-  }, [visibleBooths]);
+
+    saveTimer.current += dt;
+
+    if (saveTimer.current >= 0.2 && playerName !== "Loading...") {
+      saveTimer.current = 0;
+
+      const moved =
+        Math.abs(position.current.x - lastSent.current.x) > 0.01 ||
+        Math.abs(position.current.y - lastSent.current.y) > 0.01 ||
+        Math.abs(position.current.z - lastSent.current.z) > 0.01 ||
+        Math.abs(rotationY.current - lastSent.current.rotation) > 0.01;
+
+      if (moved) {
+        lastSent.current = {
+          x: position.current.x,
+          y: position.current.y,
+          z: position.current.z,
+          rotation: rotationY.current,
+        };
+
+        fetch("/api/player", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: playerId,
+            name: playerName,
+            x: position.current.x,
+            y: position.current.y,
+            z: position.current.z,
+            rotation: rotationY.current,
+          }),
+        }).catch(() => {});
+      }
+    }
+
+    if (playerMesh.current && mode === "third") {
+      playerMesh.current.position.copy(position.current);
+      playerMesh.current.position.y -= 1.5;
+      // Badan player ikut nengok sesuai arah hadap (yaw) — sebelumnya cuma
+      // posisinya yang diupdate, badannya sendiri nggak pernah rotate.
+      playerMesh.current.rotation.y = yaw.current;
+    }
+  });
 
   return (
     <>
-      <ambientLight intensity={2.2} />
-      <directionalLight position={[10, 15, 10]} intensity={3} />
-      <pointLight position={[0, 8, 0]} intensity={2} />
-
-      <primitive object={scene} />
-
-      {visibleBooths.map(({ item, karya }) => (
-        <Booth
-          key={`${item.name}-${currentFloor}`}
-          boothName={karya.booth_name}
-          position={item.position}
-          quaternion={item.quaternion}
-          poster={karya.poster}
-          sampul={karya.sampul}
-          tautan={karya.tautan}
-          modelPath={karya.model_path}
-          openPoster={openPoster}
-          openTautan={openTautan}
+      {!isMobile && mode === "first" && (
+        <PointerLockControls
+          ref={pointerRef}
+          onLock={() => {
+            // Listener klik bawaan PointerLockControls selalu aktif
+            // (komponennya selalu ter-mount), jadi bisa saja ke-trigger
+            // walau menu/poster/video sedang terbuka. Kalau itu terjadi,
+            // langsung batalkan lagi — TIDAK BOLEH lock selama
+            // controlsLocked masih false (mis. menu ESC sedang tampil).
+            if (!controlsLockedRef.current) {
+              pointerRef.current?.unlock?.();
+              document.exitPointerLock?.();
+            }
+          }}
         />
-      ))}
+      )}
 
-      {remotePlayers.map((player) => (
-        <RemotePlayerMesh key={player.id} player={player} modelUrl={playerModelUrl} />
-      ))}
+      {mode === "third" && (
+        <group ref={playerMesh}>
+          {playerModelUrl ? (
+            <PlayerBodyModel url={playerModelUrl} />
+          ) : (
+            // Fallback capsule kalau URL model belum siap / gagal load.
+            // Tetap ditandai isPlayer supaya tidak ikut collider/floor scan.
+            <mesh userData={{ isPlayer: true }}>
+              <capsuleGeometry args={[0.5, 1.2, 4, 8]} />
+              <meshStandardMaterial color="lime" transparent opacity={0.35} />
+            </mesh>
+          )}
 
-      {/* Tombol C untuk toggle first/third person. Dikunci (disabled) saat
-          controlsLocked false — mis. lagi lihat poster/video/menu ESC —
-          supaya tombol C nggak nyelonong ganti kamera di tengah UI lain. */}
-      <CameraSwitcher disabled={!controlsLocked} setMode={setCameraMode} />
-
-      <Player
-        mode={cameraMode}
-        controlsLocked={controlsLocked}
-        setWalking={setWalking}
-        setJumping={setJumping}
-        mobileMove={mobileMove}
-        lookDelta={lookDelta}
-        playerId={playerId}
-        playerName={playerName}
-        playerModelUrl={playerModelUrl}
-      />
+          {/* Nametag sendiri — sebelumnya cuma remote player yang punya    */}
+          {/* label nama di atas kepala (lihat RemotePlayerMesh di          */}
+          {/* experience.tsx); badan sendiri nggak pernah dikasih Text.     */}
+          <Text position={[0, 2.5, 0]} fontSize={0.28} color="black" anchorX="center" anchorY="middle">
+            {playerName}
+          </Text>
+        </group>
+      )}
     </>
   );
 }
 
-function RemotePlayerMesh({ player, modelUrl }: { player: RemotePlayer; modelUrl: string | null }) {
-  const groupRef = useRef<THREE.Group>(null!);
-  const currentPos = useRef(new THREE.Vector3(player.x, player.y, player.z));
-  const targetPos = useRef(new THREE.Vector3(player.x, player.y, player.z));
-  const currentRot = useRef(player.rotation);
-  const targetRot = useRef(player.rotation);
+/* ===================== */
+/* PLAYER BODY MODEL (player.glb) */
+/* ===================== */
 
-  useEffect(() => {
-    targetPos.current.set(player.x, player.y, player.z);
-    targetRot.current = player.rotation;
-  }, [player.x, player.y, player.z, player.rotation]);
-
-  useFrame((_, delta) => {
-    if (!groupRef.current) return;
-    currentPos.current.lerp(targetPos.current, 1 - Math.exp(-10 * delta));
-    groupRef.current.position.copy(currentPos.current);
-    currentRot.current = THREE.MathUtils.lerp(currentRot.current, targetRot.current, 1 - Math.exp(-10 * delta));
-    groupRef.current.rotation.y = currentRot.current;
-  });
-
-  return (
-    <group ref={groupRef}>
-      {modelUrl ? (
-        <RemotePlayerModel url={modelUrl} />
-      ) : (
-        // Fallback capsule kalau URL model belum siap / gagal load. Tetap
-        // ditandai isPlayer supaya tidak ikut dianggap collider/lantai oleh
-        // player.tsx (jadi tetap bisa saling tembus walau fallback).
-        <mesh position={[0, -1, 0]} userData={{ isPlayer: true }}>
-          <capsuleGeometry args={[0.8, 1.8, 4, 8]} />
-          <meshStandardMaterial color="cyan" transparent opacity={0.7} />
-        </mesh>
-      )}
-      <Text position={[0, 1, 0]} fontSize={0.28} color="black" anchorX="center" anchorY="middle">
-        {player.name}
-      </Text>
-    </group>
-  );
-}
-
-// Badan remote player pakai player.glb. Di-clone per instance (bukan pakai
-// scene hasil useGLTF langsung) karena useGLTF men-cache & mengembalikan
-// object3D YANG SAMA untuk URL yang sama — kalau tidak di-clone, semua
-// remote player akan berbagi satu object3D dan cuma yang terakhir mount
-// yang keliatan posisinya benar.
-function RemotePlayerModel({ url }: { url: string }) {
+// Di-clone per-instance (bukan pakai scene hasil useGLTF langsung) karena
+// useGLTF men-cache & mengembalikan objek scene YANG SAMA untuk URL yang
+// sama — kalau dipakai langsung, semua instance player akan berbagi satu
+// object3D dan saling "rebutan" transform (posisi/rotasi ikut yang
+// terakhir mount).
+function PlayerBodyModel({ url }: { url: string }) {
   const { scene } = useGLTF(url);
 
   const cloned = useMemo(() => {
     const clone = scene.clone(true);
     clone.traverse((obj: any) => {
-      // Tag semua mesh badan player supaya scan collider/floor di
-      // player.tsx otomatis mengabaikannya — ini yang membuat antar player
-      // saling tembus, sementara collider hall/booth tetap menghalangi.
       obj.userData.isPlayer = true;
     });
     return clone;
   }, [scene]);
 
-  return <primitive object={cloned} position={[0, -1, 0]} />;
+  return <primitive object={cloned} />;
 }

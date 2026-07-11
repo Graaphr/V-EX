@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  OrbitControls,
   PointerLockControls,
+  Text,
   useGLTF,
 } from "@react-three/drei";
 
@@ -75,9 +75,8 @@ export default function Player({
   setPosition,
   playerModelUrl,
 }: Props) {
-  const { camera, scene: world } = useThree();
+  const { camera, scene: world, gl } = useThree();
 
-  const orbitRef = useRef<any>(null);
   const pointerRef = useRef<any>(null);
   // Sekarang jadi <group>, bukan lagi <mesh>, karena isinya bisa berupa
   // model GLB (primitive) atau capsule fallback.
@@ -137,6 +136,9 @@ export default function Player({
 
   const yaw = useRef(0);
   const pitch = useRef(0);
+  // Jarak kamera ke player pas third-person, bisa di-scroll (zoom) — gantiin
+  // minDistance/maxDistance punya OrbitControls yang lama.
+  const thirdPersonDistance = useRef(6);
 
   /* ===================== */
   /* MULTIPLAYER SAVE */
@@ -158,6 +160,8 @@ export default function Player({
   const floorOriginVec = useRef(new THREE.Vector3());
   const downVec = useRef(new THREE.Vector3(0, -1, 0));
   const eulerRef = useRef(new THREE.Euler(0, 0, 0, "YXZ"));
+  const camDirVec = useRef(new THREE.Vector3());
+  const lookTargetVec = useRef(new THREE.Vector3());
 
   /* ===================== */
   /* MOBILE DETECT */
@@ -286,34 +290,73 @@ export default function Player({
   /* ===================== */
 
   useEffect(() => {
-    // Pindah mode (biasanya lewat tombol C di <CameraSwitcher>). Kalau
-    // keluar dari first-person, lepas pointer lock — kalau tidak, cursor
-    // masih "terkunci" walau PointerLockControls sudah unmount.
-    if (mode !== "first") {
-      pointerRef.current?.unlock?.();
-      document.exitPointerLock?.();
-    }
-
+    // Pindah mode (biasanya lewat tombol C di <CameraSwitcher>, atau tombol
+    // "ganti sudut pandang" di HUD mobile). Pointer TIDAK di-unlock lagi di
+    // sini — third-person sekarang tetap pakai pointer lock (mouse dipakai
+    // buat nengok terus, bukan drag-orbit kayak sebelumnya), jadi cursor
+    // harus tetap ke-hide baik di first maupun third person.
     if (mode === "third") {
-      // Begitu masuk third-person, camera.position masih peninggalan
-      // first-person (persis di posisi mata / position.current), jadi
-      // offset kamera→target hampir 0. OrbitControls.update() menghitung
-      // ulang arah kamera dari offset ini tiap frame — kalau offset ~0,
-      // arahnya jadi tidak terdefinisi dan kamera bisa "patah"/nyelonong ke
-      // sudut aneh begitu di-clamp ke minDistance. Set posisi awal kamera
-      // di belakang & agak di atas player dulu supaya transisinya mulus.
-      const backOffset = new THREE.Vector3();
-      camera.getWorldDirection(backOffset);
-      backOffset.multiplyScalar(-6); // di antara minDistance(4) & maxDistance(8)
+      // Derive yaw/pitch awal dari arah kamera saat ini (peninggalan
+      // first-person) supaya transisi ke belakang-badan player mulus,
+      // nggak "patah" ke sudut acak begitu kamera dipindah ke belakang.
+      const dir = new THREE.Vector3();
+      camera.getWorldDirection(dir);
+      yaw.current = Math.atan2(dir.x, dir.z);
+      pitch.current = Math.asin(THREE.MathUtils.clamp(dir.y, -1, 1));
+      thirdPersonDistance.current = 6;
 
-      camera.position.copy(position.current).add(backOffset);
-      camera.position.y += 2;
-
-      orbitRef.current?.target.copy(position.current);
-      orbitRef.current?.update();
+      // <PointerLockControls> (pemilik lock selama first-person) baru saja
+      // unmount begitu mode berubah. Elemen yang terkunci sebenarnya tetap
+      // canvas yang sama, jadi lock browser biasanya nggak ikut terlepas —
+      // ini cuma jaring pengaman: kalau ternyata sempat lepas, dan kita
+      // memang berhak mengunci lagi (controlsLocked, bukan mobile), minta
+      // lock ulang langsung ke canvas milik r3f.
+      if (!isMobile && controlsLockedRef.current && document.pointerLockElement !== gl.domElement) {
+        gl.domElement.requestPointerLock?.();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
+
+  /* ===================== */
+  /* THIRD-PERSON LOOK (desktop) */
+  /* Third-person sekarang juga pointer-lock: gerakan mouse (movementX/Y)   */
+  /* update yaw/pitch terus-menerus, persis first-person — cuma kameranya   */
+  /* diposisikan di belakang badan player, bukan pas di posisi mata. Mode   */
+  /* first-person tetap dipegang penuh oleh <PointerLockControls> seperti   */
+  /* semula — effect ini sengaja no-op selama mode === "first".            */
+  /* ===================== */
+
+  useEffect(() => {
+    if (isMobile) return; // mobile pakai lookDelta dari joystick kanan
+
+    const LOOK_SPEED = 0.0025;
+    const PITCH_LIMIT = 1.2;
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (mode !== "third") return;
+      if (document.pointerLockElement !== gl.domElement) return;
+
+      yaw.current -= e.movementX * LOOK_SPEED;
+      pitch.current -= e.movementY * LOOK_SPEED;
+      pitch.current = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, pitch.current));
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      if (mode !== "third") return;
+      thirdPersonDistance.current = Math.max(
+        4,
+        Math.min(8, thirdPersonDistance.current + e.deltaY * 0.01)
+      );
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("wheel", onWheel, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("wheel", onWheel);
+    };
+  }, [mode, isMobile, gl]);
 
   /* ===================== */
   /* FRAME */
@@ -326,13 +369,17 @@ export default function Player({
     /* MOBILE LOOK */
     /* ===================== */
 
-    if (isMobile && mode === "first" && lookDelta) {
+    if (isMobile && lookDelta) {
       yaw.current -= lookDelta.current.x;
       pitch.current -= lookDelta.current.y;
       pitch.current = Math.max(-1.2, Math.min(1.2, pitch.current));
 
-      eulerRef.current.set(pitch.current, yaw.current, 0, "YXZ");
-      camera.quaternion.setFromEuler(eulerRef.current);
+      // Third-person nge-set orientasi kamera sendiri di bagian CAMERA di
+      // bawah (lewat lookAt) — di sini cukup update yaw/pitch-nya aja.
+      if (mode === "first") {
+        eulerRef.current.set(pitch.current, yaw.current, 0, "YXZ");
+        camera.quaternion.setFromEuler(eulerRef.current);
+      }
     }
 
     /* ===================== */
@@ -466,6 +513,27 @@ export default function Player({
       camera.position.copy(position.current);
     }
 
+    if (mode === "third") {
+      // Koordinat bola dari yaw/pitch (di-update dari mouse/joystick di
+      // atas) — bukan drag OrbitControls lagi. Kamera "menembus" badan
+      // player buat lihat ke arah hadapnya, jadi getWorldDirection (dipakai
+      // buat gerakan WASD di atas) otomatis tetap konsisten dengan arah
+      // badan player menghadap.
+      camDirVec.current.set(
+        Math.sin(yaw.current) * Math.cos(pitch.current),
+        Math.sin(pitch.current),
+        Math.cos(yaw.current) * Math.cos(pitch.current)
+      );
+
+      lookTargetVec.current.copy(position.current);
+      lookTargetVec.current.y += 1.2;
+
+      camera.position
+        .copy(lookTargetVec.current)
+        .addScaledVector(camDirVec.current, -thirdPersonDistance.current);
+      camera.lookAt(lookTargetVec.current);
+    }
+
     /* ===================== */
     /* SAVE PLAYER */
     /* ===================== */
@@ -515,11 +583,9 @@ export default function Player({
     if (playerMesh.current && mode === "third") {
       playerMesh.current.position.copy(position.current);
       playerMesh.current.position.y -= 1.5;
-    }
-
-    if (mode === "third" && orbitRef.current) {
-      orbitRef.current.target.copy(position.current);
-      orbitRef.current.update();
+      // Badan player ikut nengok sesuai arah hadap (yaw) — sebelumnya cuma
+      // posisinya yang diupdate, badannya sendiri nggak pernah rotate.
+      playerMesh.current.rotation.y = yaw.current;
     }
   });
 
@@ -543,29 +609,25 @@ export default function Player({
       )}
 
       {mode === "third" && (
-        <>
-          <OrbitControls
-            ref={orbitRef}
-            enablePan={false}
-            enableRotate={controlsLocked}
-            enableZoom={controlsLocked}
-            minDistance={4}
-            maxDistance={8}
-          />
+        <group ref={playerMesh}>
+          {playerModelUrl ? (
+            <PlayerBodyModel url={playerModelUrl} />
+          ) : (
+            // Fallback capsule kalau URL model belum siap / gagal load.
+            // Tetap ditandai isPlayer supaya tidak ikut collider/floor scan.
+            <mesh userData={{ isPlayer: true }}>
+              <capsuleGeometry args={[0.5, 1.2, 4, 8]} />
+              <meshStandardMaterial color="lime" transparent opacity={0.35} />
+            </mesh>
+          )}
 
-          <group ref={playerMesh}>
-            {playerModelUrl ? (
-              <PlayerBodyModel url={playerModelUrl} />
-            ) : (
-              // Fallback capsule kalau URL model belum siap / gagal load.
-              // Tetap ditandai isPlayer supaya tidak ikut collider/floor scan.
-              <mesh userData={{ isPlayer: true }}>
-                <capsuleGeometry args={[0.5, 1.2, 4, 8]} />
-                <meshStandardMaterial color="lime" transparent opacity={0.35} />
-              </mesh>
-            )}
-          </group>
-        </>
+          {/* Nametag sendiri — sebelumnya cuma remote player yang punya    */}
+          {/* label nama di atas kepala (lihat RemotePlayerMesh di          */}
+          {/* experience.tsx); badan sendiri nggak pernah dikasih Text.     */}
+          <Text position={[0, 2.5, 0]} fontSize={0.28} color="black" anchorX="center" anchorY="middle">
+            {playerName}
+          </Text>
+        </group>
       )}
     </>
   );

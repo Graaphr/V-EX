@@ -62,6 +62,16 @@ export default function ExhibitionPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
 
+  // Mode kamera (first/third person) di-lift ke sini (bukan di dalam
+  // Experience/Canvas lagi) supaya Crosshair (cuma boleh tampil pas
+  // first-person) dan tombol "ganti sudut pandang" di HUD mobile bisa
+  // baca/ubah state yang sama dari luar <Canvas>.
+  const [cameraMode, setCameraMode] = useState<"first" | "third">("first");
+
+  // Label "Tekan E untuk ..." — dikirim dari ThirdPersonInteract (di dalam
+  // Canvas) lewat callback onInteractHint, ditampilkan sebagai HUD di sini.
+  const [interactHint, setInteractHint] = useState<{ label: string } | null>(null);
+
   // Loading dibagi 2 fase, digabung jadi satu progress bar 0-100%:
   //   Fase 1 (bobot 30%): fetch data awal di Experience — getHallModel,
   //     getKaryaList, getPameranFolder. Ini terjadi SEBELUM scene di-mount,
@@ -341,12 +351,28 @@ export default function ExhibitionPage() {
                   playerName={playerName}
                   currentFloor={currentFloor}
                   onDataReady={handleDataReady}
+                  cameraMode={cameraMode}
+                  setCameraMode={setCameraMode}
+                  onInteractHint={setInteractHint}
                 />
               </Suspense>
             </Canvas>
           )}
 
-          {!isMobile && controlsLocked && <Crosshair canvasRef={canvasRef} />}
+          {!isMobile && controlsLocked && cameraMode === "first" && (
+            <Crosshair canvasRef={canvasRef} />
+          )}
+
+          {/* HINT "TEKAN E" — cuma tampil pas desktop third-person & lagi
+              deket panel poster/video (dikirim dari ThirdPersonInteract). */}
+          {!isMobile && controlsLocked && cameraMode === "third" && interactHint && (
+            <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-full bg-black/70 backdrop-blur border border-white/15 text-white text-sm font-medium flex items-center gap-2">
+              <kbd className="px-2 h-6 rounded-md bg-white/15 border border-white/20 flex items-center justify-center font-bold text-[11px]">
+                E
+              </kbd>
+              {interactHint.label}
+            </div>
+          )}
 
           {isMobile && controlsLocked && (
             <MobileHUD mobileMoveRef={mobileMoveRef} lookDelta={lookDelta} />
@@ -373,15 +399,38 @@ export default function ExhibitionPage() {
             </div>
           )}
 
-          {/* MAP BUTTON */}
+          {/* TOP-RIGHT BUTTON STACK — peta selalu ada; ganti sudut pandang &
+              menu cuma muncul di HP, karena di desktop udah ada tombol C
+              dan ESC di keyboard buat itu. */}
           {controlsLocked && (
-            <button
-              onClick={() => { setMapOpen(true); document.exitPointerLock?.(); }}
-              className="fixed top-4 right-4 z-[9999] w-10 h-10 rounded-xl bg-black/60 border border-white/15 text-white flex items-center justify-center text-lg"
-              title="Lihat semua karya"
-            >
-              🗺
-            </button>
+            <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2">
+              <button
+                onClick={() => { setMapOpen(true); document.exitPointerLock?.(); }}
+                className="w-10 h-10 rounded-xl bg-black/60 border border-white/15 text-white flex items-center justify-center text-lg"
+                title="Lihat semua karya"
+              >
+                🗺
+              </button>
+
+              {isMobile && (
+                <>
+                  <button
+                    onClick={() => setCameraMode((m) => (m === "first" ? "third" : "first"))}
+                    className="w-10 h-10 rounded-xl bg-black/60 border border-white/15 text-white flex items-center justify-center text-lg"
+                    title="Ganti sudut pandang"
+                  >
+                    🎥
+                  </button>
+                  <button
+                    onClick={() => { setMenuOpen(true); document.exitPointerLock?.(); }}
+                    className="w-10 h-10 rounded-xl bg-black/60 border border-white/15 text-white flex items-center justify-center text-lg"
+                    title="Menu"
+                  >
+                    ☰
+                  </button>
+                </>
+              )}
+            </div>
           )}
         </>
       )}
@@ -544,6 +593,20 @@ export default function ExhibitionPage() {
                     </kbd>
                     <span className="text-white/70">Buka menu pengaturan</span>
                   </div>
+
+                  <div className="flex items-center gap-3 bg-white/5 hover:bg-white/[0.07] rounded-xl p-3 transition-colors">
+                    <kbd className="px-3 h-7 rounded-md bg-white/10 border border-white/10 flex items-center justify-center font-bold text-[11px] shrink-0">
+                      C
+                    </kbd>
+                    <span className="text-white/70">Ganti sudut pandang (first/third person)</span>
+                  </div>
+
+                  <div className="flex items-center gap-3 bg-white/5 hover:bg-white/[0.07] rounded-xl p-3 transition-colors">
+                    <kbd className="px-3 h-7 rounded-md bg-white/10 border border-white/10 flex items-center justify-center font-bold text-[11px] shrink-0">
+                      E
+                    </kbd>
+                    <span className="text-white/70">Berinteraksi (khusus mode third person)</span>
+                  </div>
                 </>
               )}
 
@@ -557,6 +620,9 @@ export default function ExhibitionPage() {
                   </div>
                   <div className="flex items-center bg-white/5 rounded-xl p-3">
                     <span className="text-white/70">Ketuk objek untuk berinteraksi</span>
+                  </div>
+                  <div className="flex items-center bg-white/5 rounded-xl p-3">
+                    <span className="text-white/70">Tombol 🎥 di pojok kanan atas untuk ganti sudut pandang, ☰ untuk buka menu</span>
                   </div>
                 </>
               )}
