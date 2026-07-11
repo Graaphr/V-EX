@@ -23,7 +23,7 @@ interface Status {
 
 export default function PageDetailPameran({ isLogin = false }: Status) {
   const params = useParams();
-  const slug = params.slug as string;
+  const slug = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const [pameran, setPameran] = useState<Pameran | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
 
     async function load() {
       try {
-        const data = await GetDetailPameran(slug);
+        const data = await GetDetailPameran(slug as string);
 
         if (data.status !== "success")
           throw new Error(data.message ?? "Pameran tidak ditemukan");
@@ -48,7 +48,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
     }
 
     load();
-  }, [slug]); // <-- hanya jalan ulang kalau id berubah
+  }, [slug]); // <-- hanya jalan ulang kalau slug berubah
 
   // ─── Loading ───
   if (loading) {
@@ -107,7 +107,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
             <div className="md:hidden relative pr-14">
               {isLogin && (
                 <Link
-                  href={`/admin/pameran/edit/${pameran.id}`}
+                  href={`/admin/pameran/edit/${pameran.slug}`}
                   className="absolute right-0 top-0 bg-white border rounded-full p-2 shadow-md z-20"
                 >
                   <HiPencilAlt size={18} />
@@ -138,7 +138,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
               {/* DESKTOP EDIT */}
               {isLogin && (
                 <Link
-                  href={`/admin/pameran/edit/${pameran.id}`}
+                  href={`/admin/pameran/edit/${pameran.slug}`}
                   className="absolute right-0 top-0 hidden md:flex bg-white border-2 rounded-full p-2 shadow-lg/10 hover:scale-120 transition-all duration-300"
                 >
                   <HiPencilAlt size={24} />
@@ -162,7 +162,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
               <div className="flex flex-col sm:flex-row gap-4">
                 {isOpen ? (
                   <Button
-                    link={`/exhibition/${pameran.id}`}
+                    link={`/exhibition/${pameran.slug}`}
                     className="w-full sm:w-auto min-w-[140px] py-5 px-38 flex items-center justify-center rounded-md"
                   >
                     <FaPlay />
@@ -201,9 +201,15 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
           <div className="mt-12 flex justify-end items-center gap-10">
             <p className="font-bold text-main-blue">{institution}</p>
             <div className="flex gap-4 text-main-blue text-2xl">
-              <FaInstagram href="#" />
-              <FaYoutube href="#" />
-              <FaFacebookSquare href="#" />
+              <a href="#" target="_blank" rel="noopener noreferrer">
+                <FaInstagram />
+              </a>
+              <a href="#" target="_blank" rel="noopener noreferrer">
+                <FaYoutube />
+              </a>
+              <a href="#" target="_blank" rel="noopener noreferrer">
+                <FaFacebookSquare />
+              </a>
             </div>
           </div>
 

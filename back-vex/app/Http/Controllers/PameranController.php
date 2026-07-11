@@ -223,9 +223,11 @@ class PameranController extends Controller
     // =============================
     // EDIT PAMERAN
     // =============================
-    public function update(Request $request, $id)
+    public function update(Request $request, $identifier)
     {
-        $pameran = Pameran::find($id);
+        $pameran = Pameran::where('slug', $identifier)
+            ->orWhere('id_pameran', $identifier)
+            ->first();
 
         if (!$pameran) {
             return response()->json([

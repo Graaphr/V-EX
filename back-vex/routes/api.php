@@ -31,7 +31,7 @@ Route::prefix('auth')->group(function () {
 
 // Publik Akses Global
 Route::get('/pameran', [PameranController::class, 'index']);
-Route::get('/pameran/{id}', [PameranController::class, 'show']);
+Route::get('/pameran/{identifier}', [PameranController::class, 'show']);
 Route::get('/karya/{id_karya}/komentar', [KomentarController::class, 'index']);
 Route::get('/karya-terbaik', [KpsController::class, 'karyaTerbaik']); // ✅ public
 Route::get('/public/karya/terbaik', [KaryaController::class, 'karyaTerbaikAktif']);
@@ -78,10 +78,10 @@ Route::middleware('auth:sanctum')->group(function () {
         // Manajemen Pameran
         Route::get('/pameran', [PameranController::class, 'index']);
         Route::post('/pameran/add', [PameranController::class, 'store']);
-        Route::get('/pameran/{id}', [PameranController::class, 'show']);
-        Route::put('/pameran/{id}', [PameranController::class, 'update']);
-        Route::delete('/pameran/{id}', [PameranController::class, 'destroy']);
-        Route::post('/pameran/{id}/update', [PameranController::class, 'update']);
+        Route::get('/pameran/{identifier}', [PameranController::class, 'show']);
+        Route::put('/pameran/{identifier}', [PameranController::class, 'update']);
+        // Route::delete('/pameran/{identifier}', [PameranController::class, 'destroy']);
+        Route::post('/pameran/{identifier}/update', [PameranController::class, 'update']);
 
         // Manajemen Karya (Admin)
         Route::get('/karya', [KaryaController::class, 'indexAdmin']);

@@ -17,8 +17,8 @@ export async function PostPameran(formData: FormData) {
     return res.data;
 }
 
-export async function UpdatePameran(id: number, formData: FormData) {
-    const res = await url.post(`/api/admin/pameran/${id}/update`, formData, {
+export async function UpdatePameran(slug: string, formData: FormData) {
+    const res = await url.post(`/api/admin/pameran/${slug}/update`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
     });
     return res.data;
