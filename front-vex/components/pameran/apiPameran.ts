@@ -1,13 +1,12 @@
 import url from '@/lib/axios';
 
-
 export async function GetPameran() {
     const res = await url.get("/api/pameran");
     return res.data
 }
 
-export async function GetDetailPameran(id : number) {
-    const res = await url.get(`/api/pameran/${id}`);
+export async function GetDetailPameran(slug: string) {
+    const res = await url.get(`/api/pameran/${slug}`);
     return res.data
 }
 

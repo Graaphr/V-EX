@@ -67,11 +67,15 @@ export type PameranStats = {
 
 export type Pameran = {
   id: number;
+  slug: string;
   title: string;
   subtitle: string;
   category: string;
   date: string;
   bannerImage: string;
+  bannerLarge: string;
+  bannerMedium: string;
+  bannerSmall: string;
   likes: number;
   karya: number;
   description: PameranDescription[];

@@ -166,8 +166,8 @@ export default function DetailKarya({ id }: Props) {
 
         if (found) {
           setForm(found);
-          setThumbnailPreview(found.thumbnail ?? "");
-          setPosterPreview(found.image);
+          setThumbnailPreview(found.thumbnailMedium || found.thumbnail || "");
+          setPosterPreview(found.imageLarge || found.image);
 
           if (found.pameranId) {
             setCurrentPameran({

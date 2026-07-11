@@ -10,7 +10,7 @@ export default function CarouselSection({ data, href, emblaRef }: any) {
             key={item.id}
             className="flex-[0_0_100%] sm:flex-[0_0_70%] md:flex-[0_0_50%] lg:flex-[0_0_30%]"
           >
-            <Link href={`${href}${item.id}`}>
+            <Link href={`${href}${item.slug}`}>
               <ProjectCard className="text-white" project={item} />
             </Link>
           </div>

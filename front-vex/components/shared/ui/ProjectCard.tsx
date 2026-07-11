@@ -1,14 +1,15 @@
 "use client";
 
-import '@/app/globals.css';
-import Image from 'next/image';
-import { useState } from 'react';
-import { FaHeart, FaCalendar, FaLock, FaUnlock } from 'react-icons/fa';
-import { BsStars } from 'react-icons/bs';
+import "@/app/globals.css";
+import Image from "next/image";
+import { useState } from "react";
+import { FaHeart, FaCalendar, FaLock, FaUnlock } from "react-icons/fa";
+import { BsStars } from "react-icons/bs";
 
 export interface ProjectCard {
   id: number;
   bannerImage: string;
+  bannerSmall?: string;
   title: string;
   category: string;
   likes: number;
@@ -41,7 +42,7 @@ export default function ProjectCard({ project, className }: ProjectData) {
     >
       <div className="relative aspect-video w-full overflow-hidden rounded-sm shadow-[0px_1px_3px_rgba(0,0,0,1)]">
         <Image
-          src={project.bannerImage}
+          src={project.bannerSmall || project.bannerImage}
           alt={project.title}
           fill
           unoptimized
@@ -50,8 +51,9 @@ export default function ProjectCard({ project, className }: ProjectData) {
 
         {/* OVERLAY */}
         <div
-          className={`absolute inset-0 z-10 bg-gradient-to-t from-main-blue/90 via-white/30 to-transparent transition-opacity duration-300 flex flex-col justify-end p-3 ${hovered ? "opacity-100" : "opacity-0"
-            }`}
+          className={`absolute inset-0 z-10 bg-gradient-to-t from-main-blue/90 via-white/30 to-transparent transition-opacity duration-300 flex flex-col justify-end p-3 ${
+            hovered ? "opacity-100" : "opacity-0"
+          }`}
         >
           <div className="flex items-center justify-between text-white">
             <div className="flex items-center gap-2 bg-black/50 px-2 py-0.5 rounded-full backdrop-blur-sm">

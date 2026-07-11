@@ -18,7 +18,13 @@ class Karya extends Model
         'deskripsi',
         'tautan',
         'gambar_poster',
+        'gambar_poster_large',
+        'gambar_poster_medium',
+        'gambar_poster_small',
         'gambar_sampul',
+        'gambar_sampul_large',
+        'gambar_sampul_medium',
+        'gambar_sampul_small',
         'lantai',
         'is_terbaik',
     ];

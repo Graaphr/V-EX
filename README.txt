@@ -105,6 +105,7 @@ asy
     (KaryaController)
     {
         index(User) --> (PageKarya) : OK,
+        getModelStan() : OK,
 
         store(data:[
             id_pameran,
@@ -129,12 +130,16 @@ asy
         pameranTersedia(): OK,
         stanTersedia(id_pameran): OK,
 
-        destroy(id,User) : ,
+        destroy(id,User) : OK,
+        karyaTerbaikAktif(): OK,
+        karyaFavoritAktif(): OK,
     },
 
     (GameAssetController)
     {
         index() --> (ExhibitionPage) : OK,
+        serveBoothModel(name) : OK,
+        serveHallModel(id_model) : OK,
         get3DModel(modelId) --> (ExhibitionPage) : OK,
         karyaByPameran(id) --> (ExhibitionPage): OK,
         getYoutubeThumbnail(url) : OK
@@ -142,16 +147,17 @@ asy
 
     (KomentarController)
     {
-        index(id_karya) --> (ExhibitionPage) : ,
-        store(id_karya, isi_komentar) --> (ExhibitionPage) : ,
+        index(id_karya) --> (ExhibitionPage) : OK,
+        store(id_karya, isi_komentar) --> (ExhibitionPage) : OK,
+        
     },
 
     (KpsController)
     {
-        daftarKarya(User): ,
-        pilihTerbaik(User, id_karya) : ,
-        batalkanTerbaik(User, id_karya) : ,
-        karyaTerbaik() : 
+        daftarKarya(User): OK,
+        pilihTerbaik(User, id_karya) : OK,
+        batalkanTerbaik(User, id_karya) : OK,
+        karyaTerbaik() : OK 
     },
 
     (PameranController)
@@ -186,8 +192,8 @@ asy
 
     (SukaController)
     {
-        toggle(User,id_karya) --> (ExhibitionPage): ,
-        status(User,id_karya) --> (ExhibitionPage): ,
+        toggle(User,id_karya) --> (ExhibitionPage): OK,
+        status(User,id_karya) --> (ExhibitionPage): OK,
     }
 
 ]
@@ -201,3 +207,12 @@ NOTE:
 
 ================================================================================
 ================================================================================
+
+
+CARA Ekstract Watermark dalam FOTO
+
+php artisan thinker
+$steganography = new \App\Services\Steganography();\
+$path = storage_path('app/public/pameran/4/4/poster/original.png');\
+$result = $steganography->extract($path);\
+dd($result);

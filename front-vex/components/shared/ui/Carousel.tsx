@@ -13,9 +13,12 @@ import { BiSolidRightArrow, BiSolidLeftArrow } from "react-icons/bi";
 /* ===================== */
 
 export interface CarouselKaryaItem {
-  id: number;
+  id: number | string;
   title: string;
   banner: string;
+  bannerLarge?: string;
+  poster: string;
+  posterMedium?: string;
 }
 
 interface CarouselProps {
@@ -71,11 +74,22 @@ export default function Carousel({ data, className }: CarouselProps) {
                 md:aspect-video
               "
             >
+              {/* POSTER - tampil di mobile & tablet (di bawah breakpoint md) */}
               <Image
-                src={item.banner}
+                src={item.posterMedium || item.poster || item.banner}
                 alt={item.title}
                 fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                className="object-cover transition-transform duration-700 group-hover:scale-105 block md:hidden"
+                priority={index === 0}
+                sizes="100vw"
+              />
+
+              {/* BANNER - tampil di desktop (md ke atas) */}
+              <Image
+                src={item.bannerLarge || item.banner}
+                alt={item.title}
+                fill
+                className="object-cover transition-transform duration-700 group-hover:scale-105 hidden md:block"
                 priority={index === 0}
                 sizes="100vw"
               />

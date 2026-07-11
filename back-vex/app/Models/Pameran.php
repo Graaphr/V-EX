@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Pameran extends Model
 {
     public $timestamps = false;
-    protected $table   = 'pameran';
+    protected $table = 'pameran';
     protected $primaryKey = 'id_pameran';
 
     protected $fillable = [
@@ -15,6 +16,7 @@ class Pameran extends Model
         'kategori',
         'banner',
         'judul',
+        'slug',
         'deskripsi',
         'kapasitas',
         'tanggal_mulai',
@@ -22,6 +24,24 @@ class Pameran extends Model
         'tanggal_mulai_persiapan',
         'tanggal_akhir_persiapan',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($pameran) {
+            if (empty($pameran->slug)) {
+                $base = Str::slug($pameran->judul);
+                $slug = $base . '-' . Str::lower(Str::random(5));
+
+                while (static::where('slug', $slug)->exists()) {
+                    $slug = $base . '-' . Str::lower(Str::random(5));
+                }
+
+                $pameran->slug = $slug;
+            }
+        });
+    }
 
     // Relasi ke tabel model (aset 3D)
     public function model3d()
@@ -40,20 +60,15 @@ class Pameran extends Model
         return $this->hasMany(Karya::class, 'id_pameran', 'id_pameran');
     }
 
-    /**
-     * Relasi tidak langsung: Pameran -> Karya -> Suka
-     * Dipakai untuk withCount('suka') agar dapat total suka
-     * dari seluruh karya yang ada di pameran ini.
-     */
     public function suka()
     {
         return $this->hasManyThrough(
             Suka::class,
             Karya::class,
-            'id_pameran', // FK di tabel karya yang merujuk ke pameran
-            'id_karya',   // FK di tabel suka yang merujuk ke karya
-            'id_pameran', // local key di pameran
-            'id_karya'    // local key di karya
+            'id_pameran',
+            'id_karya',
+            'id_pameran',
+            'id_karya'
         );
     }
 }

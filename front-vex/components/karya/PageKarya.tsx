@@ -322,21 +322,22 @@ export default function PageKarya({ href }: Props) {
   // RENDER DEFAULT (Admin / Ketua PBL)
   // =============================
   return (
-    <div className="min-h-screen bg-secondary-color font-poppins">
-      <section className="bg-main-blue rounded-b-[25px] md:rounded-b-[40px] py-6">
-        <div className="autoMid">
-          <FilterSection
-            search={search}
-            setSearch={setSearch}
-            selectedProdi={selectedProdi}
-            setSelectedProdi={setSelectedProdi}
-            selectedTahun={selectedTahun}
-            setSelectedTahun={setSelectedTahun}
-            selectedSemester={selectedSemester}
-            setSelectedSemester={setSelectedSemester}
-          />
-        </div>
-      </section>
+  <div className="min-h-screen bg-secondary-color font-poppins">
+    <section className="bg-main-blue rounded-b-[25px] md:rounded-b-[40px] py-6">
+      <div className="autoMid">
+        <FilterSection
+          search={search}
+          setSearch={setSearch}
+          selectedProdi={selectedProdi}
+          setSelectedProdi={setSelectedProdi}
+          selectedTahun={selectedTahun}
+          setSelectedTahun={setSelectedTahun}
+          selectedSemester={selectedSemester}
+          setSelectedSemester={setSelectedSemester}
+          hideProdi={!isAdmin}
+        />
+      </div>
+    </section>
 
       <main className="autoMid space-y-10 py-10">
         {categories.length === 0 ? (
