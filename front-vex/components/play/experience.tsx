@@ -255,7 +255,7 @@ function ExperienceInner({
 
     const load = async () => {
       try {
-        const res = await fetch("/api/player");
+        const res = await fetch("/api-internal/player");
         const data: RemotePlayer[] = await res.json();
         if (cancelled) return;
 
