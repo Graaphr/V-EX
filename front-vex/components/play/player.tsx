@@ -3,6 +3,7 @@
 import {
   PointerLockControls,
   Text,
+  Billboard,
   useGLTF,
 } from "@react-three/drei";
 
@@ -99,6 +100,9 @@ export default function Player({
   const MOVE_SPEED = 6;
   const GRAVITY = 24;
   const JUMP_FORCE = 10;
+  // Tinggi kamera/mata dari lantai (dipakai buat first-person DAN sebagai
+  // acuan third-person — lihat bagian CAMERA di useFrame di bawah). Naikin
+  // angka ini buat bikin kamera lebih tinggi, turunin buat lebih rendah.
   const PLAYER_HEIGHT = 3;
   const COLLISION_DISTANCE = 0.7;
 
@@ -628,9 +632,14 @@ export default function Player({
           {/* Nametag sendiri — sebelumnya cuma remote player yang punya    */}
           {/* label nama di atas kepala (lihat RemotePlayerMesh di          */}
           {/* experience.tsx); badan sendiri nggak pernah dikasih Text.     */}
-          <Text position={[0, 2.5, 0]} fontSize={0.28} color="black" anchorX="center" anchorY="middle">
-            {playerName}
-          </Text>
+          {/* Dibungkus Billboard supaya pas dilihat teman dari sudut mana  */}
+          {/* pun, nametag-nya tetap menghadap kamera mereka (bukan ikut    */}
+          {/* muter sesuai rotation.y group ini).                          */}
+          <Billboard position={[0, 2.5, 0]}>
+            <Text fontSize={0.28} color="black" anchorX="center" anchorY="middle">
+              {playerName}
+            </Text>
+          </Billboard>
         </group>
       )}
     </>
