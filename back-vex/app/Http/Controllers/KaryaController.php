@@ -58,6 +58,7 @@ class KaryaController extends Controller
         // Ganti segmen folder "/original/" jadi "/{size}/"
         return preg_replace('#/original/#', "/{$size}/", $originalPath, 1);
     }
+
     // =============================
     // HELPER: Generate original + 3 ukuran (75%, 50%, 25%), semua di-watermark LSB
     // Output SELALU .png (wajib, agar watermark tidak rusak oleh kompresi JPEG)
@@ -145,7 +146,7 @@ class KaryaController extends Controller
         $user = $request->user();
 
         $karya = Karya::where('id_pengguna', $user->id)
-            ->with(['stan', 'pameran'])
+            ->with(['stan.model3d', 'pameran'])
             ->get()
             ->map(function ($item) {
                 $editStatus = $this->getPameranEditStatus($item->pameran);
@@ -157,7 +158,8 @@ class KaryaController extends Controller
                     ...$this->buildKaryaImageUrls($item),
                     'link' => $item->tautan,
                     'description' => $item->deskripsi,
-                    'booth' => $item->id_stan ? (string) $item->id_stan : '',
+                    'booth' => $item->id_stan ? (string) $item->id_stan : '', // identitas stan (readOnly)
+                    'modelStan' => $item->stan?->model_stan ? (string) $item->stan->model_stan : '', // id_model aktif (dipakai select edit)
                     'pameranId' => $item->id_pameran,
                     'pameranTitle' => $item->pameran?->judul ?? '',
                     'year' => $item->pameran?->tanggal_mulai
@@ -175,8 +177,6 @@ class KaryaController extends Controller
             'karya' => $karya,
         ]);
     }
-
-
 
     // =============================
     // AMBIL MODEL STAN (jenis = 'stan')
@@ -279,8 +279,8 @@ class KaryaController extends Controller
     }
 
     // =============================
-// EDIT KARYA PBL
-// =============================
+    // EDIT KARYA PBL
+    // =============================
     public function update(Request $request, $id)
     {
         $user = $request->user();
@@ -323,42 +323,44 @@ class KaryaController extends Controller
         $idKarya = $karya->id_karya;
 
         // =============================
-        // RESOLVE id_stan DARI model_stan
+        // UPDATE MODEL STAN (id_stan TIDAK berubah)
         // =============================
         if ($request->filled('model_stan')) {
-            $stan = Stan::where('id_pameran', $idPameran)
-                ->where('model_stan', $request->model_stan)
-                ->first();
+            if (!$karya->id_stan) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Karya ini belum memiliki stan yang terhubung.',
+                ], 404);
+            }
+
+            $stan = Stan::find($karya->id_stan);
 
             if (!$stan) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Stan dengan model tersebut tidak tersedia untuk pameran ini.',
+                    'message' => 'Data stan untuk karya ini tidak ditemukan.',
                 ], 404);
             }
 
-            $karya->id_stan = $stan->id_stan;
+            // Hanya ganti model 3D pada stan milik karya ini.
+            // Primary key id_stan tetap sama, tidak pindah ke stan lain.
+            $stan->model_stan = $request->model_stan;
+            $stan->save();
         }
 
         if ($request->hasFile('gambar_poster')) {
             $posterFolder = "pameran/{$idPameran}/{$idKarya}/poster";
-
             $this->deleteAllVersions($karya->gambar_poster);
-
             $watermarkPoster = "karya:{$idKarya}|user:{$user->id}|type:poster";
             $posterPaths = $this->generateWatermarkedVersions($request->file('gambar_poster'), $posterFolder, $watermarkPoster);
-
             $karya->gambar_poster = $posterPaths['original'];
         }
 
         if ($request->hasFile('gambar_sampul')) {
             $sampulFolder = "pameran/{$idPameran}/{$idKarya}/sampul";
-
             $this->deleteAllVersions($karya->gambar_sampul);
-
             $watermarkSampul = "karya:{$idKarya}|user:{$user->id}|type:sampul";
             $sampulPaths = $this->generateWatermarkedVersions($request->file('gambar_sampul'), $sampulFolder, $watermarkSampul);
-
             $karya->gambar_sampul = $sampulPaths['original'];
         }
 
@@ -467,7 +469,7 @@ class KaryaController extends Controller
     // =============================
     public function indexAdmin(Request $request)
     {
-        $karya = Karya::with(['stan', 'pameran'])
+        $karya = Karya::with(['stan.model3d', 'pameran'])
             ->get()
             ->map(function ($item) {
                 $editStatus = $this->getPameranEditStatus($item->pameran);
@@ -480,6 +482,7 @@ class KaryaController extends Controller
                     'link' => $item->tautan,
                     'description' => $item->deskripsi,
                     'booth' => $item->id_stan ? (string) $item->id_stan : '',
+                    'modelStan' => $item->stan?->model_stan ? (string) $item->stan->model_stan : '',
                     'pameranId' => $item->id_pameran,
                     'pameranTitle' => $item->pameran?->judul ?? '',
                     'year' => $item->pameran?->tanggal_mulai
