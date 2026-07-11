@@ -198,7 +198,28 @@ export default function ExhibitionPage() {
 
   const relockRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Ref sinkron ke state isMobile, dipakai relockPointer/exitPointerLockSafe
+  // di bawah supaya nggak perlu isMobile di dependency array-nya.
+  const isMobileRef = useRef(isMobile);
+  useEffect(() => {
+    isMobileRef.current = isMobile;
+  }, [isMobile]);
+
+  // HP nggak pernah pakai Pointer Lock API sama sekali (kontrolnya lewat
+  // joystick/tap, bukan mouse) — <PointerLockControls> di player.tsx
+  // sendiri cuma di-mount kalau !isMobile. Jadi di HP nggak pernah ada
+  // "lock" beneran untuk dilepas-pasang; panggilan exitPointerLock() /
+  // requestPointerLock() di situ cuma kerja sia-sia (dan berpotensi
+  // ke-block browser tanpa alasan). Dua helper ini jadi satu titik yang
+  // otomatis skip kalau lagi di HP, jadi tempat pemanggilnya (banyak
+  // tersebar di modal open/close) nggak perlu masing-masing ngecek isMobile.
+  const exitPointerLockSafe = useCallback(() => {
+    if (isMobileRef.current) return;
+    document.exitPointerLock?.();
+  }, []);
+
   const relockPointer = useCallback(() => {
+    if (isMobileRef.current) return;
     if (relockRetryTimer.current) {
       clearTimeout(relockRetryTimer.current);
       relockRetryTimer.current = null;
@@ -267,36 +288,36 @@ export default function ExhibitionPage() {
   }, [playerId]);
 
   useEffect(() => {
-    if (posterOpen) document.exitPointerLock?.();
-  }, [posterOpen]);
+    if (posterOpen) exitPointerLockSafe();
+  }, [posterOpen, exitPointerLockSafe]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !posterOpen) {
         setMenuOpen(true);
-        document.exitPointerLock?.();
+        exitPointerLockSafe();
       }
     };
     window.addEventListener("keydown", down);
     return () => window.removeEventListener("keydown", down);
-  }, [posterOpen]);
+  }, [posterOpen, exitPointerLockSafe]);
 
   // Stable identities via useCallback — these get passed down into the R3F
   // tree (Experience/Booth), so keeping the same function reference across
   // renders avoids unnecessary re-renders/effect re-runs in children that
   // depend on them (e.g. Booth's onClick, or any future React.memo).
   const openPoster = useCallback((src: string, booth: string) => {
-    document.exitPointerLock?.();
+    exitPointerLockSafe();
     setPosterData({ src, booth });
     setPosterOpen(true);
-  }, []);
+  }, [exitPointerLockSafe]);
 
   // Dipanggil saat klik PanelVideo di booth → langsung buka embed
   const openTautan = useCallback((url: string, _booth: string) => {
-    document.exitPointerLock?.();
+    exitPointerLockSafe();
     setEmbedUrl(url);
     setEmbedOpen(true);
-  }, []);
+  }, [exitPointerLockSafe]);
 
   // Dipanggil dari PosterViewer tombol "Tonton Video"
   const openEmbedFromPoster = useCallback((url: string) => {
@@ -405,7 +426,7 @@ export default function ExhibitionPage() {
           {controlsLocked && (
             <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2">
               <button
-                onClick={() => { setMapOpen(true); document.exitPointerLock?.(); }}
+                onClick={() => { setMapOpen(true); exitPointerLockSafe(); }}
                 className="w-10 h-10 rounded-xl bg-black/60 border border-white/15 text-white flex items-center justify-center text-lg"
                 title="Lihat semua karya"
               >
@@ -422,7 +443,7 @@ export default function ExhibitionPage() {
                     🎥
                   </button>
                   <button
-                    onClick={() => { setMenuOpen(true); document.exitPointerLock?.(); }}
+                    onClick={() => { setMenuOpen(true); exitPointerLockSafe(); }}
                     className="w-10 h-10 rounded-xl bg-black/60 border border-white/15 text-white flex items-center justify-center text-lg"
                     title="Menu"
                   >

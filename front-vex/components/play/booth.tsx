@@ -39,6 +39,45 @@ function loadCachedTexture(
   );
 }
 
+// Hitung aspect ratio (lebar/tinggi) panel dari bounding box geometry-nya.
+// Panel berupa plane tipis, jadi sumbu paling tipis (biasanya arah normal-
+// nya) diabaikan — dua sumbu terbesar dianggap lebar & tinggi.
+function computePlaneAspect(mesh: THREE.Mesh): number {
+  const geo = mesh.geometry;
+  if (!geo.boundingBox) geo.computeBoundingBox();
+  const size = new THREE.Vector3();
+  geo.boundingBox!.getSize(size);
+  const dims = [size.x, size.y, size.z].sort((a, b) => b - a);
+  return dims[1] > 0 ? dims[0] / dims[1] : 1;
+}
+
+// Meniru CSS `object-fit: cover`: texture di-crop (bukan di-stretch) supaya
+// gambar tetap proporsional walau aspect ratio-nya beda dari aspect ratio
+// panel. Sebelumnya texture ditempel dengan repeat/offset default (1,1 /
+// 0,0), jadi gambar yang rasio aslinya beda dari panel jadi gepeng atau
+// "kepanjangan" — terutama kelihatan di sampul video.
+function applyCoverUV(tex: THREE.Texture, meshAspect: number) {
+  const img = tex.image as { width?: number; height?: number } | undefined;
+  if (!img?.width || !img?.height) return;
+
+  const imgAspect = img.width / img.height;
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+
+  if (imgAspect > meshAspect) {
+    // Gambar relatif lebih "lebar" dari panel → crop kiri-kanan.
+    const scale = meshAspect / imgAspect;
+    tex.repeat.set(scale, 1);
+    tex.offset.set((1 - scale) / 2, 0);
+  } else {
+    // Gambar relatif lebih "tinggi" dari panel → crop atas-bawah.
+    const scale = imgAspect / meshAspect;
+    tex.repeat.set(1, scale);
+    tex.offset.set(0, (1 - scale) / 2);
+  }
+  tex.needsUpdate = true;
+}
+
 type BoothProps = {
   position?: [number, number, number];
   quaternion?: [number, number, number, number];
@@ -111,7 +150,13 @@ export default function Booth({
     loadCachedTexture(poster, (tex) => {
       if (cancelled || !posterMesh.current) return;
       (posterMesh.current.material as THREE.Material)?.dispose?.();
-      posterMesh.current.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
+      // Clone dulu — texture aslinya dipakai bareng-bareng lewat
+      // textureCache, jadi repeat/offset (dihitung khusus buat panel ini)
+      // nggak boleh "bocor" dan ikut ngubah tampilan booth lain yang
+      // kebetulan pakai poster/URL yang sama.
+      const t = tex.clone();
+      applyCoverUV(t, computePlaneAspect(posterMesh.current));
+      posterMesh.current.material = new THREE.MeshBasicMaterial({ map: t, toneMapped: false });
     });
 
     return () => {
@@ -127,7 +172,10 @@ export default function Booth({
     loadCachedTexture(sampul, (tex) => {
       if (cancelled || !sampulMesh.current) return;
       (sampulMesh.current.material as THREE.Material)?.dispose?.();
-      sampulMesh.current.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
+      // Clone — sama alasannya kayak poster di atas.
+      const t = tex.clone();
+      applyCoverUV(t, computePlaneAspect(sampulMesh.current));
+      sampulMesh.current.material = new THREE.MeshBasicMaterial({ map: t, toneMapped: false });
     }, true);
 
     return () => {
