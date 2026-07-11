@@ -642,9 +642,6 @@ const canvasRef = useRef<HTMLCanvasElement | null>(null);
                   <div className="flex items-center bg-white/5 rounded-xl p-3">
                     <span className="text-white/70">Ketuk objek untuk berinteraksi</span>
                   </div>
-                  <div className="flex items-center bg-white/5 rounded-xl p-3">
-                    <span className="text-white/70">Tombol 🎥 di pojok kanan atas untuk ganti sudut pandang, ☰ untuk buka menu</span>
-                  </div>
                 </>
               )}
             </div>
