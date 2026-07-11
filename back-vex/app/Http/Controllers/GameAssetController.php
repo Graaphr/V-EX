@@ -26,9 +26,10 @@ class GameAssetController extends Controller
     public function index()
     {
         return response()->json([
-            'bgm' => asset('storage/audio/bgm.mp3', true),
-            'footstep' => asset('storage/audio/footstep.mp3', true),
-            'jump' => asset('storage/audio/jump.mp3', true),
+            'bgm' => asset('storage/audio/bgm.mp3'),
+            'footstep' => asset('storage/audio/footstep.mp3'),
+            'jump' => asset('storage/audio/jump.mp3'),
+            'player' => asset('storage/models/player.glb'),
         ]);
     }
 
@@ -47,6 +48,24 @@ class GameAssetController extends Controller
         return response()->file($path, [
             'Content-Type' => 'model/gltf-binary',
             'Access-Control-Allow-Origin' => 'https://vex.terpalb25.web.id',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
+    }
+
+    // ====================
+    // SERVE PLAYER GLB FILE
+    // ====================
+    public function servePlayerModel()
+    {
+        $path = storage_path('app/public/models/player.glb');
+
+        if (!file_exists($path)) {
+            return response()->json(['error' => 'File tidak ditemukan'], 404);
+        }
+
+        return response()->file($path, [
+            'Content-Type' => 'model/gltf-binary',
+            'Access-Control-Allow-Origin' => 'http://localhost:3000',
             'Cache-Control' => 'public, max-age=86400',
         ]);
     }

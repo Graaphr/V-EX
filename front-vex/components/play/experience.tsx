@@ -7,9 +7,10 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 
 import Booth from "./booth";
 import Player from "./player";
+import CameraSwitcher from "./cameraSwitcher";
 import { sharedTextureLoader } from "@/components/shared/ui/LoadingManager";
 
-import { getHallModel, getKaryaList, getPameranFolder, getGameAssets } from "@/components/play/apiPlay";
+import { getHallModel, getKaryaList, getPameranFolder, getGameAssets, getPlayerModelUrl } from "@/components/play/apiPlay";
 
 type RemotePlayer = {
   id: string;
@@ -154,9 +155,14 @@ function ExperienceInner({
   folder,
 }: Props & { hallModel: string; karyaList: any[]; folder: string }) {
   const [audioUrls, setAudioUrls] = useState({ bgm: "", footstep: "", jump: "" });
+  const [playerModelUrl, setPlayerModelUrl] = useState<string | null>(null);
   const [walking, setWalking] = useState(false);
   const [jumping, setJumping] = useState(false);
   const [remotePlayers, setRemotePlayers] = useState<RemotePlayer[]>([]);
+  // Mode kamera player sendiri (first/third person), di-toggle lewat tombol
+  // C via <CameraSwitcher>. Sebelumnya <Player mode="first" .../> di-hardcode
+  // jadi CameraSwitcher walau ada tidak pernah benar-benar mengubah apa-apa.
+  const [cameraMode, setCameraMode] = useState<"first" | "third">("first");
 
   const isViewingMedia = !controlsLocked;
 
@@ -171,12 +177,18 @@ function ExperienceInner({
   const { scene } = useGLTF(hallModel);
 
   /* ===================== */
-  /* AUDIO                 */
+  /* AUDIO + PLAYER MODEL  */
   /* ===================== */
 
   useEffect(() => {
     getGameAssets()
-      .then((data) => setAudioUrls({ bgm: data.bgm, footstep: data.footstep, jump: data.jump }))
+      .then((data) => {
+        setAudioUrls({ bgm: data.bgm, footstep: data.footstep, jump: data.jump });
+        // Model badan player (player.glb). Lihat getPlayerModelUrl() di
+        // apiPlay.ts: pakai field `player` dari response ini kalau ada,
+        // atau fallback ke path storage default.
+        setPlayerModelUrl(getPlayerModelUrl(data));
+      })
       .catch(() => { });
   }, []);
 
@@ -400,11 +412,16 @@ function ExperienceInner({
       ))}
 
       {remotePlayers.map((player) => (
-        <RemotePlayerMesh key={player.id} player={player} />
+        <RemotePlayerMesh key={player.id} player={player} modelUrl={playerModelUrl} />
       ))}
 
+      {/* Tombol C untuk toggle first/third person. Dikunci (disabled) saat
+          controlsLocked false — mis. lagi lihat poster/video/menu ESC —
+          supaya tombol C nggak nyelonong ganti kamera di tengah UI lain. */}
+      <CameraSwitcher disabled={!controlsLocked} setMode={setCameraMode} />
+
       <Player
-        mode="first"
+        mode={cameraMode}
         controlsLocked={controlsLocked}
         setWalking={setWalking}
         setJumping={setJumping}
@@ -412,12 +429,13 @@ function ExperienceInner({
         lookDelta={lookDelta}
         playerId={playerId}
         playerName={playerName}
+        playerModelUrl={playerModelUrl}
       />
     </>
   );
 }
 
-function RemotePlayerMesh({ player }: { player: RemotePlayer }) {
+function RemotePlayerMesh({ player, modelUrl }: { player: RemotePlayer; modelUrl: string | null }) {
   const groupRef = useRef<THREE.Group>(null!);
   const currentPos = useRef(new THREE.Vector3(player.x, player.y, player.z));
   const targetPos = useRef(new THREE.Vector3(player.x, player.y, player.z));
@@ -439,13 +457,42 @@ function RemotePlayerMesh({ player }: { player: RemotePlayer }) {
 
   return (
     <group ref={groupRef}>
-      <mesh position={[0, -1, 0]}>
-        <capsuleGeometry args={[0.8, 1.8, 4, 8]} />
-        <meshStandardMaterial color="cyan" transparent opacity={0.7} />
-      </mesh>
+      {modelUrl ? (
+        <RemotePlayerModel url={modelUrl} />
+      ) : (
+        // Fallback capsule kalau URL model belum siap / gagal load. Tetap
+        // ditandai isPlayer supaya tidak ikut dianggap collider/lantai oleh
+        // player.tsx (jadi tetap bisa saling tembus walau fallback).
+        <mesh position={[0, -1, 0]} userData={{ isPlayer: true }}>
+          <capsuleGeometry args={[0.8, 1.8, 4, 8]} />
+          <meshStandardMaterial color="cyan" transparent opacity={0.7} />
+        </mesh>
+      )}
       <Text position={[0, 1, 0]} fontSize={0.28} color="black" anchorX="center" anchorY="middle">
         {player.name}
       </Text>
     </group>
   );
+}
+
+// Badan remote player pakai player.glb. Di-clone per instance (bukan pakai
+// scene hasil useGLTF langsung) karena useGLTF men-cache & mengembalikan
+// object3D YANG SAMA untuk URL yang sama — kalau tidak di-clone, semua
+// remote player akan berbagi satu object3D dan cuma yang terakhir mount
+// yang keliatan posisinya benar.
+function RemotePlayerModel({ url }: { url: string }) {
+  const { scene } = useGLTF(url);
+
+  const cloned = useMemo(() => {
+    const clone = scene.clone(true);
+    clone.traverse((obj: any) => {
+      // Tag semua mesh badan player supaya scan collider/floor di
+      // player.tsx otomatis mengabaikannya — ini yang membuat antar player
+      // saling tembus, sementara collider hall/booth tetap menghalangi.
+      obj.userData.isPlayer = true;
+    });
+    return clone;
+  }, [scene]);
+
+  return <primitive object={cloned} position={[0, -1, 0]} />;
 }
