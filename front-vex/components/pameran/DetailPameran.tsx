@@ -23,22 +23,18 @@ interface Status {
 
 export default function PageDetailPameran({ isLogin = false }: Status) {
   const params = useParams();
-  const id = Number(params.id);
+  const slug = params.slug as string;
 
   const [pameran, setPameran] = useState<Pameran | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ─────────────────────────────────────────────────────────
-  // Fetch detail pameran berdasarkan id dari URL
-  // /api/pameran/[id]  →  Next.js route  →  Laravel GET /api/pameran/{id}
-  // ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!id) return;
+    if (!slug) return;
 
     async function load() {
       try {
-        const data = await GetDetailPameran(id);
+        const data = await GetDetailPameran(slug);
 
         if (data.status !== "success")
           throw new Error(data.message ?? "Pameran tidak ditemukan");
@@ -52,7 +48,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
     }
 
     load();
-  }, [id]); // <-- hanya jalan ulang kalau id berubah
+  }, [slug]); // <-- hanya jalan ulang kalau id berubah
 
   // ─── Loading ───
   if (loading) {
@@ -111,7 +107,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
             <div className="md:hidden relative pr-14">
               {isLogin && (
                 <Link
-                  href={`/admin/pameran/edit/${id}`}
+                  href={`/admin/pameran/edit/${pameran.id}`}
                   className="absolute right-0 top-0 bg-white border rounded-full p-2 shadow-md z-20"
                 >
                   <HiPencilAlt size={18} />
@@ -142,7 +138,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
               {/* DESKTOP EDIT */}
               {isLogin && (
                 <Link
-                  href={`/admin/pameran/edit/${id}`}
+                  href={`/admin/pameran/edit/${pameran.id}`}
                   className="absolute right-0 top-0 hidden md:flex bg-white border-2 rounded-full p-2 shadow-lg/10 hover:scale-120 transition-all duration-300"
                 >
                   <HiPencilAlt size={24} />
@@ -166,7 +162,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
               <div className="flex flex-col sm:flex-row gap-4">
                 {isOpen ? (
                   <Button
-                    link={`/exhibition/${id}`}
+                    link={`/exhibition/${pameran.id}`}
                     className="w-full sm:w-auto min-w-[140px] py-5 px-38 flex items-center justify-center rounded-md"
                   >
                     <FaPlay />

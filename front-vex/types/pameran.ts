@@ -67,6 +67,7 @@ export type PameranStats = {
 
 export type Pameran = {
   id: number;
+  slug: string;
   title: string;
   subtitle: string;
   category: string;

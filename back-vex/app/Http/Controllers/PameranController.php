@@ -72,6 +72,7 @@ class PameranController extends Controller
 
         $transformed = $pameran->map(fn($item) => [
             'id' => $item->id_pameran,
+            'slug' => $item->slug,
             'title' => $item->judul,
             'subtitle' => $item->prodi?->nama_prodi ?? $item->kategori,
             'category' => $item->prodi?->nama_prodi ?? $item->kategori,
@@ -112,13 +113,15 @@ class PameranController extends Controller
     }
 
     // =============================
-    // DETAIL PAMERAN
-    // =============================
-    public function show($id)
+// DETAIL PAMERAN (bisa lewat slug ATAU id)
+// =============================
+    public function show($identifier)
     {
         $pameran = Pameran::with(['model3d', 'prodi'])
             ->withCount(['karya', 'suka'])
-            ->find($id);
+            ->where('slug', $identifier)
+            ->orWhere('id_pameran', $identifier)
+            ->first();
 
         if (!$pameran) {
             return response()->json([
@@ -129,6 +132,7 @@ class PameranController extends Controller
 
         $transformed = [
             'id' => $pameran->id_pameran,
+            'slug' => $pameran->slug,
             'title' => $pameran->judul,
             'subtitle' => $pameran->prodi?->nama_prodi ?? $pameran->kategori,
             'kode_prodi' => $pameran->kategori,
