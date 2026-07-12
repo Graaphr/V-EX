@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Karya;
 use App\Models\Komentar;
+use App\Rules\BebasKataKasar;
 use Illuminate\Http\Request;
 
 class KomentarController extends Controller
@@ -48,7 +49,7 @@ class KomentarController extends Controller
         }
 
         $request->validate([
-            'isi_komentar' => 'required|string|max:100',
+            'isi_komentar' => ['required', 'string', 'max:100', new BebasKataKasar()],
         ]);
 
         $komentar = Komentar::create([

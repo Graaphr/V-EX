@@ -1249,8 +1249,13 @@ function PosterViewer({
         setInfo((prev) => ({ ...prev, komentar: [...prev.komentar, { nama, isi }] }));
         setNewComment("");
       }
-    } catch {
-      setCommentError("Gagal mengirim komentar. Coba lagi.");
+    } catch (err: any) {
+      // 422 dari Laravel = gagal validasi (misalnya kata kasar, atau
+      // komentar kosong/kepanjangan). Ambil pesannya kalau ada supaya
+      // user tahu alasan spesifiknya, bukan cuma "gagal kirim".
+      const validasi = err?.response?.data?.errors?.isi_komentar?.[0];
+      const pesanUmum = err?.response?.data?.message;
+      setCommentError(validasi ?? pesanUmum ?? "Gagal mengirim komentar. Coba lagi.");
     } finally {
       setSubmitting(false);
     }
