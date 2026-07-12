@@ -34,7 +34,7 @@ export default function Footer() {
           {/* links */}
           <div className="grid mt-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             <div >
-              <h3 className="font-extrabold text-main-blue mb-3 text-lg sm:text-xl tracking-wider">Solusi</h3>
+              <h3 className="font-extrabold text-main-blue mb-3 text-lg sm:text-xl tracking-wider">Tentang</h3>
               <ul className="text-gray-500 space-y-2 text-sm sm:text-base">
                 <li>
                   <LinkAkses link={'/pameran'} title={'Pameran'} />
