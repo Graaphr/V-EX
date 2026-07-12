@@ -1,4 +1,4 @@
-import { FaLinkedin, FaInstagram, FaYoutube, FaFacebook } from 'react-icons/fa';
+import { FaLinkedin, FaInstagram, FaYoutube } from 'react-icons/fa';
 
 import { LogoWhite, LinkAkses, LinkAksesEks } from '@/components/shared/ui/Components';
 
@@ -37,16 +37,16 @@ export default function Footer() {
               <h3 className="font-extrabold text-main-blue mb-3 text-lg sm:text-xl tracking-wider">Solusi</h3>
               <ul className="text-gray-500 space-y-2 text-sm sm:text-base">
                 <li>
-                  <LinkAkses link={'/'} title={'Pameran'} />
+                  <LinkAkses link={'/pameran'} title={'Pameran'} />
                 </li>
                 <li>
-                  <LinkAkses link={'/'} title={'Stan Pameran'} />
+                  <LinkAkses link={'/#stan'} title={'Stan Pameran'} />
                 </li>
                 <li>
-                  <LinkAkses link={'/'} title={'Karya'} />
+                  <LinkAkses link={'/#karya'} title={'Karya'} />
                 </li>
                 <li>
-                  <LinkAkses link={'/'} title={'Akun'} />
+                  <LinkAkses link={'/#akun'} title={'Akun'} />
                 </li>
               </ul>
             </div>
@@ -55,13 +55,13 @@ export default function Footer() {
               <h3 className="font-extrabold text-main-blue mb-4 text-lg sm:text-xl tracking-wider">Sumber</h3>
               <ul className="text-gray-500 space-y-2 text-sm sm:text-base">
                 <li>
-                  <LinkAkses link={'/'} title={'FAQs'} />
+                  <LinkAkses link={'/faqs'} title={'FAQs'} />
                 </li>
                 <li>
-                  <LinkAkses link={'/'} title={'Petunjuk'} />
+                  <LinkAkses link={'/petunjuk'} title={'Petunjuk'} />
                 </li>
                 <li>
-                  <LinkAkses link={'/'} title={'Pelayanan'} />
+                  <LinkAkses link={'/pelayanan'} title={'Pelayanan'} />
                 </li>
                 {/* <li>
                   <LinkAkses link={'/'} title={'Harga'} />
@@ -73,13 +73,13 @@ export default function Footer() {
               <h3 className="font-extrabold text-main-blue mb-4 text-lg sm:text-xl tracking-wider">Hukum</h3>
               <ul className="text-gray-500 space-y-2 text-sm sm:text-base">
                 <li>
-                  <LinkAksesEks link={'/'} title="Syarat & Ketentuan" />
+                  <LinkAksesEks link={'/syarat-ketentuan'} title="Syarat & Ketentuan" />
                 </li>
                 <li>
-                  <LinkAksesEks link={'/'} title="Kebijakan Privasi" />
+                  <LinkAksesEks link={'/kebijakan-privasi'} title="Kebijakan Privasi" />
                 </li>
                 <li>
-                  <LinkAksesEks link={'https://www.instagram.com/virtualexhibition204/'} title="Hubungi Kami" />
+                  <LinkAksesEks link={'/hubungi-kami'} title="Hubungi Kami" />
                 </li>
               </ul>
             </div>
@@ -87,9 +87,9 @@ export default function Footer() {
 
           {/* social */}
           <div className=" mt-8 lg:mt-9 flex flex-wrap justify-center sm:justify-start lg:justify-end items-center  gap-4 sm:gap-5 text-main-blue">
-            <LinkAksesEks link={'/'}>
+            {/* <LinkAksesEks link={'/'}>
               <FaLinkedin className="w-8 h-8 sm:w-10 sm:h-10 hover:scale-125 transition-all cursor-pointer" />
-            </LinkAksesEks>
+            </LinkAksesEks> */}
             <LinkAksesEks link="https://www.instagram.com/virtualexhibition204/">
               <FaInstagram className="w-8 h-8 sm:w-10 sm:h-10 hover:scale-125 transition-all cursor-pointer" />
             </LinkAksesEks>

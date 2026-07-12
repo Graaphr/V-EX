@@ -26,6 +26,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [password_confirmation, setPasswordConfirmation] = useState('');
+  const [agreed, setAgreed] = useState(false);
 
   const [success, setSuccess] = useState("");
   const [error, setError] = useState('');
@@ -33,6 +34,7 @@ export default function RegisterPage() {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordConfirmationError, setPasswordConfirmationError] = useState('');
+  const [agreedError, setAgreedError] = useState('');
 
   // handle_register
   const handleRegister = async (e: React.FormEvent) => {
@@ -42,6 +44,7 @@ export default function RegisterPage() {
     setEmailError('');
     setPasswordError('');
     setPasswordConfirmationError('');
+    setAgreedError('');
     setSuccess('');
 
     let hasError = false;
@@ -64,6 +67,10 @@ export default function RegisterPage() {
     }
     if (password !== password_confirmation) {
       setPasswordConfirmationError('Password tidak sama!');
+      hasError = true;
+    }
+    if (!agreed) {
+      setAgreedError('Kamu harus menyetujui Syarat & Ketentuan dan Kebijakan Privasi');
       hasError = true;
     }
 
@@ -239,6 +246,45 @@ const boxes = [
             onToggle={() => setShowConfirm((prev) => !prev)}
             minLength={8}
           />
+
+          {/* Persetujuan Syarat & Ketentuan + Kebijakan Privasi */}
+          <div className="pt-1">
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => {
+                  setAgreed(e.target.checked);
+                  setAgreedError('');
+                }}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-main-blue cursor-pointer"
+              />
+              <span className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                Saya setuju dengan{' '}
+                <a
+                  href="/syarat-ketentuan"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-main-blue font-medium underline underline-offset-2 hover:text-main-blue/80"
+                >
+                  Syarat & Ketentuan
+                </a>{' '}
+                dan{' '}
+                <a
+                  href="/kebijakan-privasi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-main-blue font-medium underline underline-offset-2 hover:text-main-blue/80"
+                >
+                  Kebijakan Privasi
+                </a>{' '}
+                yang berlaku.
+              </span>
+            </label>
+            {agreedError && <p className="mt-1.5 text-xs text-red-500">{agreedError}</p>}
+          </div>
 
           <div className="w-full mt-8 border-b-2 border-gray-300 pb-8">
             <ButtonPutih onClick={handleRegister} disabled={isLoading} className="w-full py-3 rounded-lg font-bold">

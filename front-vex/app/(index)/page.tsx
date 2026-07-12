@@ -14,7 +14,7 @@ export default function HomePage() {
   const [karyaTerbaik, setKaryaTerbaik] = useState<CarouselKaryaItem[]>([]);
   const [karyaFavorit, setKaryaFavorit] = useState<CarouselKaryaItem[]>([]);
   const tutorialLink = '/';
-  
+
   useEffect(() => {
     GetKaryaTerbaikAktif()
       .then((data) => {
@@ -44,9 +44,9 @@ export default function HomePage() {
 
               <div className="aspect-video rounded-md overflow-hidden shadow-[0px_0px_8px_2px_rgba(0,0,0,0.25)]">
                 <iframe
-                  src="https://www.youtube.com/embed/Gdq5k6fmuK0?si=gwPbWVPc5CKjnWtk"
+                  src="https://www.youtube.com/embed/bLdFe6G7OC8?si=GZeAFFL7zB47tmud"
                   className="w-full h-full"
-                  title="Demo V-Ex"
+                  title="Demo V-EX"
                   allowFullScreen
                 />
               </div>
@@ -65,7 +65,7 @@ export default function HomePage() {
       </section>
 
       {/* SECTION 2 - Tampilkan Karyamu */}
-      <section className="bg-secondary-color w-full">
+      <section id="karya" className="bg-secondary-color w-full scroll-mt-24">
         <div className="autoMid px-4 sm:px-6 lg:px-[20px] py-[80px] lg:py-[180px] min-h-[740px] grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
           <div className="relative order-1 lg:order-2 w-full">
             <Card link="/image/BG1.svg" title="lobby" className="w-full h-full object-cover rounded-xl" />
@@ -93,9 +93,9 @@ export default function HomePage() {
               </div>
             </div>
 
-            <Button 
-            link={tutorialLink}
-            className="w-[50%] px-10 sm:px-14 lg:px-18 py-2 lg:py-3 rounded-md hover:scale-102 duration-500">
+            <Button
+              link={tutorialLink}
+              className="w-[50%] px-10 sm:px-14 lg:px-18 py-2 lg:py-3 rounded-md hover:scale-102 duration-500">
               Tutorial
             </Button>
           </div>
@@ -103,7 +103,7 @@ export default function HomePage() {
       </section>
 
       {/* SECTION 3 - Pilih Stan */}
-      <section className="bg-secondary-color w-full">
+      <section id="stan" className="bg-secondary-color w-full scroll-mt-24">
         <div className="autoMid py-[60px] min-h-[740px] flex flex-col gap-10 px-4 sm:px-6 lg:px-0">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-end w-full pb-6 lg:pb-10">
             <div className="order-2 lg:order-1 flex items-end">
@@ -220,7 +220,7 @@ export default function HomePage() {
       </section>
 
       {/* SECTION 7 - CTA */}
-      <section className="bg-white w-full">
+      <section id="akun" className="bg-white w-full scroll-mt-24">
         <div className="autoMid min-h-[460px] py-[48px] px-4 sm:px-6 lg:px-0 grid grid-cols-1 lg:grid-cols-10 gap-10 lg:gap-20 items-start">
           <div className="order-1 lg:order-2 lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
             <Card
