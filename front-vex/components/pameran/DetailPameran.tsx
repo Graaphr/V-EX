@@ -17,13 +17,16 @@ import { useParams } from "next/navigation";
 import { Button } from "../shared/ui/Button";
 import { Pameran } from "@/types/pameran";
 import { GetDetailPameran } from "./apiPameran";
+
 interface Status {
   isLogin?: boolean;
+ 
 }
 
 export default function PageDetailPameran({ isLogin = false }: Status) {
+  // SESUDAH (sesuai nama folder [slug] yang sebenarnya)
   const params = useParams();
-  const slug = params.slug as string;
+  const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
 
   const [pameran, setPameran] = useState<Pameran | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +37,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
 
     async function load() {
       try {
-        const data = await GetDetailPameran(slug);
+        const data = await GetDetailPameran(slug as string);
 
         if (data.status !== "success")
           throw new Error(data.message ?? "Pameran tidak ditemukan");
@@ -48,7 +51,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
     }
 
     load();
-  }, [slug]); // <-- hanya jalan ulang kalau id berubah
+  }, [slug]); // <-- hanya jalan ulang kalau slug berubah
 
   // ─── Loading ───
   if (loading) {
@@ -87,6 +90,15 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
   closeDate.setHours(23, 59, 59, 999);
   const isOpen = today >= openDate && today <= closeDate;
 
+  // console.log("DEBUG STATUS PAMERAN:", {
+  //   raw_startDate: stats.startDate,
+  //   raw_endDate: stats.endDate,
+  //   today: today.toString(),
+  //   openDate: openDate.toString(),
+  //   closeDate: closeDate.toString(),
+  //   isOpen,
+  // });
+
   return (
     <div className="min-h-screen bg-gray-50 font-poppins text-gray-800 select-none">
       <main className="relative pb-16 bg-white">
@@ -104,19 +116,19 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
         <div className="autoMid relative z-10 py-6 md:py-8">
           <div className="flex flex-col md:flex-row gap-8 relative">
             {/* MOBILE TITLE + EDIT */}
-            <div className="md:hidden relative pr-14">
-              {isLogin && (
-                <Link
-                  href={`/admin/pameran/edit/${pameran.id}`}
-                  className="absolute right-0 top-0 bg-white border rounded-full p-2 shadow-md z-20"
-                >
-                  <HiPencilAlt size={18} />
-                </Link>
-              )}
-              <div className="flex items-center gap-4">
-                <h1 className="text-4xl font-extrabold uppercase">{title}</h1>
-                <StatusBadge isOpen={isOpen} />
+            <div className="md:hidden relative pr-16">
+              <div className="absolute right-0 top-0 flex items-center gap-2 z-20">
+              
+                {isLogin && (
+                  <Link
+                    href={`/admin/pameran/edit/${pameran.slug}`}
+                    className="bg-white border rounded-full p-2 shadow-md"
+                  >
+                    <HiPencilAlt size={18} />
+                  </Link>
+                )}
               </div>
+              <h1 className="text-4xl font-extrabold uppercase">{title}  <StatusBadge isOpen={isOpen} /></h1>
               <p className="text-gray-500 text-sm mt-1">{subtitle}</p>
               <div className="flex items-center gap-4 text-gray-600 mt-2 text-sm">
                 <FaRegCalendarAlt className="text-main-blue" />
@@ -138,7 +150,7 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
               {/* DESKTOP EDIT */}
               {isLogin && (
                 <Link
-                  href={`/admin/pameran/edit/${pameran.id}`}
+                  href={`/admin/pameran/edit/${pameran.slug}`}
                   className="absolute right-0 top-0 hidden md:flex bg-white border-2 rounded-full p-2 shadow-lg/10 hover:scale-120 transition-all duration-300"
                 >
                   <HiPencilAlt size={24} />
@@ -162,13 +174,13 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
               <div className="flex flex-col sm:flex-row gap-4">
                 {isOpen ? (
                   <Button
-                    link={`/exhibition/${pameran.id}`}
-                    className="w-full sm:w-auto min-w-[140px] py-5 px-38 flex items-center justify-center rounded-md"
+                    link={`/exhibition/${pameran.slug}`}
+                    className="w-full sm:w-auto min-w-[100%] py-5 px-38 flex items-center justify-center rounded-md"
                   >
                     <FaPlay />
                   </Button>
                 ) : (
-                  <div className="w-full sm:w-auto min-w-[140px] py-5 px-38 bg-gray-300 text-gray-500 rounded-md flex justify-center items-center">
+                  <div className="w-full sm:w-auto min-w-[100%] py-5 px-38 bg-gray-300 text-gray-500 rounded-md flex justify-center items-center">
                     <FaPlay />
                   </div>
                 )}
@@ -201,9 +213,15 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
           <div className="mt-12 flex justify-end items-center gap-10">
             <p className="font-bold text-main-blue">{institution}</p>
             <div className="flex gap-4 text-main-blue text-2xl">
-              <FaInstagram href="#" />
-              <FaYoutube href="#" />
-              <FaFacebookSquare href="#" />
+              <a href="#" target="_blank" rel="noopener noreferrer">
+                <FaInstagram />
+              </a>
+              <a href="#" target="_blank" rel="noopener noreferrer">
+                <FaYoutube />
+              </a>
+              <a href="#" target="_blank" rel="noopener noreferrer">
+                <FaFacebookSquare />
+              </a>
             </div>
           </div>
 
@@ -251,9 +269,8 @@ function Row({ title, value }: { title: string; value: any }) {
 function StatusBadge({ isOpen }: { isOpen: boolean }) {
   return (
     <div
-      className={`flex items-center gap-1.5 w-8 h-8 px-2.5 py-1 rounded-full text-white text-xs font-semibold ${
-        isOpen ? "bg-green-500" : "bg-red-500"
-      }`}
+      className={`flex items-center gap-1.5 w-8 h-8 px-2.5 py-1 rounded-full text-white text-xs font-semibold ${isOpen ? "bg-green-500" : "bg-red-500"
+        }`}
     >
       {isOpen ? <FaLockOpen size={12} /> : <FaLock size={12} />}
     </div>

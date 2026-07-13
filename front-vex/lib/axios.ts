@@ -1,11 +1,11 @@
 import axios from "axios";
 
 const url = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: "https://vex.terpalb25.web.id",
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
-  },
+  }, withCredentials: true,
 });
 
 url.interceptors.request.use((config) => {

@@ -29,67 +29,84 @@ export default function Navbar({ menuItems }: NavbarProps) {
 
   const { user, logout, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <nav className="bg-white px-6 shadow-sm">
-        <div className="autoMid flex h-[70px] items-center justify-between">
-          <div className="flex animate-pulse items-center gap-3">
-            <div className="h-10 w-30 rounded bg-gray-200" />
-          </div>
-          <div className="hidden md:flex animate-pulse items-center gap-6">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <div className="h-4 w-28 rounded bg-gray-200" />
-                <div className="h-2 w-16 rounded bg-gray-200" />
-              </div>
-            ))}
-          </div>
-          <div className="flex animate-pulse items-center gap-3">
-            <div className="hidden sm:block h-9 w-24 rounded bg-gray-200" />
-            <div className="h-9 w-9 rounded-full bg-gray-200" />
-          </div>
-        </div>
-      </nav>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <nav className="bg-white px-6 shadow-sm">
+  //       <div className="autoMid flex h-[70px] items-center justify-between">
+  //         <div className="flex animate-pulse items-center gap-3">
+  //           <div className="h-10 w-30 rounded bg-gray-200" />
+  //         </div>
+  //         <div className="hidden md:flex animate-pulse items-center gap-6">
+  //           {Array.from({ length: 3 }).map((_, i) => (
+  //             <div key={i} className="space-y-2">
+  //               <div className="h-4 w-28 rounded bg-gray-200" />
+  //               <div className="h-2 w-16 rounded bg-gray-200" />
+  //             </div>
+  //           ))}
+  //         </div>
+  //         <div className="flex animate-pulse items-center gap-3">
+  //           <div className="hidden sm:block h-9 w-24 rounded bg-gray-200" />
+  //           <div className="h-9 w-9 rounded-full bg-gray-200" />
+  //         </div>
+  //       </div>
+  //     </nav>
+  //   );
+  // }
 
   const isLogin = !!user;
 
-  const resolvedMenu: NavItem[] = user?.role === 'Admin'
-    ? [
-        { title: 'BERANDA', subtitle: 'UTAMA', link: '/' },
-        { title: 'PAMERAN', subtitle: '3D BOOTH', link: '/admin/pameran' },
-        { title: 'DASHBOARD', subtitle: 'ADMIN', link: '/admin/pengguna' },
-      ]
-    : user?.role === 'Ketua PBL'
-    ? [
-        { title: 'BERANDA', subtitle: 'UTAMA', link: '/' },
-        { title: 'PAMERAN', subtitle: '3D BOOTH', link: '/pameran' },
-        { title: 'DASHBOARD', subtitle: 'KETUA PBL', link: '/ketua-pbl/karya' },
-      ]
-    : user?.role === 'KPS'
-    ? [
-        { title: 'BERANDA', subtitle: 'UTAMA', link: '/' },
-        { title: 'PAMERAN', subtitle: '3D BOOTH', link: '/pameran' },
-        { title: 'DASHBOARD', subtitle: 'KPS', link: '/kps/karya' },
-      ]
-    : menuItems ?? [];
+const defaultMenu: NavItem[] = [
+  { title: 'BERANDA', subtitle: 'UTAMA', link: '/' },
+  { title: 'PAMERAN', subtitle: '3D BOOTH', link: '/pameran' },
+];
 
+const resolvedMenu: NavItem[] = loading
+  ? defaultMenu
+  : user?.role === 'Admin'
+  ? [
+      { title: 'BERANDA', subtitle: 'UTAMA', link: '/' },
+      { title: 'PAMERAN', subtitle: '3D BOOTH', link: '/admin/pameran' },
+      { title: 'DASHBOARD', subtitle: 'ADMIN', link: '/admin/pengguna' },
+    ]
+  : user?.role === 'Ketua PBL'
+  ? [
+      { title: 'BERANDA', subtitle: 'UTAMA', link: '/' },
+      { title: 'PAMERAN', subtitle: '3D BOOTH', link: '/pameran' },
+      { title: 'DASHBOARD', subtitle: 'KETUA PBL', link: '/ketua-pbl/karya' },
+    ]
+  : user?.role === 'KPS'
+  ? [
+      { title: 'BERANDA', subtitle: 'UTAMA', link: '/' },
+      { title: 'PAMERAN', subtitle: '3D BOOTH', link: '/pameran' },
+      { title: 'DASHBOARD', subtitle: 'KPS', link: '/kps/karya' },
+    ]
+  : menuItems ?? defaultMenu;
   // ===== AUTH DESKTOP =====
-  const AuthDesktop = () =>
-    isLogin ? (
-      <button
-        onClick={() => setOpenProfile(true)}
-        className="w-10 h-10 flex items-center justify-center rounded-full bg-main-blue text-white hover:scale-110 transition-all duration-300 shadow-md"
-      >
-        <FaUser size={24} className="rounded-full" />
-      </button>
-    ) : (
-      <Button link="/login" className="px-5 py-2 text-sm font-bold rounded-md hover:scale-110 transition">
-        Masuk
-      </Button>
-    );
+const AuthDesktop = () => {
+  if (loading) {
+    return (
 
+      <div className="px-5 py-2 w-20 h-10 rounded-md bg-gray-200 animate-pulse" />
+       
+    );
+  }
+
+  return isLogin ? (
+    <button
+      onClick={() => setOpenProfile(true)}
+      className="w-10 h-10 flex items-center justify-center rounded-full bg-main-blue text-white hover:scale-110 transition-all duration-300 shadow-md"
+    >
+      <FaUser size={24} className="rounded-full" />
+    </button>
+  ) : (
+    <Button
+      link="/login"
+      className="px-5 py-2 text-sm font-bold rounded-md hover:scale-110 transition"
+    >
+      Masuk
+    </Button>
+  );
+};
   // ===== AUTH MOBILE =====
   const AuthMobile = () =>
     isLogin ? (
@@ -129,6 +146,7 @@ export default function Navbar({ menuItems }: NavbarProps) {
           </div>
 
           {/* AUTH DESKTOP */}
+
           <div className="hidden lg:block">
             <AuthDesktop />
           </div>
@@ -154,7 +172,6 @@ export default function Navbar({ menuItems }: NavbarProps) {
         </div>
       </nav>
 
-
       {/* PROFILE SIDEBAR */}
       <div
         className={`fixed inset-0 z-50 transition-all duration-300 ${
@@ -166,22 +183,31 @@ export default function Navbar({ menuItems }: NavbarProps) {
 
         {/* DRAWER */}
         <div
-          className={`absolute top-0 right-0 min-h-[400px] w-[700px] sm:w-[320px] bg-white shadow-2xl p-4 transform transition-transform duration-300 rounded-l-xl
-          ${openProfile ? 'translate-x-0' : 'translate-x-full'}`}
+          className={`fixed top-0 right-0 z-60
+  h-screen w-[85%] max-w-[380px]
+  bg-white shadow-2xl p-4
+  transform transition-transform duration-300
+  rounded-l-2xl
+  ${openProfile ? 'translate-x-0' : 'translate-x-full'}`}
         >
-          <div className="flex flex-col h-100">
+          <div className="flex flex-col h-full">
             {/* HEADER */}
-            <div className="flex items-center justify-between border-b pb-3 select-none">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-main-blue flex items-center justify-center text-white">
+            <div className="flex items-center justify-between border-b pb-4 select-none">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="w-12 h-12 rounded-full bg-main-blue flex items-center justify-center text-white shrink-0">
                   <FaUser size={20} className="rounded-full" />
                 </div>
-                <div>
-                  <p className="font-semibold">{user?.nama || 'User'}</p>
-                  <p className="text-xs text-gray-500 truncate max-w-[170px]">{user?.email || 'user@mail.com'}</p>
+
+                <div className="overflow-hidden">
+                  <p className="font-semibold text-sm sm:text-base truncate">{user?.nama || 'User'}</p>
+
+                  <p className="text-xs text-gray-500 truncate max-w-[180px] sm:max-w-[220px]">
+                    {user?.email || 'user@mail.com'}
+                  </p>
                 </div>
               </div>
-              <button className="cursor-pointer" onClick={() => setOpenProfile(false)}>
+
+              <button className="cursor-pointer shrink-0" onClick={() => setOpenProfile(false)}>
                 <HiX size={24} />
               </button>
             </div>
@@ -190,16 +216,18 @@ export default function Navbar({ menuItems }: NavbarProps) {
             <div className="flex flex-col mt-4">
               <Link
                 href="/ganti-password"
-                className="p-3 flex items-center gap-3 hover:bg-gray-100 transition border-b-2"
+                className="p-3 flex items-center gap-3 hover:bg-gray-100 transition border-b rounded-lg"
               >
                 <FaLock size={18} />
-                Ganti Kata Sandi
+                <span className="text-sm sm:text-base">Ganti Kata Sandi</span>
               </Link>
-            </div>
-            <div className="flex flex-col mt-4">
-              <Link href="/ganti-email" className="p-3 flex items-center gap-3 hover:bg-gray-100 transition border-b-2">
+
+              <Link
+                href="/ganti-email"
+                className="p-3 flex items-center gap-3 hover:bg-gray-100 transition border-b rounded-lg mt-2"
+              >
                 <HiOutlineMail size={22} />
-                Ganti Email
+                <span className="text-sm sm:text-base">Ganti Email</span>
               </Link>
             </div>
 
@@ -207,12 +235,15 @@ export default function Navbar({ menuItems }: NavbarProps) {
             <div className="mt-auto pt-4 border-t">
               <button
                 onClick={() => {
+                  const yakin = confirm('Apakah anda yakin ?');
+
+                  if (!yakin) return;
+
                   logout();
                   setOpenProfile(false);
-                  confirm('Apakah anda yakin ?');
                   router.push('/');
                 }}
-                className="w-full p-3 flex items-center justify-center gap-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition active:scale-95"
+                className="w-full p-3 flex items-center justify-center gap-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition active:scale-95 text-sm sm:text-base"
               >
                 <FiLogOut />
                 Logout

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GetModelStan, GetStanTersedia } from "@/components/karya/apiKarya"; // ← tambah GetStanTersedia
+import { GetModelStan, GetStanTersedia } from "@/components/karya/apiKarya";
 
 interface StanOption {
   id_model: number;
@@ -10,8 +10,9 @@ interface StanOption {
 
 interface Props {
   pameranId?: number;
-  booth: string;
-  onChange: (value: string) => void;
+  booth: string; // id_stan — dipakai untuk cari nomor urut (readOnly)
+  modelStan: string; // id_model — dipakai untuk value select (edit)
+  onChange: (value: string) => void; // mengubah modelStan
   error?: string;
   readOnly?: boolean;
 }
@@ -29,6 +30,7 @@ function Label({ text, required }: { text: string; required?: boolean }) {
 
 export default function DetailPreview({
   booth,
+  modelStan,
   pameranId,
   onChange,
   error,
@@ -37,12 +39,11 @@ export default function DetailPreview({
   const [modelList, setModelList] = useState<StanOption[]>([]);
   const [loadingModel, setLoadingModel] = useState(false);
 
-  // ← BARU: nomor urut stan (1, 2, 3...) khusus untuk tampilan readOnly
   const [stanNomor, setStanNomor] = useState<number | null>(null);
   const [loadingNomor, setLoadingNomor] = useState(false);
 
   useEffect(() => {
-    if (readOnly) return; // skip fetch model catalog kalau KPS/Admin/locked
+    if (readOnly) return;
 
     const fetchModel = async () => {
       setLoadingModel(true);
@@ -59,7 +60,7 @@ export default function DetailPreview({
     fetchModel();
   }, [readOnly]);
 
-  // ← BARU: khusus readOnly, cari nomor urut stan berdasarkan pameranId + booth
+  // Khusus readOnly: cari nomor urut stan berdasarkan pameranId + booth (id_stan)
   useEffect(() => {
     if (!readOnly || !pameranId || !booth) {
       setStanNomor(null);
@@ -84,8 +85,9 @@ export default function DetailPreview({
     fetchStanNomor();
   }, [readOnly, pameranId, booth]);
 
+  // Select edit dicocokkan berdasarkan modelStan (id_model), BUKAN booth
   const selectedModel = modelList.find(
-    (m) => String(m.id_model) === String(booth),
+    (m) => String(m.id_model) === String(modelStan),
   );
 
   return (
@@ -98,13 +100,15 @@ export default function DetailPreview({
         <img
           src={
             selectedModel
-              ? `/image/${encodeURIComponent(selectedModel.nama_model)}.svg`
-              : "/image/Stan A.svg"
+              ? `/image/img-${selectedModel.nama_model
+                  .toLowerCase()
+                  .replace(/\s+/g, "-")}.svg`
+              : "/image/img-stan-a.svg"
           }
           alt="booth"
           className="h-full w-full object-contain p-4"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = "/image/img-stan1.svg";
+            (e.target as HTMLImageElement).src = "/image/img-stan-a.svg";
           }}
         />
       </div>
@@ -129,7 +133,7 @@ export default function DetailPreview({
           <div className="mt-1.5 h-10 animate-pulse rounded-lg bg-gray-100" />
         ) : (
           <select
-            value={booth ?? ""}
+            value={modelStan ?? ""}
             onChange={(e) => onChange(e.target.value)}
             className={`${inputClass} ${
               error

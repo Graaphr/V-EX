@@ -194,7 +194,7 @@ export default function ExhibitionPage() {
   // Ref ke elemen <canvas> Three.js — dipakai buat manual re-lock pointer
   // setelah modal (poster/video/menu) ditutup, karena exitPointerLock()
   // saat modal dibuka tidak otomatis di-lock lagi begitu modal ditutup.
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const relockRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -494,11 +494,11 @@ export default function ExhibitionPage() {
             </button>
             <button
               onClick={async () => {
-                await fetch(`/api/player?id=${playerId}`, { method: "DELETE" });
+                await fetch(`/api-internal/player?id=${playerId}`, { method: "DELETE" });
                 sessionStorage.removeItem("playerId");
                 sessionStorage.removeItem("playerName");
                 document.cookie = "username=; path=/; max-age=0"; // ← tambah ini
-                router.push(`/pameran/${id}`);
+                router.back();
               }}
               className="w-full h-12 rounded-xl bg-red-500 font-bold"
             >
@@ -641,9 +641,6 @@ export default function ExhibitionPage() {
                   </div>
                   <div className="flex items-center bg-white/5 rounded-xl p-3">
                     <span className="text-white/70">Ketuk objek untuk berinteraksi</span>
-                  </div>
-                  <div className="flex items-center bg-white/5 rounded-xl p-3">
-                    <span className="text-white/70">Tombol 🎥 di pojok kanan atas untuk ganti sudut pandang, ☰ untuk buka menu</span>
                   </div>
                 </>
               )}
@@ -1252,8 +1249,13 @@ function PosterViewer({
         setInfo((prev) => ({ ...prev, komentar: [...prev.komentar, { nama, isi }] }));
         setNewComment("");
       }
-    } catch {
-      setCommentError("Gagal mengirim komentar. Coba lagi.");
+    } catch (err: any) {
+      // 422 dari Laravel = gagal validasi (misalnya kata kasar, atau
+      // komentar kosong/kepanjangan). Ambil pesannya kalau ada supaya
+      // user tahu alasan spesifiknya, bukan cuma "gagal kirim".
+      const validasi = err?.response?.data?.errors?.isi_komentar?.[0];
+      const pesanUmum = err?.response?.data?.message;
+      setCommentError(validasi ?? pesanUmum ?? "Gagal mengirim komentar. Coba lagi.");
     } finally {
       setSubmitting(false);
     }

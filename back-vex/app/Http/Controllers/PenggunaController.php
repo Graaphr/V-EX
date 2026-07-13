@@ -263,7 +263,7 @@ class PenggunaController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Email atau password salah.'
-                ], 401);
+                ], 404);
             }
 
             if (in_array($user->role, [Pengguna::ROLE_KPS, Pengguna::ROLE_KETUA_PBL])) {
@@ -297,8 +297,9 @@ class PenggunaController extends Controller
 
             return response()->json([
                 'status' => 'success',
+                'message' => 'Berhasil masuk ke akun',
                 'role' => $user->role,
-                'redirect_to' => $redirectTo,
+                'redirect' => $redirectTo,
                 'token' => $token,
                 'user' => [
                     'id' => $user->id,

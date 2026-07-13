@@ -9,6 +9,16 @@ use App\Models\Pameran;
 
 class GameAssetController extends Controller
 {
+    // =============================
+    // HELPER: Resolve pameran dari slug ATAU id
+    // =============================
+    private function resolvePameran(string $identifier): ?Pameran
+    {
+            return Pameran::with('model3d')
+                ->where('slug', $identifier) 
+                ->first();
+    }
+
     // ==============
     // GET AUDIO PATH
     // ==============
@@ -27,7 +37,8 @@ class GameAssetController extends Controller
     // ====================
     public function serveBoothModel($filename)
     {
-        $path = storage_path('app/public/models/' . $filename);
+        $safeFilename = basename($filename); // proteksi path traversal
+        $path = storage_path('app/public/models/' . $safeFilename);
 
         if (!file_exists($path)) {
             return response()->json(['error' => 'File tidak ditemukan'], 404);
@@ -35,7 +46,7 @@ class GameAssetController extends Controller
 
         return response()->file($path, [
             'Content-Type' => 'model/gltf-binary',
-            'Access-Control-Allow-Origin' => 'http://localhost:3000',
+            'Access-Control-Allow-Origin' => 'https://vex.terpalb25.web.id',
             'Cache-Control' => 'public, max-age=86400',
         ]);
     }
@@ -61,9 +72,13 @@ class GameAssetController extends Controller
     // ===================
     // SERVE HALL GLB FILE
     // ===================
-    public function serveHallModel($modelId)
+    public function serveHallModel($identifier)
     {
-        $pameran = Pameran::with('model3d')->findOrFail($modelId);
+        $pameran = $this->resolvePameran($identifier);
+
+        if (!$pameran) {
+            return response()->json(['error' => 'Pameran tidak ditemukan'], 404);
+        }
 
         if (!$pameran->model3d) {
             return response()->json(['error' => 'Model tidak ditemukan'], 404);
@@ -78,7 +93,7 @@ class GameAssetController extends Controller
 
         return response()->file($path, [
             'Content-Type' => 'model/gltf-binary',
-            'Access-Control-Allow-Origin' => 'http://localhost:3000',
+            'Access-Control-Allow-Origin' => 'https://vex.terpalb25.web.id',
             'Cache-Control' => 'public, max-age=86400',
         ]);
     }
@@ -86,30 +101,44 @@ class GameAssetController extends Controller
     // ==============
     // AMBIL 3D MODEL
     // ==============
-    public function get3DModel($modelId)
+    public function get3DModel($identifier)
     {
-        $pameran = Pameran::with('model3d')->findOrFail($modelId);
+        $pameran = $this->resolvePameran($identifier);
+
+        if (!$pameran) {
+            return response()->json(['error' => 'Pameran tidak ditemukan'], 404);
+        }
 
         if (!$pameran->model3d) {
             return response()->json(['error' => 'Model tidak ditemukan'], 404);
         }
 
         return response()->json([
-            'model_hall' => "http://localhost:8000/api/experience/hall-model/{$modelId}",
+            // pakai identifier yang sama persis yang dikirim client (slug atau id),
+            // supaya endpoint hall-model juga bisa resolve dengan cara yang sama
+            'model_hall' => "https://vex.terpalb25.web.id/api/experience/hall-model/{$identifier}",
         ]);
     }
 
     // ==========================
     // AMBIL KARYA DI TABEL KARYA
     // ==========================
-    public function karyaByPameran($id_pameran)
+    public function karyaByPameran($identifier)
     {
+        $pameran = $this->resolvePameran($identifier);
+
+        if (!$pameran) {
+            return response()->json(['error' => 'Pameran tidak ditemukan'], 404);
+        }
+
+        $idPameran = $pameran->id_pameran; // selalu pakai id numerik untuk query relasi
+
         $karyas = DB::table('karya')
             ->leftJoin('stan', 'karya.id_stan', '=', 'stan.id_stan')
             ->leftJoin('model', 'stan.model_stan', '=', 'model.id_model')
             ->leftJoin('pengguna', 'karya.id_pengguna', '=', 'pengguna.id')
             ->leftJoin('kelas', 'pengguna.kelas', '=', 'kelas.id_kelas')
-            ->where('karya.id_pameran', $id_pameran)
+            ->where('karya.id_pameran', $idPameran)
             ->select(
                 'karya.id_karya',
                 'karya.id_stan',
@@ -122,32 +151,34 @@ class GameAssetController extends Controller
                 'karya.lantai',
                 'karya.is_terbaik',
                 'model.nama_model as nama_stan',
-                'model.3d_model as booth_model',
+                DB::raw('model.`3d_model` as booth_model'),
                 'kelas.nama_kelas as zona'
             )
             ->orderBy('karya.id_karya')
             ->get();
 
-        // Setelah get semua karya, hitung total suka per karya
-        $sukaCount = $karyas->mapWithKeys(function ($k) {
-            return [$k->id_karya => DB::table('suka')->where('id_karya', $k->id_karya)->count()];
-        });
+        $karyaIds = $karyas->pluck('id_karya');
+
+        $sukaCount = DB::table('suka')
+            ->whereIn('id_karya', $karyaIds)
+            ->select('id_karya', DB::raw('count(*) as total'))
+            ->groupBy('id_karya')
+            ->pluck('total', 'id_karya');
 
         $maxSuka = $sukaCount->max();
         $idTerbanyak = $maxSuka > 0 ? $sukaCount->search($maxSuka) : null;
 
-        $result = $karyas->map(function ($karya) use ($idTerbanyak) {
-            $totalSuka = DB::table('suka')
-                ->where('id_karya', $karya->id_karya)
-                ->count();
+        $komentarSemua = DB::table('komentar')
+            ->leftJoin('pengguna', 'komentar.id_pengguna', '=', 'pengguna.id')
+            ->whereIn('komentar.id_karya', $karyaIds)
+            ->select('komentar.id_karya', 'pengguna.nama', 'komentar.isi_komentar')
+            ->get()
+            ->groupBy('id_karya');
 
+        $result = $karyas->map(function ($karya) use ($idTerbanyak, $sukaCount, $komentarSemua) {
+            $totalSuka = $sukaCount->get($karya->id_karya, 0);
 
-
-            $komentar = DB::table('komentar')
-                ->leftJoin('pengguna', 'komentar.id_pengguna', '=', 'pengguna.id')
-                ->where('komentar.id_karya', $karya->id_karya)
-                ->select('pengguna.nama', 'komentar.isi_komentar')
-                ->get()
+            $komentar = ($komentarSemua->get($karya->id_karya) ?? collect())
                 ->map(fn($k) => [
                     'nama' => $k->nama ?? 'Anonim',
                     'isi' => $k->isi_komentar,
@@ -163,12 +194,10 @@ class GameAssetController extends Controller
                 'judul' => $karya->judul,
                 'deskripsi' => $karya->deskripsi,
                 'tautan' => $karya->tautan,
-                'poster' => $karya->gambar_poster
-                    ? '/storage/' . $karya->gambar_poster
-                    : null,
+                'poster' => $karya->gambar_poster ? '/storage/' . $karya->gambar_poster : null,
                 'sampul' => $this->getYoutubeThumbnail($karya->tautan),
                 'model_path' => $boothModel
-                    ? "http://localhost:8000/api/experience/booth-model/" . basename($boothModel)
+                    ? "https://vex.terpalb25.web.id/api/experience/booth-model/" . basename($boothModel)
                     : null,
                 'lantai' => $karya->lantai,
                 'is_terbaik' => (bool) $karya->is_terbaik,
@@ -186,11 +215,9 @@ class GameAssetController extends Controller
     // ========================
     private function getYoutubeThumbnail($url)
     {
-        if (!$url)
-            return null;
+        if (!$url) return null;
 
         $videoId = null;
-
         parse_str(parse_url($url, PHP_URL_QUERY), $query);
 
         if (isset($query['v'])) {
@@ -201,9 +228,12 @@ class GameAssetController extends Controller
             $videoId = $matches[1];
         }
 
-        if (!$videoId)
-            return null;
+        if (!$videoId && preg_match('/youtube\.com\/shorts\/([^\?&]+)/', $url, $matches)) {
+            $videoId = $matches[1];
+        }
 
-        return "https://img.youtube.com/vi/{$videoId}/maxresdefault.jpg";
+        if (!$videoId) return null;
+
+        return "https://img.youtube.com/vi/{$videoId}/hqdefault.jpg";
     }
 }

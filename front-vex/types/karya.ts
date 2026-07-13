@@ -12,6 +12,7 @@ export interface KaryaItem {
   thumbnail?: string;
   thumbnailMedium?: string;
   booth?: string;
+  modelStan?: string;
   pameranId?: number;
   pameranTitle?: string;
   isTerbaik?: boolean;

@@ -255,7 +255,7 @@ function ExperienceInner({
 
     const load = async () => {
       try {
-        const res = await fetch("/api/player");
+        const res = await fetch("/api-internal/player");
         const data: RemotePlayer[] = await res.json();
         if (cancelled) return;
 
@@ -561,8 +561,8 @@ function ThirdPersonInteract({
     if (!onHintChange) return;
     const label = target
       ? target.data.type === "video"
-        ? `Tonton video — ${target.data.boothName}`
-        : `Lihat poster — ${target.data.boothName}`
+        ? `Tonton video`
+        : `Lihat poster`
       : null;
 
     if (label !== lastHintRef.current) {
@@ -638,7 +638,7 @@ function RemotePlayerMesh({ player, modelUrl }: { player: RemotePlayer; modelUrl
           Sebelumnya Text ikut muter bareng badan, jadi kelihatan kepotong/
           kebalik pas karakter nengok ke arah tertentu. */}
       <Billboard position={[0, 1, 0]}>
-        <Text fontSize={0.28} color="black" anchorX="center" anchorY="middle">
+        <Text fontSize={0.28} color="red" anchorX="center" anchorY="middle">
           {player.name}
         </Text>
       </Billboard>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "@/app/globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import BackToTop from '@/components/shared/ui/BackToTop';
 
 export const metadata: Metadata = {
     title: "V-EX",
@@ -17,6 +18,7 @@ export default function IndexLayout({ children }: { children: React.ReactNode })
         <div>
             <Navbar menuItems={userMenu} />
             {children}
+            <BackToTop />
             <Footer />
         </div>
 

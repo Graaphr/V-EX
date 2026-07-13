@@ -36,7 +36,7 @@ function validate(
   const errors: Record<string, string> = {};
 
   if (!form.pameranId) errors.pameranId = "Pameran wajib dipilih.";
-  if (!form.booth) errors.booth = "Stan wajib dipilih.";
+  if (!form.modelStan) errors.modelStan = "Stan wajib dipilih."; // ← FIX: cek modelStan, bukan booth
   if (!form.title.trim()) errors.title = "Judul wajib diisi.";
   if (!form.description?.trim()) errors.description = "Deskripsi wajib diisi.";
 
@@ -62,7 +62,7 @@ function mapLaravelErrors(
 ): Record<string, string> {
   return {
     ...(raw.id_pameran ? { pameranId: raw.id_pameran[0] } : {}),
-    ...(raw.id_stan ? { booth: raw.id_stan[0] } : {}),
+    ...(raw.id_model ? { modelStan: raw.id_model[0] } : {}), // ← FIX: id_model → modelStan
     ...(raw.judul ? { title: raw.judul[0] } : {}),
     ...(raw.deskripsi ? { description: raw.deskripsi[0] } : {}),
     ...(raw.tautan ? { link: raw.tautan[0] } : {}),
@@ -84,6 +84,7 @@ const initialForm: KaryaItem = {
   semester: "",
   description: "",
   booth: "",
+  modelStan: "", // ← FIX: tambahkan field baru
   link: "",
   pameranId: undefined,
 };
@@ -169,7 +170,7 @@ export default function AddKaryaPage() {
     try {
       const formData = new FormData();
       formData.append("id_pameran", String(form.pameranId));
-      formData.append("id_model", form.booth ?? "");
+      formData.append("id_model", form.modelStan ?? ""); // ← FIX: kirim modelStan sebagai id_model
       formData.append("judul", form.title.trim());
       formData.append("deskripsi", form.description?.trim() ?? "");
       formData.append("tautan", normalizeUrl(form.link ?? ""));
@@ -249,9 +250,10 @@ export default function AddKaryaPage() {
           <div>
             <DetailPreview
               booth={form.booth ?? ""}
+              modelStan={form.modelStan ?? ""} // ← FIX: prop baru untuk value select
               pameranId={form.pameranId}
-              onChange={(value) => handleChange("booth", value)}
-              error={errors.booth}
+              onChange={(value) => handleChange("modelStan", value)} // ← FIX: update modelStan, bukan booth
+              error={errors.modelStan} // ← FIX
             />
             <DetailForm form={form} onChange={handleChange} errors={errors} />
             <DetailAction onSave={handleSave} loading={isLoading} />

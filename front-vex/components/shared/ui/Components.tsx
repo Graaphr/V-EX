@@ -50,7 +50,7 @@ export function Card({ link, title, className, ...props }: dataCard) {
         alt={title}
         width={100}
         height={100}
-        className="object-fill rounded-xl size-full "
+        className="object-fill rounded-xl size-full self-start"
         {...props}
       />
     </div>
@@ -105,7 +105,7 @@ export function LinkAkses({ link, title, className, ...props }: LinkAkses) {
 // Footer.tsx
 export function LinkAksesEks({ link, title, children, className, ...props }: LinkAkses) {
   return (
-    <a href={link || '/icon/logo-vex.svg'} className="hover-text" {...props}>
+    <a href={link || '/icon/logo-vex.svg'} className="hover-text " {...props}>
       {title}
       {children}
     </a>

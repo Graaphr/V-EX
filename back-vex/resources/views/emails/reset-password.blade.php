@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
+
 <body style="margin:0; padding:0; background-color:#f4f4f4; font-family: Arial, sans-serif;">
 
     <table width="100%" cellpadding="0" cellspacing="0">
@@ -11,7 +13,7 @@
             <td align="center" style="padding: 40px 0;">
 
                 <table width="500" cellpadding="0" cellspacing="0"
-                       style="background:#ffffff; border-radius:8px; overflow:hidden;">
+                    style="background:#ffffff; border-radius:8px; overflow:hidden;">
 
                     {{-- Header --}}
                     <tr>
@@ -39,7 +41,7 @@
                                 <tr>
                                     <td align="center">
                                         <a href="{{ $resetLink }}"
-                                           style="background-color:#3730A3;
+                                            style="background-color:#3730A3;
                                                   color:#ffffff;
                                                   padding:14px 32px;
                                                   text-decoration:none;
@@ -68,7 +70,7 @@
                         <td align="center"
                             style="background-color:#f4f4f4; padding:20px;">
                             <p style="color:#999999; font-size:12px; margin:0;">
-                                © {{ date('Y') }} PBL. All rights reserved.
+                                © {{ date('Y') }} All rights reserved. V-EX (Virtual Exhibition)
                             </p>
                         </td>
                     </tr>
@@ -80,4 +82,5 @@
     </table>
 
 </body>
+
 </html>

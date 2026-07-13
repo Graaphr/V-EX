@@ -45,7 +45,7 @@ function validate(
   const errors: Record<string, string> = {};
 
   if (!form.pameranId) errors.pameranId = "Pameran wajib dipilih.";
-  if (!form.booth) errors.booth = "Stan wajib dipilih.";
+  if (!form.modelStan) errors.modelStan = "Stan wajib dipilih."; // ← FIX: cek modelStan, bukan booth
   if (!form.title.trim()) errors.title = "Judul wajib diisi.";
   if (!form.description?.trim()) errors.description = "Deskripsi wajib diisi.";
 
@@ -111,7 +111,7 @@ export default function DetailKarya({ id }: Props) {
   useEffect(() => {
     if (authLoading) return;
     if (!isAdmin && !isKps && !isKetuaPbl) {
-      router.replace("/unauthorized");
+      router.replace("/");
     }
   }, [authLoading, isAdmin, isKps, isKetuaPbl, router]);
 
@@ -145,15 +145,18 @@ export default function DetailKarya({ id }: Props) {
                 description: item.deskripsi,
                 category: item.stan?.pameran?.kategori ?? "",
                 image: item.gambar_poster
-                  ? `http://localhost:8000/storage/${item.gambar_poster}`
+                  ? `https://vex.terpalb25.web.id/storage/${item.gambar_poster}`
                   : "",
                 thumbnail: item.gambar_sampul
-                  ? `http://localhost:8000/storage/${item.gambar_sampul}`
+                  ? `https://vex.terpalb25.web.id/storage/${item.gambar_sampul}`
                   : "",
                 link: item.tautan ?? "",
                 year: tanggalMulai.slice(0, 4),
                 semester,
                 booth: String(item.id_stan ?? ""),
+                modelStan: item.stan?.model_stan
+                  ? String(item.stan.model_stan)
+                  : "", // ← FIX: tambah modelStan untuk KPS juga
                 pameranId: item.id_pameran,
                 pameranTitle:
                   item.stan?.pameran?.judul ?? `Pameran #${item.id_pameran}`,
@@ -250,7 +253,7 @@ export default function DetailKarya({ id }: Props) {
     try {
       const formData = new FormData();
       formData.append("id_pameran", String(form.pameranId));
-      formData.append("id_stan", form.booth ?? "");
+      formData.append("model_stan", form.modelStan ?? ""); // kirim model_stan (id_model), bukan id_stan
       formData.append("judul", form.title.trim());
       formData.append("deskripsi", form.description?.trim() ?? "");
       formData.append("tautan", normalizeUrl(form.link ?? ""));
@@ -273,7 +276,8 @@ export default function DetailKarya({ id }: Props) {
         const mapped: Record<string, string> = {};
         if (laravelErrors.id_pameran)
           mapped.pameranId = laravelErrors.id_pameran[0];
-        if (laravelErrors.id_stan) mapped.booth = laravelErrors.id_stan[0];
+        if (laravelErrors.model_stan)
+          mapped.modelStan = laravelErrors.model_stan[0];
         if (laravelErrors.judul) mapped.title = laravelErrors.judul[0];
         if (laravelErrors.deskripsi)
           mapped.description = laravelErrors.deskripsi[0];
@@ -558,9 +562,10 @@ export default function DetailKarya({ id }: Props) {
             >
               <DetailPreview
                 booth={form.booth ?? ""}
+                modelStan={form.modelStan ?? ""} // ← FIX: prop yang tadi hilang
                 pameranId={form.pameranId}
-                onChange={(value) => handleChange("booth", value)}
-                error={errors.booth}
+                onChange={(value) => handleChange("modelStan", value)}
+                error={errors.modelStan} // ← FIX: dari errors.booth ke errors.modelStan
                 readOnly={isReadOnly || isPameranLocked}
               />
               <DetailForm

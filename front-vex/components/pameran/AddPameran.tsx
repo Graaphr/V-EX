@@ -102,8 +102,8 @@ export default function AddPameran() {
 
       if (data.status === "success") {
         showToast("Pameran berhasil ditambahkan!", "success");
-        const newId = data.pameran?.id_pameran;
-        router.push(`/admin/pameran/detail/${newId}`);
+        const newSlug = data.pameran?.slug;
+        router.push(`/admin/pameran/detail/${newSlug}`);
       } else {
         showToast("Gagal menambahkan pameran.", "error");
       }

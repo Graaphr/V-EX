@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 type Props = {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
 };
 
 export default function Crosshair({ canvasRef }: Props) {

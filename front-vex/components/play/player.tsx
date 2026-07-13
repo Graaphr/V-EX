@@ -147,6 +147,8 @@ export default function Player({
   /* ===================== */
   /* MULTIPLAYER SAVE */
   /* ===================== */
+const heartbeatTimer = useRef(0); // ← tambah ini
+const HEARTBEAT_INTERVAL = 3;
 
   const saveTimer = useRef(0);
   const rotationY = useRef(0);
@@ -205,7 +207,7 @@ export default function Player({
       colliders.current = colliderArr;
       floorMeshes.current = floorArr;
 
-      console.log("colliders:", colliderArr.length, "floor candidates:", floorArr.length);
+      // console.log("colliders:", colliderArr.length, "floor candidates:", floorArr.length);
     };
 
     const t1 = setTimeout(scan, 300);
@@ -257,7 +259,7 @@ export default function Player({
 
   useEffect(() => {
     const removePlayer = () => {
-      fetch(`/api/player?id=${playerId}`, {
+      fetch(`/api-internal/player?id=${playerId}`, {
         method: "DELETE",
       }).catch(() => {});
     };
@@ -552,41 +554,48 @@ export default function Player({
       z: position.current.z,
     });
 
-    saveTimer.current += dt;
+   saveTimer.current += dt;
+heartbeatTimer.current += dt; // ← tambah ini, di luar if supaya selalu jalan
 
-    if (saveTimer.current >= 0.2 && playerName !== "Loading...") {
-      saveTimer.current = 0;
+if (saveTimer.current >= 0.2 && playerName !== "Loading...") {
+  saveTimer.current = 0;
 
-      const moved =
-        Math.abs(position.current.x - lastSent.current.x) > 0.01 ||
-        Math.abs(position.current.y - lastSent.current.y) > 0.01 ||
-        Math.abs(position.current.z - lastSent.current.z) > 0.01 ||
-        Math.abs(rotationY.current - lastSent.current.rotation) > 0.01;
+  const moved =
+    Math.abs(position.current.x - lastSent.current.x) > 0.01 ||
+    Math.abs(position.current.y - lastSent.current.y) > 0.01 ||
+    Math.abs(position.current.z - lastSent.current.z) > 0.01 ||
+    Math.abs(rotationY.current - lastSent.current.rotation) > 0.01;
 
-      if (moved) {
-        lastSent.current = {
-          x: position.current.x,
-          y: position.current.y,
-          z: position.current.z,
-          rotation: rotationY.current,
-        };
+  // Heartbeat: walau pemain diam total (moved = false), tetap kirim POST
+  // tiap HEARTBEAT_INTERVAL detik supaya `updatedAt` di Redis terus
+  // ter-refresh dan key tidak expired (TTL) hanya karena idle — bukan
+  // karena benar-benar disconnect.
+  const heartbeatDue = heartbeatTimer.current >= HEARTBEAT_INTERVAL;
 
-        fetch("/api/player", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            id: playerId,
-            name: playerName,
-            x: position.current.x,
-            y: position.current.y,
-            z: position.current.z,
-            rotation: rotationY.current,
-          }),
-        }).catch(() => {});
-      }
-    }
+  if (moved || heartbeatDue) {
+    lastSent.current = {
+      x: position.current.x,
+      y: position.current.y,
+      z: position.current.z,
+      rotation: rotationY.current,
+    };
+
+    if (heartbeatDue) heartbeatTimer.current = 0;
+
+    fetch("/api-internal/player", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: playerId,
+        name: playerName,
+        x: position.current.x,
+        y: position.current.y,
+        z: position.current.z,
+        rotation: rotationY.current,
+      }),
+    }).catch(() => {});
+  }
+}
 
     if (playerMesh.current && mode === "third") {
       playerMesh.current.position.copy(position.current);
@@ -636,7 +645,7 @@ export default function Player({
           {/* pun, nametag-nya tetap menghadap kamera mereka (bukan ikut    */}
           {/* muter sesuai rotation.y group ini).                          */}
           <Billboard position={[0, 2.5, 0]}>
-            <Text fontSize={0.28} color="black" anchorX="center" anchorY="middle">
+            <Text fontSize={0.28} color="red" anchorX="center" anchorY="middle" >
               {playerName}
             </Text>
           </Billboard>

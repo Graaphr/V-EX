@@ -41,7 +41,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            'url' => rtrim(env('APP_URL', 'https://vex.terpalb25.web.id'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

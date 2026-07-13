@@ -12,7 +12,8 @@ type FormErrors = Partial<Record<keyof PameranForm | 'image', string>>;
 export default function EditPameran() {
   const params = useParams();
   const router = useRouter();
-  const id = Number(Array.isArray(params?.id) ? params.id[0] : params?.id);
+  // Cek folder untuk halaman edit juga — kalau namanya [slug], ganti jadi:
+const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -42,11 +43,11 @@ export default function EditPameran() {
   };
 
   useEffect(() => {
-    if (!id) return;
-    const fetch = async () => {
+    if (!slug) return;
+    const fetchData = async () => {
       try {
         setFetching(true);
-        const res = await GetDetailPameran(id);
+        const res = await GetDetailPameran(slug);
 
         if (res.status !== 'success' || !res.pameran) {
           setNotFound(true);
@@ -75,8 +76,8 @@ export default function EditPameran() {
         setFetching(false);
       }
     };
-    fetch();
-  }, [id]);
+    fetchData();
+  }, [slug]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -113,6 +114,11 @@ export default function EditPameran() {
   };
 
   const handleSubmit = async () => {
+    if (!slug) {
+      showToast('Slug pameran tidak ditemukan.', 'error');
+      return;
+    }
+
     if (!validate()) {
       showToast('Lengkapi semua data terlebih dahulu.', 'warning');
       return;
@@ -132,11 +138,11 @@ export default function EditPameran() {
       formData.append('deskripsi', form.description);
       if (form.image) formData.append('banner', form.image);
 
-      const data = await UpdatePameran(id, formData);
+      const data = await UpdatePameran(slug, formData);
 
       if (data.status === 'success') {
         showToast('Pameran berhasil diupdate!', 'success');
-        router.push(`/admin/pameran/detail/${id}`);
+        router.push(`/admin/pameran/detail/${slug}`);
       } else {
         showToast('Gagal mengupdate pameran.', 'error');
       }

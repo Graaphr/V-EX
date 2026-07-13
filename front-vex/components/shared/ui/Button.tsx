@@ -7,9 +7,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   link?: string;
   className?: string;
+  target?: string;
+  rel?: string;
 }
 
-export function Button({ children,title, link, className, ...props }: ButtonProps) {
+export function Button({ children, title, link, className, target, rel, ...props }: ButtonProps) {
 
   const style = `
   inline-flex items-center justify-center
@@ -21,7 +23,7 @@ export function Button({ children,title, link, className, ...props }: ButtonProp
 
   if (link) {
     return (
-      <Link href={link} title={title} className={style}>
+      <Link href={link} title={title} className={style} target={target} rel={rel}>
         {children}
       </Link>
     );
@@ -35,7 +37,7 @@ export function Button({ children,title, link, className, ...props }: ButtonProp
   );
 }
 
-export function ButtonPutih({ children, link, className = '', ...props }: ButtonProps) {
+export function ButtonPutih({ children, link, className = '', target, rel, ...props }: ButtonProps) {
   const style = `
       inline-flex items-center justify-center
       text-main-blue font-bold font-tilt-wrap cursor-pointer
@@ -47,7 +49,7 @@ export function ButtonPutih({ children, link, className = '', ...props }: Button
 
   if (link) {
     return (
-      <Link href={link} className={style}>
+      <Link href={link} className={style} target={target} rel={rel}>
         {children}
       </Link>
     );

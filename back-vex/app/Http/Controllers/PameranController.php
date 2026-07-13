@@ -11,7 +11,7 @@ use Intervention\Image\Drivers\Gd\Driver;
 
 class PameranController extends Controller
 {
-    private const STORAGE_BASE_URL = 'http://localhost:8000/storage/';
+    private const STORAGE_BASE_URL = 'https://vex.terpalb25.web.id/storage/';
 
     // =============================
     // HELPER: URL banner (dengan fallback ke original)
@@ -120,7 +120,6 @@ class PameranController extends Controller
         $pameran = Pameran::with(['model3d', 'prodi'])
             ->withCount(['karya', 'suka'])
             ->where('slug', $identifier)
-            ->orWhere('id_pameran', $identifier)
             ->first();
 
         if (!$pameran) {
@@ -223,9 +222,11 @@ class PameranController extends Controller
     // =============================
     // EDIT PAMERAN
     // =============================
-    public function update(Request $request, $id)
+    public function update(Request $request, $identifier)
     {
-        $pameran = Pameran::find($id);
+        $pameran = Pameran::where('slug', $identifier)
+            ->orWhere('id_pameran', $identifier)
+            ->first();
 
         if (!$pameran) {
             return response()->json([

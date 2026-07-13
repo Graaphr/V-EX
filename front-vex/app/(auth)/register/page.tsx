@@ -26,12 +26,15 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [password_confirmation, setPasswordConfirmation] = useState('');
+  const [agreed, setAgreed] = useState(false);
 
   const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
   const [namaError, setNamaError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordConfirmationError, setPasswordConfirmationError] = useState('');
+  const [agreedError, setAgreedError] = useState('');
 
   // handle_register
   const handleRegister = async (e: React.FormEvent) => {
@@ -41,6 +44,7 @@ export default function RegisterPage() {
     setEmailError('');
     setPasswordError('');
     setPasswordConfirmationError('');
+    setAgreedError('');
     setSuccess('');
 
     let hasError = false;
@@ -63,6 +67,10 @@ export default function RegisterPage() {
     }
     if (password !== password_confirmation) {
       setPasswordConfirmationError('Password tidak sama!');
+      hasError = true;
+    }
+    if (!agreed) {
+      setAgreedError('Kamu harus menyetujui Syarat & Ketentuan dan Kebijakan Privasi');
       hasError = true;
     }
 
@@ -88,7 +96,8 @@ export default function RegisterPage() {
       router.push('/verifikasi');
 
     } catch (error: any) {
-      const response = error.response?.data;
+      const response = error.response?.data?.message;
+      setError(response || 'Terjadi kesalahan saat mendaftar');
 
       if (response?.errors) {
         setNamaError(response.errors.nama?.[0] || '');
@@ -121,33 +130,33 @@ export default function RegisterPage() {
   });
 
   // Position
-  const boxes = [
-    {
-      d: 0.2,
-      className: 'top-10 left-10',
-      size: 'h-[300px] w-[300px] rotate-45',
-    },
-    {
-      d: 0.3,
-      className: 'top-10 right-10',
-      size: 'h-[300px] w-[300px] -rotate-12',
-    },
-    {
-      d: 0.1,
-      className: 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
-      size: 'h-[250px] w-[250px] rotate-90',
-    },
-    {
-      d: 0.5,
-      className: 'bottom-20 left-1/4',
-      size: 'h-[100px] w-[100px] rotate-12',
-    },
-    {
-      d: 0.6,
-      className: 'bottom-20 right-1/4',
-      size: 'h-[100px] w-[100px] -rotate-45',
-    },
-  ];
+const boxes = [
+  {
+    d: 0.2,
+    className: 'top-4 left-4 sm:top-8 sm:left-8 md:top-10 md:left-0',
+    size: 'h-[130px] w-[130px] sm:h-[180px] sm:w-[180px] md:h-[230px] md:w-[230px] lg:h-[300px] lg:w-[300px] rotate-45',
+  },
+  {
+    d: 0.3,
+    className: 'top-4 right-4 sm:top-8 sm:right-8 md:top-10 md:right-0',
+    size: 'h-[130px] w-[130px] sm:h-[180px] sm:w-[180px] md:h-[230px] md:w-[230px] lg:h-[300px] lg:w-[300px] -rotate-12',
+  },
+  {
+    d: 0.1,
+    className: 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
+    size: 'h-[120px] w-[120px] sm:h-[170px] sm:w-[170px] md:h-[210px] md:w-[210px] lg:h-[250px] lg:w-[250px] rotate-90',
+  },
+  {
+    d: 0.5,
+    className: 'bottom-6 left-[12%] sm:bottom-14 sm:left-1/4',
+    size: 'h-[65px] w-[65px] sm:h-[85px] sm:w-[85px] md:h-[95px] md:w-[95px] lg:h-[100px] lg:w-[100px] rotate-12',
+  },
+  {
+    d: 0.6,
+    className: 'bottom-6 right-[12%] sm:bottom-14 sm:right-0',
+    size: 'h-[65px] w-[65px] sm:h-[85px] sm:w-[85px] md:h-[95px] md:w-[95px] lg:h-[100px] lg:w-[100px] -rotate-45',
+  },
+];
 
   return (
     <motion.div
@@ -160,7 +169,7 @@ export default function RegisterPage() {
         initial={{ y: '-100vh' }}
         animate={{ y: 0 }}
         transition={{ duration: 2, ease: 'circOut' }}
-        className="absolute h-[95%] top-0 w-[95%] bg-secondary-color rounded-b-full"
+        className="absolute h-[100%] sm:h-[90%] md:h-[93%] lg:h-[95%] w-[100%] sm:w-[94%] md:w-[95%] top-0 bg-secondary-color lg:rounded-b-full "
       >
         {boxes.map((box, i) => (
           <motion.div
@@ -185,7 +194,8 @@ export default function RegisterPage() {
         <Logo />
 
         <form onSubmit={handleRegister} className="w-full space-y-4 mt-6 select-none">
-        {success && <div className="bg-green-50 text-green-600 text-sm p-3 rounded-lg mb-4">{success}</div>}
+          {success && <div className="bg-green-50 text-green-600 text-sm p-3 rounded-lg mb-4">{success}</div>}
+          {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-4">{error}</div>}
           <InputField
             type="text"
             value={nama}
@@ -200,7 +210,7 @@ export default function RegisterPage() {
             
           />
           <InputField
-            type="text"
+            type="email"
             value={email}
             placeholder="Masukkan Email"
             error={emailError}
@@ -236,6 +246,45 @@ export default function RegisterPage() {
             onToggle={() => setShowConfirm((prev) => !prev)}
             minLength={8}
           />
+
+          {/* Persetujuan Syarat & Ketentuan + Kebijakan Privasi */}
+          <div className="pt-1">
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => {
+                  setAgreed(e.target.checked);
+                  setAgreedError('');
+                }}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-main-blue cursor-pointer"
+              />
+              <span className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                Saya setuju dengan{' '}
+                <a
+                  href="/syarat-ketentuan"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-main-blue font-medium underline underline-offset-2 hover:text-main-blue/80"
+                >
+                  Syarat & Ketentuan
+                </a>{' '}
+                dan{' '}
+                <a
+                  href="/kebijakan-privasi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-main-blue font-medium underline underline-offset-2 hover:text-main-blue/80"
+                >
+                  Kebijakan Privasi
+                </a>{' '}
+                yang berlaku.
+              </span>
+            </label>
+            {agreedError && <p className="mt-1.5 text-xs text-red-500">{agreedError}</p>}
+          </div>
 
           <div className="w-full mt-8 border-b-2 border-gray-300 pb-8">
             <ButtonPutih onClick={handleRegister} disabled={isLoading} className="w-full py-3 rounded-lg font-bold">

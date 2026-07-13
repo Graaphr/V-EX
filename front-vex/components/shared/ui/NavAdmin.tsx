@@ -37,7 +37,7 @@ export default function NavAdmin({ onAddClick, isFormOpen }: AddOn) {
 
   return (
     <div
-      className="fixed z-50 left-1/2 -translate-x-1/2 bottom-0 w-fit flex justify-center px-3 pb-3
+      className="fixed z-14 left-1/2 -translate-x-1/2 bottom-0 w-fit flex justify-center px-3 pb-3
       "
       style={{
         paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
