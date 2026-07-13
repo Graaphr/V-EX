@@ -1,5 +1,5 @@
 import TutorialSection from '@/components/TutorialSection';
-import type { TutorialSubsection } from '@/components/TutorialSection';
+import type { TutorialSubsection } from '@/components/layout/TutorialSection';
 
 export const metadata = {
     title: 'Tutorial - Panduan Ketua PBL | V-EX',
