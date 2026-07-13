@@ -13,7 +13,7 @@ import { GetKaryaTerbaikAktif, GetKaryaFavoritAktif } from './api';
 export default function HomePage() {
   const [karyaTerbaik, setKaryaTerbaik] = useState<CarouselKaryaItem[]>([]);
   const [karyaFavorit, setKaryaFavorit] = useState<CarouselKaryaItem[]>([]);
-  const tutorialLink = '/tutorial/V-EX Tutorial.pdf';
+  const tutorialLink = '/tutorial/umum';
 
   useEffect(() => {
     GetKaryaTerbaikAktif()
