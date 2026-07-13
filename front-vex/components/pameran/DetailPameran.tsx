@@ -90,14 +90,14 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
   closeDate.setHours(23, 59, 59, 999);
   const isOpen = today >= openDate && today <= closeDate;
 
-  console.log("DEBUG STATUS PAMERAN:", {
-    raw_startDate: stats.startDate,
-    raw_endDate: stats.endDate,
-    today: today.toString(),
-    openDate: openDate.toString(),
-    closeDate: closeDate.toString(),
-    isOpen,
-  });
+  // console.log("DEBUG STATUS PAMERAN:", {
+  //   raw_startDate: stats.startDate,
+  //   raw_endDate: stats.endDate,
+  //   today: today.toString(),
+  //   openDate: openDate.toString(),
+  //   closeDate: closeDate.toString(),
+  //   isOpen,
+  // });
 
   return (
     <div className="min-h-screen bg-gray-50 font-poppins text-gray-800 select-none">
