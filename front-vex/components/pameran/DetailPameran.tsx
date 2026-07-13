@@ -24,7 +24,6 @@ interface Status {
 }
 
 export default function PageDetailPameran({ isLogin = false }: Status) {
-
   // SESUDAH (sesuai nama folder [slug] yang sebenarnya)
   const params = useParams();
   const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
@@ -84,8 +83,21 @@ export default function PageDetailPameran({ isLogin = false }: Status) {
     institution,
   } = pameran;
 
+  // Laravel kirim YYYY-MM-DD → langsung pakai new Date(), tidak perlu convertDate
+  const today = new Date();
+  const openDate = new Date(stats.startDate);
+  const closeDate = new Date(stats.endDate);
+  closeDate.setHours(23, 59, 59, 999);
+  const isOpen = today >= openDate && today <= closeDate;
 
-  const isOpen = isLogin;
+  // console.log("DEBUG STATUS PAMERAN:", {
+  //   raw_startDate: stats.startDate,
+  //   raw_endDate: stats.endDate,
+  //   today: today.toString(),
+  //   openDate: openDate.toString(),
+  //   closeDate: closeDate.toString(),
+  //   isOpen,
+  // });
 
   return (
     <div className="min-h-screen bg-gray-50 font-poppins text-gray-800 select-none">
@@ -257,9 +269,8 @@ function Row({ title, value }: { title: string; value: any }) {
 function StatusBadge({ isOpen }: { isOpen: boolean }) {
   return (
     <div
-      className={`flex items-center gap-1.5 w-8 h-8 px-2.5 py-1 rounded-full text-white text-xs font-semibold ${
-        isOpen ? "bg-green-500" : "bg-red-500"
-      }`}
+      className={`flex items-center gap-1.5 w-8 h-8 px-2.5 py-1 rounded-full text-white text-xs font-semibold ${isOpen ? "bg-green-500" : "bg-red-500"
+        }`}
     >
       {isOpen ? <FaLockOpen size={12} /> : <FaLock size={12} />}
     </div>
