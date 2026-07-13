@@ -78,6 +78,55 @@ function applyCoverUV(tex: THREE.Texture, meshAspect: number) {
   tex.needsUpdate = true;
 }
 
+// Meniru CSS `object-fit: contain`: gambar poster ditampilkan utuh (TIDAK
+// di-crop) walau aspect ratio-nya beda dari panel. Bedanya sama repeat/
+// offset biasa: repeat/offset saja tidak bisa bikin area sisa jadi kosong/
+// letterbox — areanya malah ke-smear (efek "clamp edge" yang ditarik).
+// Jadi di sini gambar digambar ulang ke <canvas> seukuran aspect ratio
+// panel, di-scale supaya pas masuk semua (contain), sisanya diisi warna
+// latar polos — baru <canvas> itu yang dipakai jadi texture.
+function applyContainCanvas(
+  tex: THREE.Texture,
+  meshAspect: number,
+  bgColor = "#000000"
+): THREE.Texture {
+  const img = tex.image as HTMLImageElement | ImageBitmap | undefined;
+  const imgW = (img as any)?.width;
+  const imgH = (img as any)?.height;
+  if (!img || !imgW || !imgH) return tex;
+
+  // Resolusi canvas: pakai sisi terbesar dari gambar asli sebagai basis
+  // supaya nggak downscale gambar yang sudah bagus, lalu sisi lainnya
+  // disesuaikan ke aspect ratio panel.
+  const baseSize = Math.max(imgW, imgH, 1024);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(meshAspect >= 1 ? baseSize : baseSize * meshAspect);
+  canvas.height = Math.round(meshAspect >= 1 ? baseSize / meshAspect : baseSize);
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return tex;
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const scale = Math.min(canvas.width / imgW, canvas.height / imgH);
+  const drawW = imgW * scale;
+  const drawH = imgH * scale;
+  ctx.drawImage(
+    img as CanvasImageSource,
+    (canvas.width - drawW) / 2,
+    (canvas.height - drawH) / 2,
+    drawW,
+    drawH
+  );
+
+  const canvasTex = new THREE.CanvasTexture(canvas);
+  canvasTex.flipY = tex.flipY;
+  canvasTex.colorSpace = tex.colorSpace;
+  canvasTex.needsUpdate = true;
+  return canvasTex;
+}
+
 type BoothProps = {
   position?: [number, number, number];
   quaternion?: [number, number, number, number];
@@ -109,6 +158,11 @@ export default function Booth({
 
   const posterMesh = useRef<THREE.Mesh | null>(null);
   const sampulMesh = useRef<THREE.Mesh | null>(null);
+  // Canvas texture hasil applyContainCanvas dibuat baru terus (bukan dari
+  // textureCache yang shared), jadi harus di-dispose manual sendiri —
+  // beda dari texture asli poster/sampul yang memang sengaja tidak
+  // di-dispose karena dipakai bareng-bareng.
+  const posterCanvasTex = useRef<THREE.Texture | null>(null);
 
   useEffect(() => {
     scene.traverse((obj: any) => {
@@ -150,12 +204,14 @@ export default function Booth({
     loadCachedTexture(poster, (tex) => {
       if (cancelled || !posterMesh.current) return;
       (posterMesh.current.material as THREE.Material)?.dispose?.();
-      // Clone dulu — texture aslinya dipakai bareng-bareng lewat
-      // textureCache, jadi repeat/offset (dihitung khusus buat panel ini)
-      // nggak boleh "bocor" dan ikut ngubah tampilan booth lain yang
-      // kebetulan pakai poster/URL yang sama.
-      const t = tex.clone();
-      applyCoverUV(t, computePlaneAspect(posterMesh.current));
+      posterCanvasTex.current?.dispose();
+
+      // Pakai "contain" (bukan "cover") khusus poster: gambar ditampilkan
+      // utuh, tanpa ada bagian yang kepotong, walau aspect ratio-nya beda
+      // dari panel. Sisa area yang nggak kepakai diisi warna latar polos.
+      const meshAspect = computePlaneAspect(posterMesh.current);
+      const t = applyContainCanvas(tex, meshAspect);
+      posterCanvasTex.current = t;
       posterMesh.current.material = new THREE.MeshBasicMaterial({ map: t, toneMapped: false });
     });
 
@@ -182,6 +238,15 @@ export default function Booth({
       cancelled = true;
     };
   }, [sampul, scene]);
+
+  // Canvas texture poster itu unik per-mount (bukan dari textureCache
+  // shared), jadi kalau nggak di-dispose pas komponen bener-bener unmount,
+  // bakal nyisa di GPU memory.
+  useEffect(() => {
+    return () => {
+      posterCanvasTex.current?.dispose();
+    };
+  }, []);
 
   /* ===================== */
   /* CLICK RANGE / OCCLUSION */
@@ -234,16 +299,7 @@ export default function Booth({
     const clicked = e?.object?.name;
     if (clicked !== "PanelPoster" && clicked !== "PanelVideo") return;
 
-    // Begitu ray kena salah satu panel yang relevan, stop di sini — jangan
-    // biarkan event nembus/lanjut ke intersection lain di belakangnya.
-    // Ini yang bikin klik poster kadang malah ke-trigger sebagai klik video
-    // (dan sebaliknya) saat kedua panel berhimpit di ray yang sama.
     e.stopPropagation();
-
-    // Di desktop third-person, interaksi udah dipindah ke tombol E (nggak
-    // ada crosshair buat nunjuk lagi, mouse dipakai buat nengok terus) —
-    // klik langsung di-skip di sini. Mobile third-person tetap pakai tap
-    // seperti biasa karena nggak ada tombol E di HP.
     if (cameraMode === "third" && !mobile) return;
 
     if (isBlocked(e.point, e.distance)) return;
