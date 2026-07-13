@@ -17,14 +17,17 @@ import { useParams } from "next/navigation";
 import { Button } from "../shared/ui/Button";
 import { Pameran } from "@/types/pameran";
 import { GetDetailPameran } from "./apiPameran";
+
 interface Status {
   isLogin?: boolean;
+ 
 }
 
 export default function PageDetailPameran({ isLogin = false }: Status) {
-// SESUDAH (sesuai nama folder [slug] yang sebenarnya)
-const params = useParams();
-const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug; 
+
+  // SESUDAH (sesuai nama folder [slug] yang sebenarnya)
+  const params = useParams();
+  const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
 
   const [pameran, setPameran] = useState<Pameran | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,12 +84,8 @@ const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
     institution,
   } = pameran;
 
-  // Laravel kirim YYYY-MM-DD → langsung pakai new Date(), tidak perlu convertDate
-  const today = new Date();
-  const openDate = new Date(stats.startDate);
-  const closeDate = new Date(stats.endDate);
-  closeDate.setHours(23, 59, 59, 999);
-  const isOpen = today >= openDate && today <= closeDate;
+
+  const isOpen = isLogin;
 
   return (
     <div className="min-h-screen bg-gray-50 font-poppins text-gray-800 select-none">
@@ -105,19 +104,19 @@ const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
         <div className="autoMid relative z-10 py-6 md:py-8">
           <div className="flex flex-col md:flex-row gap-8 relative">
             {/* MOBILE TITLE + EDIT */}
-            <div className="md:hidden relative pr-14">
-              {isLogin && (
-                <Link
-                  href={`/admin/pameran/edit/${pameran.slug}`}
-                  className="absolute right-0 top-0 bg-white border rounded-full p-2 shadow-md z-20"
-                >
-                  <HiPencilAlt size={18} />
-                </Link>
-              )}
-              <div className="flex items-center gap-4">
-                <h1 className="text-4xl font-extrabold uppercase">{title}</h1>
-                <StatusBadge isOpen={isOpen} />
+            <div className="md:hidden relative pr-16">
+              <div className="absolute right-0 top-0 flex items-center gap-2 z-20">
+              
+                {isLogin && (
+                  <Link
+                    href={`/admin/pameran/edit/${pameran.slug}`}
+                    className="bg-white border rounded-full p-2 shadow-md"
+                  >
+                    <HiPencilAlt size={18} />
+                  </Link>
+                )}
               </div>
+              <h1 className="text-4xl font-extrabold uppercase">{title}  <StatusBadge isOpen={isOpen} /></h1>
               <p className="text-gray-500 text-sm mt-1">{subtitle}</p>
               <div className="flex items-center gap-4 text-gray-600 mt-2 text-sm">
                 <FaRegCalendarAlt className="text-main-blue" />
@@ -164,12 +163,12 @@ const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
                 {isOpen ? (
                   <Button
                     link={`/exhibition/${pameran.slug}`}
-                    className="w-full sm:w-auto min-w-[140px] py-5 px-38 flex items-center justify-center rounded-md"
+                    className="w-full sm:w-auto min-w-[100%] py-5 px-38 flex items-center justify-center rounded-md"
                   >
                     <FaPlay />
                   </Button>
                 ) : (
-                  <div className="w-full sm:w-auto min-w-[140px] py-5 px-38 bg-gray-300 text-gray-500 rounded-md flex justify-center items-center">
+                  <div className="w-full sm:w-auto min-w-[100%] py-5 px-38 bg-gray-300 text-gray-500 rounded-md flex justify-center items-center">
                     <FaPlay />
                   </div>
                 )}

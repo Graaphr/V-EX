@@ -100,13 +100,15 @@ export default function DetailPreview({
         <img
           src={
             selectedModel
-              ? `/image/${encodeURIComponent(selectedModel.nama_model)}.svg`
-              : "/image/Stan A.svg"
+              ? `/image/img-${selectedModel.nama_model
+                  .toLowerCase()
+                  .replace(/\s+/g, "-")}.svg`
+              : "/image/img-stan-a.svg"
           }
           alt="booth"
           className="h-full w-full object-contain p-4"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = "/image/img-stan1.svg";
+            (e.target as HTMLImageElement).src = "/image/img-stan-a.svg";
           }}
         />
       </div>
