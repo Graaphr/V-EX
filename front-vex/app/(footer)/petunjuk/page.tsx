@@ -56,29 +56,6 @@ export default function PetunjukPage() {
           </li>
         ))}
       </ol>
-
-      {/* CTA: Panduan Lengkap PDF */}
-      <a
-        href={tutorialPdfLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group flex items-center justify-between gap-4 mt-4 p-5 sm:p-6 rounded-xl border border-main-blue/20 bg-main-blue/5 hover:bg-main-blue/10 transition-colors duration-300"
-      >
-        <div className="flex items-center gap-4">
-          <div className="shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-main-blue text-white flex items-center justify-center text-lg sm:text-xl">
-            <FaFilePdf />
-          </div>
-          <div>
-            <p className="font-poppins font-medium text-main-blue text-base sm:text-lg">
-              Butuh penjelasan lebih lanjut?
-            </p>
-            <p className="font-poppins font-light text-gray-600 text-sm sm:text-base mt-0.5">
-              Lihat Panduan Lengkap
-            </p>
-          </div>
-        </div>
-        <FaArrowRight className="shrink-0 text-main-blue text-lg sm:text-xl transition-transform duration-300 group-hover:translate-x-1" />
-      </a>
     </div>
   );
 }
