@@ -17,6 +17,16 @@ type MenuGroup = {
 
 const menuGroups: MenuGroup[] = [
   {
+    label: 'Tutorial',
+    items: [
+      { title: 'Panduan Umum', link: '/tutorial/umum' },
+      { title: 'Panduan Pengunjung', link: '/tutorial/pengunjung' },
+      { title: 'Panduan Admin', link: '/tutorial/admin' },
+      { title: 'Panduan Ketua PBL', link: '/tutorial/ketua-pbl' },
+      { title: 'Panduan KPS', link: '/tutorial/kps' },
+    ],
+  },
+  {
     label: 'Sumber',
     items: [
       { title: 'FAQs', link: '/faqs' },
